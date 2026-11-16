@@ -66,7 +66,7 @@ export async function handleChat(req, log) {
   const q = await consumeMsgs(w.ident, COST.chat);
   if (!q.ok) return denied(q);
   try {
-    const reply = await complete([{ role: 'system', content: chatSystemPrompt(v) }, ...v.messages], { maxTokens: v.voice ? 250 : 800 });
+    const reply = await complete([{ role: 'system', content: chatSystemPrompt(v) }, ...v.messages], { maxTokens: v.voice ? 200 : 500 });
     return json(200, { reply, account: await status(w.ident) });
   } catch (e) {
     await refundMsgs(w.ident, COST.chat, q.plan);
@@ -183,7 +183,7 @@ export function handleHealth() {
     payments: !!process.env.REVENUECAT_WEBHOOK_AUTH,
     plans: {
       free: { msgs: L.free.msgs, voiceMin: Math.floor(L.free.voiceSec / 60) },
-      pro: { msgs: L.pro.msgs, voiceMin: Math.floor(L.pro.voiceSec / 60), price: process.env.PRO_PRICE_LABEL || '$4.99/month' },
+      pro: { msgs: L.pro.msgs, voiceMin: Math.floor(L.pro.voiceSec / 60), price: process.env.PRO_PRICE_LABEL || '$11.99/month' },
     },
   });
 }

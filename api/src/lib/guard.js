@@ -37,14 +37,14 @@ const str = (v, max) => (typeof v === 'string' ? v.slice(0, max) : '');
 
 export function validateChat(body) {
   if (!body || !Array.isArray(body.messages) || body.messages.length === 0) return { error: 'messages required' };
-  const messages = body.messages.slice(-16)
+  const messages = body.messages.slice(-12)
     .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string' && m.content.trim())
-    .map(m => ({ role: m.role, content: m.content.slice(0, 4000) }));
+    .map(m => ({ role: m.role, content: m.content.slice(0, 2000) }));
   if (!messages.length || messages[messages.length - 1].role !== 'user') return { error: 'last message must be from the user' };
   return {
     messages,
-    profile: str(body.profileSummary, 1500),
-    context: str(body.context, 3000),
+    profile: str(body.profileSummary, 1000),
+    context: str(body.context, 1500),
     voice: body.mode === 'voice',
   };
 }

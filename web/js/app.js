@@ -243,10 +243,10 @@ function accountCard() {
   const usage = a.unlimited ? 'Unlimited AI (admin)'
     : `${a.msgsLeft} of ${a.limits.msgs} messages · ${mins(a.voiceSecLeft)} of ${mins(a.limits.voiceSec)} voice min left${a.plan === 'pro' && a.periodEnds ? ` · resets ${new Date(a.periodEnds).toLocaleDateString()}` : ''}`;
   const upgrade = a.plan !== 'free' ? ''
-    : native() ? `<button class="btn primary" data-act="upgrade">Upgrade to Pro · ${esc(P?.pro.price || '$4.99/month')}</button><button class="link small" data-act="restore">Restore purchase</button>
-      <p class="small muted">Pro: ${P ? `${P.pro.msgs} AI messages + ${P.pro.voiceMin} voice minutes per month. ` : ''}Auto-renews monthly at ${esc(P?.pro.price || '$4.99/month')} until cancelled in your ${window.PP_PLATFORM === 'android' ? 'Google Play' : 'Apple ID'} subscription settings at least 24 hours before renewal.
+    : native() ? `<button class="btn primary" data-act="upgrade">Upgrade to Pro · ${esc(P?.pro.price || '$11.99/month')}</button><button class="link small" data-act="restore">Restore purchase</button>
+      <p class="small muted">Pro: ${P ? `${P.pro.msgs} AI messages + ${P.pro.voiceMin} voice minutes per month. ` : ''}Auto-renews monthly at ${esc(P?.pro.price || '$11.99/month')} until cancelled in your ${window.PP_PLATFORM === 'android' ? 'Google Play' : 'Apple ID'} subscription settings at least 24 hours before renewal.
       <a class="link small" href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener">Terms of Use</a> · <a class="link small" href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a></p>`
-    : `<span class="small muted">Upgrade to Pro (${esc(P?.pro.price || '$4.99/month')}) in the PrepPilot iPhone app; it unlocks here too.</span>`;
+    : `<span class="small muted">Upgrade to Pro (${esc(P?.pro.price || '$11.99/month')}) in the PrepPilot iPhone app; it unlocks here too.</span>`;
   return `<section class="card stack ${S.paywall ? 'paywall' : ''}" id="accountCard">
     <div class="row between"><div><b>${esc(a.name || a.email || 'Signed in')}</b> <span class="pill">${esc(a.plan.toUpperCase())}</span></div>
       <button class="link small" data-act="signout">Sign out</button></div>
@@ -267,16 +267,20 @@ function chatView() {
   const quick = ['Mock interview me on my weakest topic', 'Grade my answer to the last question', 'Explain the hardest topic in my plan simply', 'What would a senior panel ask about my background?'];
   const live = S.live ? `<div class="msg assistant" id="liveMsg">${md(S.live.text) || '…'}</div>` : '';
   const canUse = signedIn();
+  const a = store.account();
+  const usageLine = a && !a.unlimited && a.limits
+    ? `<div class="small muted">${a.msgsLeft} messages · ${mins(a.voiceSecLeft)} voice min remaining</div>`
+    : a?.unlimited ? '<div class="small muted">Unlimited (admin)</div>' : '';
   return `<div class="stack chat">
     <div class="row between"><h2>Ask PrepPilot</h2>
-      <div class="row"><label class="small"><input type="checkbox" id="speakToggle" ${store.speak() ? 'checked' : ''}> Speak replies</label>
+      <div class="row">${usageLine}<label class="small"><input type="checkbox" id="speakToggle" ${store.speak() ? 'checked' : ''}> Speak replies</label>
       <button class="link small" data-act="clearchat">Clear</button></div></div>
     ${!canUse || S.paywall ? accountCard() : voiceBar()}
     ${S.chatContext ? `<div class="tip small">Context: ${esc(S.chatContext.split('\n')[0])} <button class="link small" data-act="dropctx">remove</button></div>` : ''}
     <div class="msgs" id="msgs">${msgs.length || live ? msgs.map(m => `<div class="msg ${m.role}">${m.role === 'assistant' ? md(m.content) : fmt(m.content)}</div>`).join('') : `<div class="muted">Ask anything: concepts, commands, "grade my answer", or a mock interview.</div>${canUse ? `<div class="chips">${quick.map(q => `<button class="chip" data-act="quick" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>` : ''}`}
     ${live}${S.busy ? '<div class="msg assistant muted">Thinking…</div>' : ''}</div>
     ${canUse ? `<form id="chatForm" class="composer">
-      <textarea id="chatInput" rows="2" maxlength="4000" placeholder="${S.rt ? 'Type — answers stream instantly' : 'Type or tap the mic…'}"></textarea>
+      <textarea id="chatInput" rows="2" maxlength="2000" placeholder="${S.rt ? 'Type — answers stream instantly' : 'Type or tap the mic…'}"></textarea>
       <div class="row">
         ${S.rt ? '' : `<button type="button" class="btn ${S.listening ? 'again' : ''}" data-act="mic" ${voice.canListen ? '' : 'disabled title="Voice input not supported here"'}>${S.listening ? '■ Stop' : '🎤 Dictate'}</button>`}
         <button class="btn primary" type="submit" ${S.busy ? 'disabled' : ''}>Send</button>
