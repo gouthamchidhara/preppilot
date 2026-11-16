@@ -4,7 +4,7 @@ import { complete, llmConfigured } from './llm.js';
 import { rateLimit, validateChat, validateGenerate, sanitizeGenerated } from './guard.js';
 import { chatSystemPrompt, generateSystemPrompt, generateUserPrompt } from './prompts.js';
 import { realtimeConfigured, validateRealtime, startRealtime, hangupCall } from './realtime.js';
-import { identify, verifyIdToken, signSession } from './auth.js';
+import { identify, verifyIdToken, signSession, verifySession } from './auth.js';
 import { upsertUser, status, consumeMsgs, refundMsgs, reserveVoice, refundVoice, recordCall, endCall, sweepCalls, deleteUser } from './account.js';
 import { COST, limits } from './plans.js';
 import { webhookAuthorized, applyWebhook, refreshFromRevenueCat } from './billing.js';
@@ -175,8 +175,17 @@ export async function handleRoleTelemetry(req) {
 
 export function handleHealth() {
   const L = limits();
+  // Self-test: sign and immediately verify a token to confirm the runtime reads SESSION_SECRET.
+  let sessionVerify = 'unknown';
+  try {
+    const tok = signSession({ key: 'health:test', email: '' });
+    const back = verifySession(tok);
+    sessionVerify = back?.key === 'health:test' ? 'ok' : 'mismatch';
+  } catch (e) { sessionVerify = 'error: ' + e.message; }
   return json(200, {
     ok: true,
+    sessionSecretSet: !!process.env.SESSION_SECRET,
+    sessionVerify,
     ai: llmConfigured() ? 'azure-openai' : 'mock',
     voice: realtimeConfigured(),
     googleClientId: process.env.GOOGLE_WEB_CLIENT_ID || '',
