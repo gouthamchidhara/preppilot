@@ -461,6 +461,13 @@ function filterRoles() {
   document.querySelectorAll('#profileForm .rolefam').forEach(f => { f.hidden = ![...f.querySelectorAll('[data-act=pickrole]')].some(b => !b.hidden); });
 }
 
+app.addEventListener('keydown', e => {
+  if (e.target.id !== 'chatInput' || e.key !== 'Enter' || e.shiftKey) return;
+  e.preventDefault();
+  const form = document.getElementById('chatForm');
+  if (form) form.dispatchEvent(new Event('submit', { cancelable: true }));
+});
+
 app.addEventListener('input', e => {
   if (e.target.id !== 'roleSearch') return;
   S.roleSearch = e.target.value;
