@@ -5,7 +5,7 @@ import { rateLimit, validateChat, validateGenerate, sanitizeGenerated } from './
 import { chatSystemPrompt, generateSystemPrompt, generateUserPrompt } from './prompts.js';
 import { realtimeConfigured, validateRealtime, startRealtime, hangupCall } from './realtime.js';
 import { identify, verifyIdToken, signSession } from './auth.js';
-import { upsertUser, status, consumeMsgs, refundMsgs, reserveVoice, refundVoice, recordCall, endCall, sweepCalls, deleteUser } from './account.js';
+import { upsertUser, status, consumeMsgs, refundMsgs, reserveVoice, refundVoice, recordCall, endCall, sweepCalls, deleteUser, addSessionCredits, consumeSessionCredit } from './account.js';
 import { COST, limits } from './plans.js';
 import { webhookAuthorized, applyWebhook, refreshFromRevenueCat } from './billing.js';
 import { getDb } from './db.js';
@@ -106,8 +106,27 @@ export async function handleRealtime(req, log) {
   if (w.error) return w.error;
   const rl = limited('voice', w.ident);
   if (rl) return rl;
-  sweepCalls(hangupCall).catch(() => {}); // opportunistic cleanup of overdue calls
+  sweepCalls(hangupCall).catch(() => {});
   const now = Date.now();
+  const L = limits();
+
+  // Mock interview session: consume a credit, allow extended voice time
+  if (v.mode === 'mock') {
+    const ok = await consumeSessionCredit(w.ident.key, now);
+    if (!ok) return json(402, { error: 'No mock interview session credit. Purchase one to start.', code: 'no_credit' });
+    const allowedSec = L.mockCallSec;
+    try {
+      const out = await startRealtime({ ...v, mode: 'talk' }, log);
+      if (out.callId) {
+        await recordCall({ id: out.callId, key: w.ident.key, start: Date.now(), allowedSec, plan: 'mock', day: today(now) });
+      }
+      return json(200, { sdp: out.sdp, callId: out.callId, allowedSec, degraded: out.degraded, mock: true });
+    } catch (e) {
+      await addSessionCredits(w.ident.key, 1, now); // refund credit on failure
+      return fail(e, log);
+    }
+  }
+
   const r = await reserveVoice(w.ident, now);
   if (!r.ok) return denied(r);
   try {

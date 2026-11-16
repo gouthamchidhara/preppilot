@@ -21,7 +21,7 @@ if (extra.googleWebClientId) {
 }
 if (rcKey) Purchases.configure({ apiKey: rcKey });
 
-type FromWeb = { type: 'signin'; provider: 'google' | 'apple' } | { type: 'purchase' | 'restore'; userKey: string } | { type: 'signout' };
+type FromWeb = { type: 'signin'; provider: 'google' | 'apple' } | { type: 'purchase' | 'restore'; userKey: string } | { type: 'buyMock'; userKey: string } | { type: 'signout' };
 
 export default function App() {
   const web = useRef<WebView>(null);
@@ -75,11 +75,30 @@ export default function App() {
     }
   }
 
+  async function buyMockSession(userKey: string) {
+    if (!rcKey) return fail('In-app purchases are not set up yet.');
+    try {
+      await Purchases.logIn(userKey);
+      const offerings = await Purchases.getOfferings();
+      // Find the mock_session_60min consumable across all offerings
+      const allPkgs = Object.values(offerings.all).flatMap(o => o.availablePackages);
+      const mockPkg = allPkgs.find(p => p.product.identifier === 'mock_session_60min');
+      if (!mockPkg) return fail('Mock interview session is not available right now.');
+      await Purchases.purchasePackage(mockPkg);
+      toWeb({ type: 'purchased' });
+    } catch (e) {
+      const err = e as PurchasesError & { userCancelled?: boolean };
+      if (err.userCancelled) return;
+      fail(err.message || 'Purchase failed.');
+    }
+  }
+
   async function onMessage(e: WebViewMessageEvent) {
     let m: FromWeb;
     try { m = JSON.parse(e.nativeEvent.data); } catch { return; }
     if (m.type === 'signin') return signIn(m.provider);
     if (m.type === 'purchase') return purchase(m.userKey);
+    if (m.type === 'buyMock') return buyMockSession(m.userKey);
     if (m.type === 'restore') return purchase(m.userKey, true);
     if (m.type === 'signout') {
       GoogleSignin.signOut().catch(() => {});

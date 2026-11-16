@@ -162,6 +162,27 @@ export async function sweepCalls(hangup, now = Date.now()) {
   return overdue.length;
 }
 
+// Consumable session credits for extended mock interview voice sessions.
+export async function addSessionCredits(key, count = 1, now = Date.now()) {
+  await (await getDb()).update('users', key, u => {
+    if (!u) return undefined;
+    u.sessionCredits = (u.sessionCredits || 0) + count;
+    u.sessionCreditLast = now;
+    return u;
+  });
+}
+
+export async function consumeSessionCredit(key, now = Date.now()) {
+  let ok = false;
+  await (await getDb()).update('users', key, u => {
+    if (!u || !u.sessionCredits) return undefined;
+    u.sessionCredits--;
+    ok = true;
+    return u;
+  });
+  return ok;
+}
+
 export async function setProUntil(key, untilMs, now = Date.now()) {
   return (await getDb()).update('users', key, u => {
     if (!u) return undefined;

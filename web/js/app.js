@@ -3,7 +3,7 @@ import { store } from './store.js';
 import { ai } from './ai.js';
 import { voice } from './voice.js';
 import { VoiceSession, realtimeSupported } from './realtime.js';
-import { native, signedIn, signOut, renderGoogleButton, refreshAccount, onAccountChange, nativeSignIn, nativePurchase, nativeRestore, listenNative } from './auth.js';
+import { native, signedIn, signOut, renderGoogleButton, refreshAccount, onAccountChange, nativeSignIn, nativePurchase, nativeBuyMock, nativeRestore, listenNative } from './auth.js';
 import { initContent, getCatalog, getManifest, roleById, topicMeta, ensureTopics, ensureForProfile, loadedTopics, reportUrl } from './content.js';
 
 const DAY = 86400000;
@@ -199,6 +199,8 @@ const STATUS = { connecting: 'Connecting…', ready: 'Listening — just talk', 
 
 function voiceBar() {
   const live = !!S.rt;
+  const a = store.account();
+  const credits = a?.sessionCredits || 0;
   if (!live) {
     if (!(S.voiceServer && realtimeSupported)) {
       return `<div class="voicebar muted small">Realtime voice isn't available here${S.voiceServer ? ' (browser lacks WebRTC)' : ' (server not configured)'}; the 🎤 button below uses basic dictation.</div>`;
@@ -206,12 +208,15 @@ function voiceBar() {
     return `<div class="voicebar">
       <button class="btn primary" data-act="rtstart" data-mode="talk" ${S.rtStarting ? 'disabled' : ''}>🎙 Talking mode</button>
       <button class="btn" data-act="rtstart" data-mode="listen" ${S.rtStarting ? 'disabled' : ''}>👂 Listening mode</button>
-      <span class="muted small">Talking: hands-free back-and-forth, interrupt anytime. Listening: practice a long answer; tap "Your turn" for feedback.</span>
+      ${credits > 0
+        ? `<button class="btn good" data-act="rtstart" data-mode="mock" ${S.rtStarting ? 'disabled' : ''}>🎯 Mock Interview (60 min) · ${credits} credit${credits > 1 ? 's' : ''}</button>`
+        : `<button class="btn" data-act="buymock" ${S.busy ? 'disabled' : ''}>🎯 Mock Interview · $10.99</button>`}
+      <span class="muted small">Talking: hands-free, interrupt anytime. Listening: practice + feedback. Mock: structured 60-min interview.</span>
     </div>`;
   }
   return `<div class="voicebar live">
     <span class="pill status-${S.rtStatus}" id="rtStatus">${esc(STATUS[S.rtStatus] || S.rtStatus)}</span>
-    <span class="small muted">${S.rtMode === 'listen' ? 'Listening mode' : 'Talking mode'}</span>
+    <span class="small muted">${S.rtMode === 'mock' ? 'Mock Interview' : S.rtMode === 'listen' ? 'Listening mode' : 'Talking mode'}</span>
     ${S.rtMode === 'listen' ? '<button class="btn primary" data-act="rtrespond">Your turn →</button>' : ''}
     <button class="btn" data-act="rtinterrupt">⏹ Stop talking</button>
     <button class="btn" data-act="rtmute">${S.muted ? '🔇 Unmute' : '🎤 Mute'}</button>
@@ -241,7 +246,7 @@ function accountCard() {
   }
   if (!a) return `<section class="card small muted">${store.accessCode() ? 'Using beta access code.' : 'Loading account…'} <button class="link small" data-act="signout">Sign out</button></section>`;
   const usage = a.unlimited ? 'Unlimited AI (admin)'
-    : `${a.msgsLeft} of ${a.limits.msgs} messages · ${mins(a.voiceSecLeft)} of ${mins(a.limits.voiceSec)} voice min left${a.plan === 'pro' && a.periodEnds ? ` · resets ${new Date(a.periodEnds).toLocaleDateString()}` : ''}`;
+    : `${a.msgsLeft} of ${a.limits.msgs} messages · ${mins(a.voiceSecLeft)} of ${mins(a.limits.voiceSec)} voice min left${a.sessionCredits ? ` · ${a.sessionCredits} mock session credit${a.sessionCredits > 1 ? 's' : ''}` : ''}${a.plan === 'pro' && a.periodEnds ? ` · resets ${new Date(a.periodEnds).toLocaleDateString()}` : ''}`;
   const upgrade = a.plan !== 'free' ? ''
     : native() ? `<button class="btn primary" data-act="upgrade">Upgrade to Pro · ${esc(P?.pro.price || '$11.99/month')}</button><button class="link small" data-act="restore">Restore purchase</button>
       <p class="small muted">Pro: ${P ? `${P.pro.msgs} AI messages + ${P.pro.voiceMin} voice minutes per month. ` : ''}Auto-renews monthly at ${esc(P?.pro.price || '$11.99/month')} until cancelled in your ${window.PP_PLATFORM === 'android' ? 'Google Play' : 'Apple ID'} subscription settings at least 24 hours before renewal.
@@ -551,6 +556,15 @@ document.addEventListener('click', async e => {
   }
   else if (a === 'quick') sendChat(b.dataset.q);
   else if (a === 'rtstart') startVoice(b.dataset.mode);
+  else if (a === 'buymock') {
+    if (!signedIn()) { S.view = 'chat'; return render(); }
+    if (native()) {
+      const acc = store.account();
+      nativeBuyMock(acc?.key || '');
+    } else {
+      alert('Mock interview sessions can be purchased in the PrepPilot iPhone app. The credit unlocks here too.');
+    }
+  }
   else if (a === 'rtrespond') S.rt?.respond();
   else if (a === 'rtinterrupt') S.rt?.interrupt();
   else if (a === 'rtmute') { S.muted = !S.muted; S.rt?.setMuted(S.muted); render(); }

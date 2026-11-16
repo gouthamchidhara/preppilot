@@ -81,6 +81,7 @@ export async function renderGoogleButton(el, clientId, onError) {
 /* ---------- native app bridge ---------- */
 export function nativeSignIn(provider) { toNative({ type: 'signin', provider }); }
 export function nativePurchase(userKey) { toNative({ type: 'purchase', userKey }); }
+export function nativeBuyMock(userKey) { toNative({ type: 'buyMock', userKey }); }
 export function nativeRestore(userKey) { toNative({ type: 'restore', userKey }); }
 
 export function listenNative({ onError, onPurchased }) {
