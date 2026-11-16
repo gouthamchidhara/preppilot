@@ -177,7 +177,9 @@ export function handleHealth() {
   const L = limits();
   // Self-test: sign and immediately verify a token to confirm the runtime reads SESSION_SECRET.
   let sessionVerify = 'unknown';
+  let secretHash = '';
   try {
+    secretHash = createHash('sha256').update(process.env.SESSION_SECRET || '').digest('hex').slice(0, 12);
     const tok = signSession({ key: 'health:test', email: '' });
     const back = verifySession(tok);
     sessionVerify = back?.key === 'health:test' ? 'ok' : 'mismatch';
@@ -186,6 +188,7 @@ export function handleHealth() {
     ok: true,
     sessionSecretSet: !!process.env.SESSION_SECRET,
     sessionVerify,
+    secretHash,
     ai: llmConfigured() ? 'azure-openai' : 'mock',
     voice: realtimeConfigured(),
     googleClientId: process.env.GOOGLE_WEB_CLIENT_ID || '',
