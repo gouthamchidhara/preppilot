@@ -1,29 +1,19 @@
 import { app } from '@azure/functions';
-import { handleChat, handleGenerate, handleHealth, handleRealtime } from '../lib/handlers.js';
+import { ROUTES } from '../lib/routes.js';
 
 const toReq = async request => {
   let body = null;
-  try { body = await request.json(); } catch { /* empty or invalid body -> validation returns 400 */ }
+  if (request.method === 'POST') {
+    try { body = await request.json(); } catch { /* empty or invalid body -> handler validation returns 400 */ }
+  }
   return { body, headers: Object.fromEntries([...request.headers].map(([k, v]) => [k.toLowerCase(), v])), ip: '' };
 };
 const toRes = r => ({ status: r.status, jsonBody: r.body, headers: { 'cache-control': 'no-store', ...r.headers } });
 
-app.http('chat', {
-  methods: ['POST'], authLevel: 'anonymous', route: 'chat',
-  handler: async (request, ctx) => toRes(await handleChat(await toReq(request), m => ctx.warn(m))),
-});
-
-app.http('generate', {
-  methods: ['POST'], authLevel: 'anonymous', route: 'generate',
-  handler: async (request, ctx) => toRes(await handleGenerate(await toReq(request), m => ctx.warn(m))),
-});
-
-app.http('realtime', {
-  methods: ['POST'], authLevel: 'anonymous', route: 'realtime',
-  handler: async (request, ctx) => toRes(await handleRealtime(await toReq(request), m => ctx.warn(m))),
-});
-
-app.http('health', {
-  methods: ['GET'], authLevel: 'anonymous', route: 'health',
-  handler: async () => toRes(handleHealth()),
-});
+for (const [key, handler] of Object.entries(ROUTES)) {
+  const [method, route] = key.split(' ');
+  app.http(route.replace(/\//g, '-'), {
+    methods: [method], authLevel: 'anonymous', route,
+    handler: async (request, ctx) => toRes(await handler(await toReq(request), m => ctx.warn(m))),
+  });
+}

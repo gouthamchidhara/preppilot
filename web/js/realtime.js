@@ -2,7 +2,8 @@
 //   talk   = hands-free conversation; the AI answers ~0.35s after you stop and stops when you interrupt
 //   listen = the AI only listens/transcribes; call respond() when you want feedback
 import { apiBase } from './config.js';
-import { store } from './store.js';
+import { authHeaders, setAccount } from './auth.js';
+import { ApiError } from './ai.js';
 
 const MAX_SESSION_MS = 15 * 60 * 1000; // cost guard
 const IDLE_MS = 3 * 60 * 1000;
@@ -41,15 +42,18 @@ export class VoiceSession {
     await pc.setLocalDescription(offer);
     const res = await fetch(apiBase() + '/api/realtime', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-client-id': store.clientId(), 'x-access-code': store.accessCode() || '' },
+      headers: { 'content-type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ sdp: offer.sdp, mode, speak, profileSummary, context }),
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) { this.stop(); throw new Error(data.error || `Voice failed (${res.status})`); }
+    if (!res.ok) { this.stop(); throw new ApiError(data.error || `Voice failed (${res.status})`, res.status, data.code); }
+    this.callId = data.callId; // set first: if anything below fails, stop() still ends the call and refunds
     await pc.setRemoteDescription({ type: 'answer', sdp: data.sdp });
     this.degraded = data.degraded;
+    this.allowedSec = data.allowedSec;
     this.bump();
-    this.timers.push(setTimeout(() => this.stop('Session limit reached (15 min). Start again to continue.'), MAX_SESSION_MS));
+    const capMs = Math.min(MAX_SESSION_MS, (data.allowedSec || 900) * 1000);
+    this.timers.push(setTimeout(() => this.stop(capMs < MAX_SESSION_MS ? 'Voice minutes for this session are used up.' : 'Session limit reached (15 min). Start again to continue.'), capMs));
   }
 
   bump() {
@@ -101,6 +105,12 @@ export class VoiceSession {
     this.mic?.getTracks().forEach(t => t.stop());
     if (this.audio) this.audio.srcObject = null;
     this.pc = this.dc = this.mic = null;
+    // Tell the server so it hangs up and refunds unused minutes (keepalive survives page close).
+    if (this.callId) {
+      const id = this.callId; this.callId = null;
+      fetch(apiBase() + '/api/realtime/end', { method: 'POST', keepalive: true, headers: { 'content-type': 'application/json', ...authHeaders() }, body: JSON.stringify({ callId: id }) })
+        .then(r => r.json()).then(d => d.account && setAccount(d.account)).catch(() => {});
+    }
     this.on.end(reason || '');
   }
 }

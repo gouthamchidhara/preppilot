@@ -40,7 +40,55 @@ param budgetAmount int = 20
 
 param budgetStartDate string = utcNow('yyyy-MM-01')
 
+@secure()
+@description('HMAC key for session tokens (>= 32 chars). Keep stable or every user is signed out.')
+param sessionSecret string
+
+@description('Comma-separated admin emails (unlimited AI).')
+param adminEmails string = ''
+
+@description('Comma-separated Google OAuth client IDs whose ID tokens are accepted (web + iOS + Android).')
+param googleClientIds string = ''
+
+@description('Google OAuth client ID used by the web sign-in button.')
+param googleWebClientId string = ''
+
+@description('Comma-separated Apple Sign In audiences (iOS bundle ID, web Services ID).')
+param appleAudiences string = 'com.gchid.preppilot'
+
+@secure()
+param revenueCatSecretKey string = ''
+
+@secure()
+@description('Exact Authorization header value RevenueCat sends with webhooks.')
+param revenueCatWebhookAuth string = ''
+
 var suffix = uniqueString(resourceGroup().id)
+
+// Users, daily free pool and voice calls live in Table Storage (cents per month).
+resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
+  name: 'stpp${take(suffix, 18)}'
+  location: location
+  kind: 'StorageV2'
+  sku: { name: 'Standard_LRS' }
+  properties: {
+    minimumTlsVersion: 'TLS1_2'
+    allowBlobPublicAccess: false
+    supportsHttpsTrafficOnly: true
+  }
+}
+
+resource tableService 'Microsoft.Storage/storageAccounts/tableServices@2023-05-01' = {
+  parent: storage
+  name: 'default'
+}
+
+resource tables 'Microsoft.Storage/storageAccounts/tableServices/tables@2023-05-01' = [for t in [ 'ppusers', 'ppdaily', 'ppcalls' ]: {
+  parent: tableService
+  name: t
+}]
+
+var storageConn = 'DefaultEndpointsProtocol=https;AccountName=${storage.name};AccountKey=${storage.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
 
 resource aoai 'Microsoft.CognitiveServices/accounts@2024-10-01' = {
   name: 'aoai-preppilot-${suffix}'
@@ -108,8 +156,70 @@ resource swaSettings 'Microsoft.Web/staticSites/config@2023-12-01' = {
     AZURE_OPENAI_REALTIME_DEPLOYMENT: realtimeModelName
     AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT: transcribeModelName
     ACCESS_CODE: accessCode
+    STORAGE_CONNECTION_STRING: storageConn
+    SESSION_SECRET: sessionSecret
+    ADMIN_EMAILS: adminEmails
+    GOOGLE_CLIENT_IDS: googleClientIds
+    GOOGLE_WEB_CLIENT_ID: googleWebClientId
+    APPLE_AUDIENCES: appleAudiences
+    REVENUECAT_SECRET_KEY: revenueCatSecretKey
+    REVENUECAT_WEBHOOK_AUTH: revenueCatWebhookAuth
   }
-  dependsOn: [ realtime, transcribe ]
+  dependsOn: [ realtime, transcribe, tables ]
+}
+
+// Sweeper: a timer Function App (Flex Consumption; its free monthly grant covers a 1-minute timer)
+// that hangs up voice calls whose paid time has run out. SWA's managed API only supports HTTP triggers.
+resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-05-01' = {
+  parent: storage
+  name: 'default'
+}
+
+resource deployContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: blobService
+  name: 'sweeper-deploy'
+}
+
+resource sweeperPlan 'Microsoft.Web/serverfarms@2023-12-01' = {
+  name: 'plan-pp-sweeper-${suffix}'
+  location: location
+  sku: { name: 'FC1', tier: 'FlexConsumption' }
+  kind: 'functionapp'
+  properties: { reserved: true }
+}
+
+resource sweeper 'Microsoft.Web/sites@2023-12-01' = {
+  name: 'func-pp-sweeper-${suffix}'
+  location: location
+  kind: 'functionapp,linux'
+  properties: {
+    serverFarmId: sweeperPlan.id
+    httpsOnly: true
+    functionAppConfig: {
+      deployment: {
+        storage: {
+          type: 'blobContainer'
+          value: '${storage.properties.primaryEndpoints.blob}sweeper-deploy'
+          authentication: { type: 'StorageAccountConnectionString', storageAccountConnectionStringName: 'DEPLOYMENT_STORAGE_CONNECTION_STRING' }
+        }
+      }
+      scaleAndConcurrency: { maximumInstanceCount: 40, instanceMemoryMB: 512 }
+      runtime: { name: 'node', version: '20' }
+    }
+    siteConfig: {
+      ftpsState: 'Disabled'
+      minTlsVersion: '1.2'
+      appSettings: [
+        { name: 'AzureWebJobsStorage', value: storageConn }
+        { name: 'DEPLOYMENT_STORAGE_CONNECTION_STRING', value: storageConn }
+        { name: 'STORAGE_CONNECTION_STRING', value: storageConn }
+        { name: 'AZURE_OPENAI_ENDPOINT', value: openAiEndpoint }
+        { name: 'AZURE_OPENAI_API_KEY', value: aoai.listKeys().key1 }
+        { name: 'AZURE_OPENAI_REALTIME_DEPLOYMENT', value: realtimeModelName }
+      ]
+    }
+  }
+  dependsOn: [ deployContainer ]
 }
 
 resource budget 'Microsoft.Consumption/budgets@2023-11-01' = if (!empty(budgetEmail)) {
@@ -129,3 +239,4 @@ resource budget 'Microsoft.Consumption/budgets@2023-11-01' = if (!empty(budgetEm
 output swaName string = swa.name
 output swaHostname string = swa.properties.defaultHostname
 output aoaiName string = aoai.name
+output sweeperName string = sweeper.name

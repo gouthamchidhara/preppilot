@@ -1,5 +1,4 @@
-import { timingSafeEqual } from 'node:crypto';
-
+// Per-user request rate limits (abuse brake; spend is governed by quotas in account.js).
 const LIMITS = {
   chat: { max: Number(process.env.RATE_CHAT_PER_HOUR || 40), windowMs: 3600000 },
   generate: { max: Number(process.env.RATE_GENERATE_PER_HOUR || 6), windowMs: 3600000 },
@@ -32,14 +31,6 @@ export function rateLimit(kind, key, now = Date.now()) {
 }
 
 export function resetRateLimits() { buckets.clear(); dayCount = 0; }
-
-export function checkAccessCode(provided) {
-  const expected = process.env.ACCESS_CODE;
-  if (!expected) return true;
-  if (typeof provided !== 'string') return false;
-  const a = Buffer.from(provided), b = Buffer.from(expected);
-  return a.length === b.length && timingSafeEqual(a, b);
-}
 
 const str = (v, max) => (typeof v === 'string' ? v.slice(0, max) : '');
 

@@ -48,6 +48,7 @@ details summary{cursor:pointer;font-weight:600}
 .composer{position:sticky;bottom:calc(64px + env(safe-area-inset-bottom));background:var(--bg);padding-top:8px;display:flex;flex-direction:column;gap:8px}
 .composer .row{justify-content:flex-end}
 .tabs{position:fixed;bottom:0;left:0;right:0;display:grid;grid-template-columns:repeat(4,1fr);background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.paywall{border-color:var(--accent);box-shadow:0 0 0 2px var(--soft)}
 .voicebar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .voicebar.live{border-color:var(--accent)}
 .status-you,.status-ai{background:var(--good-soft);color:var(--good)}

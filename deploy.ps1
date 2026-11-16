@@ -53,11 +53,25 @@ if ($tr) { Write-Host "Transcription:  $($tr.name) $($tr.version)" }
 
 # 3. Infrastructure.
 az group create -n $ResourceGroup -l $Location -o none
+
+# Non-secret settings (committed) + secrets (git-ignored, generated once so sessions survive redeploys).
+$settings = Get-Content deploy.settings.json -Raw | ConvertFrom-Json
+New-Item -ItemType Directory -Force private | Out-Null
+$secretsFile = 'private/secrets.json'
+$secrets = if (Test-Path $secretsFile) { Get-Content $secretsFile -Raw | ConvertFrom-Json } else { [pscustomobject]@{} }
+$rand = { -join ((1..48) | ForEach-Object { '{0:x}' -f (Get-Random -Maximum 16) }) }
+foreach ($k in 'sessionSecret', 'revenueCatWebhookAuth', 'revenueCatSecretKey', 'adminEmails') { if (-not ($secrets.PSObject.Properties.Name -contains $k)) { $secrets | Add-Member $k '' } }
+if (-not $secrets.sessionSecret) { $secrets.sessionSecret = & $rand }
+if (-not $secrets.revenueCatWebhookAuth) { $secrets.revenueCatWebhookAuth = "Bearer $(& $rand)" }
+$secrets | ConvertTo-Json | Set-Content $secretsFile
+
 $p = @{
   location = $Location; aiLocation = $AiLocation; modelName = $modelName; modelVersion = $modelVersion
   reasoningModel = $reasoning; accessCode = $AccessCode; budgetEmail = $BudgetEmail; budgetAmount = $BudgetAmount
   realtimeModelName = $(if ($rt) { $rt.name } else { '' }); realtimeModelVersion = $(if ($rt) { $rt.version } else { '' })
   transcribeModelName = $(if ($rt -and $tr) { $tr.name } else { '' }); transcribeModelVersion = $(if ($rt -and $tr) { $tr.version } else { '' })
+  sessionSecret = $secrets.sessionSecret; revenueCatWebhookAuth = $secrets.revenueCatWebhookAuth; revenueCatSecretKey = $secrets.revenueCatSecretKey
+  adminEmails = (@($settings.adminEmails, $secrets.adminEmails) | Where-Object { $_ }) -join ','; googleClientIds = $settings.googleClientIds; googleWebClientId = $settings.googleWebClientId; appleAudiences = $settings.appleAudiences
 }
 $paramFile = Join-Path ([IO.Path]::GetTempPath()) "preppilot-params-$PID.json"
 @{ '$schema' = 'https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#'; contentVersion = '1.0.0.0'
@@ -81,7 +95,21 @@ $token = az staticwebapp secrets list -n $swa -g $ResourceGroup --query properti
 npx --yes @azure/static-web-apps-cli@2 deploy ./web --api-location ./api --api-language node --api-version 20 --deployment-token $token --env production
 if ($LASTEXITCODE -ne 0) { throw 'SWA deploy failed.' }
 
-# 6. Verify.
+# 6. Sweeper Function App (hangs up voice calls past their paid time).
+$build = Join-Path ([IO.Path]::GetTempPath()) "pp-sweeper-$PID"
+Remove-Item $build -Recurse -Force -ErrorAction SilentlyContinue
+Copy-Item sweeper $build -Recurse
+Copy-Item api/src/lib "$build/src/lib" -Recurse
+Push-Location $build; npm install --omit=dev --no-audit --no-fund | Out-Null; Pop-Location
+$zip = "$build.zip"; Remove-Item $zip -ErrorAction SilentlyContinue
+# tar writes forward-slash paths; Compress-Archive (PS 5.1) writes backslashes that Linux treats as file names.
+$items = Get-ChildItem $build -Name
+tar.exe -a -cf $zip -C $build @items
+az functionapp deployment source config-zip -g $ResourceGroup -n $out.sweeperName.value --src $zip --timeout 900 -o none
+if ($LASTEXITCODE -ne 0) { Write-Warning 'Sweeper deploy failed; voice limits are then only enforced by the app and opportunistic sweeps.' }
+Remove-Item $build, $zip -Recurse -Force -ErrorAction SilentlyContinue
+
+# 7. Verify.
 Start-Sleep 15
 try { $h = Invoke-RestMethod "https://$hostName/api/health"; Write-Host "Health: $($h | ConvertTo-Json -Compress)" }
 catch { Write-Warning "Health check failed (cold start?). Retry: curl https://$hostName/api/health" }

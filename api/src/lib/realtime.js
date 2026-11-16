@@ -98,5 +98,17 @@ export async function startRealtime(v, log) {
     log?.(`realtime calls ${res.status}: ${answer.slice(0, 400)}`);
     throw Object.assign(new Error('Voice connection failed.'), { status: 502 });
   }
-  return { sdp: answer, degraded };
+  // Location: .../realtime/calls/{call_id} -> needed to hang up from the server when the paid time runs out.
+  const callId = (res.headers.get('location') || '').split('?')[0].split('/').filter(Boolean).pop() || null;
+  return { sdp: answer, degraded, callId };
+}
+
+export async function hangupCall(callId) {
+  if (!callId || !realtimeConfigured()) return;
+  const base = process.env.AZURE_OPENAI_ENDPOINT.replace(/\/+$/, '');
+  await fetch(`${base}/openai/v1/realtime/calls/${encodeURIComponent(callId)}/hangup`, {
+    method: 'POST',
+    headers: { 'api-key': process.env.AZURE_OPENAI_API_KEY },
+    signal: AbortSignal.timeout(8000),
+  });
 }

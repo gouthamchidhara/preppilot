@@ -3,11 +3,13 @@ import { store } from './store.js';
 import { ai } from './ai.js';
 import { voice } from './voice.js';
 import { VoiceSession, realtimeSupported } from './realtime.js';
+import { native, signedIn, signOut, renderGoogleButton, refreshAccount, onAccountChange, nativeSignIn, nativePurchase, nativeRestore, listenNative } from './auth.js';
 
 const DAY = 86400000;
 const app = document.getElementById('app');
 const S = { view: 'home', topic: null, ci: 0, deck: null, di: 0, reveal: false, busy: false, listening: false, chatContext: '',
-  rt: null, rtMode: null, rtStatus: '', rtStarting: false, voiceServer: false, live: null, pendingUser: false, muted: false };
+  rt: null, rtMode: null, rtStatus: '', rtStarting: false, voiceServer: false, live: null, pendingUser: false, muted: false,
+  googleClientId: '', plans: null, paywall: false };
 let PUBLIC = [];
 
 /* ---------- helpers ---------- */
@@ -142,25 +144,65 @@ function voiceBar() {
   </div>`;
 }
 
+/* ---------- account / paywall ---------- */
+const mins = sec => (sec / 60).toFixed(sec % 60 ? 1 : 0);
+
+function accountCard() {
+  const P = S.plans;
+  const a = store.account();
+  if (!signedIn()) {
+    const offer = P ? `Free trial: ${P.free.msgs} AI messages + ${P.free.voiceMin} voice minutes. Pro: ${P.pro.price} for ${P.pro.msgs} messages + ${P.pro.voiceMin} voice minutes a month.` : '';
+    const buttons = native()
+      ? '<div class="row"><button class="btn primary" data-act="nsignin" data-p="apple"> Sign in with Apple</button><button class="btn" data-act="nsignin" data-p="google">Continue with Google</button></div>'
+      : (S.googleClientId ? '<div id="gbtn"></div>' : '<p class="muted small">Sign-in is being set up. Check back soon.</p>');
+    return `<section class="card stack" id="accountCard">
+      <h3>Sign in to use the AI coach</h3>
+      <p class="muted small">Your study plan, guide and flashcards are free and work without an account. ${esc(offer)}</p>
+      ${buttons}
+      <details class="small"><summary>Have a beta code?</summary>
+        <form id="codeForm" class="row"><input id="code" type="password" value="${esc(store.accessCode())}" autocomplete="off"><button class="btn">Save</button></form>
+      </details>
+    </section>`;
+  }
+  if (!a) return `<section class="card small muted">${store.accessCode() ? 'Using beta access code.' : 'Loading account…'} <button class="link small" data-act="signout">Sign out</button></section>`;
+  const usage = a.unlimited ? 'Unlimited AI (admin)'
+    : `${a.msgsLeft} of ${a.limits.msgs} messages · ${mins(a.voiceSecLeft)} of ${mins(a.limits.voiceSec)} voice min left${a.plan === 'pro' && a.periodEnds ? ` · resets ${new Date(a.periodEnds).toLocaleDateString()}` : ''}`;
+  const upgrade = a.plan !== 'free' ? ''
+    : native() ? `<button class="btn primary" data-act="upgrade">Upgrade to Pro · ${esc(P?.pro.price || '$4.99/month')}</button><button class="link small" data-act="restore">Restore purchase</button>`
+    : `<span class="small muted">Upgrade to Pro (${esc(P?.pro.price || '$4.99/month')}) in the PrepPilot iPhone app; it unlocks here too.</span>`;
+  return `<section class="card stack ${S.paywall ? 'paywall' : ''}" id="accountCard">
+    <div class="row between"><div><b>${esc(a.name || a.email || 'Signed in')}</b> <span class="pill">${esc(a.plan.toUpperCase())}</span></div>
+      <button class="link small" data-act="signout">Sign out</button></div>
+    <div class="small muted">${esc(usage)}</div>
+    ${upgrade ? `<div class="row">${upgrade}</div>` : ''}
+  </section>`;
+}
+
+function mountGoogleButton() {
+  const el = document.getElementById('gbtn');
+  if (el && !el.childElementCount) renderGoogleButton(el, S.googleClientId, msg => alert(msg)).catch(e => { el.textContent = e.message; });
+}
+
 function chatView() {
   const msgs = store.chat();
   const quick = ['Mock interview me on my weakest topic', 'Grade my answer to the last question', 'Explain BDP like I\'m in an interview', 'What would a senior panel ask about my background?'];
   const live = S.live ? `<div class="msg assistant" id="liveMsg">${md(S.live.text) || '…'}</div>` : '';
+  const canUse = signedIn();
   return `<div class="stack chat">
     <div class="row between"><h2>Ask PrepPilot</h2>
       <div class="row"><label class="small"><input type="checkbox" id="speakToggle" ${store.speak() ? 'checked' : ''}> Speak replies</label>
       <button class="link small" data-act="clearchat">Clear</button></div></div>
-    ${voiceBar()}
+    ${!canUse || S.paywall ? accountCard() : voiceBar()}
     ${S.chatContext ? `<div class="tip small">Context: ${esc(S.chatContext.split('\n')[0])} <button class="link small" data-act="dropctx">remove</button></div>` : ''}
-    <div class="msgs" id="msgs">${msgs.length || live ? msgs.map(m => `<div class="msg ${m.role}">${m.role === 'assistant' ? md(m.content) : fmt(m.content)}</div>`).join('') : `<div class="muted">Ask anything: concepts, commands, "grade my answer", or a mock interview.</div><div class="chips">${quick.map(q => `<button class="chip" data-act="quick" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>`}
+    <div class="msgs" id="msgs">${msgs.length || live ? msgs.map(m => `<div class="msg ${m.role}">${m.role === 'assistant' ? md(m.content) : fmt(m.content)}</div>`).join('') : `<div class="muted">Ask anything: concepts, commands, "grade my answer", or a mock interview.</div>${canUse ? `<div class="chips">${quick.map(q => `<button class="chip" data-act="quick" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>` : ''}`}
     ${live}${S.busy ? '<div class="msg assistant muted">Thinking…</div>' : ''}</div>
-    <form id="chatForm" class="composer">
+    ${canUse ? `<form id="chatForm" class="composer">
       <textarea id="chatInput" rows="2" maxlength="4000" placeholder="${S.rt ? 'Type — answers stream instantly' : 'Type or tap the mic…'}"></textarea>
       <div class="row">
         ${S.rt ? '' : `<button type="button" class="btn ${S.listening ? 'again' : ''}" data-act="mic" ${voice.canListen ? '' : 'disabled title="Voice input not supported here"'}>${S.listening ? '■ Stop' : '🎤 Dictate'}</button>`}
         <button class="btn primary" type="submit" ${S.busy ? 'disabled' : ''}>Send</button>
       </div>
-    </form>
+    </form>` : ''}
   </div>`;
 }
 
@@ -217,6 +259,7 @@ async function startVoice(mode) {
     await session.start({ mode, speak: store.speak() || mode === 'talk', profileSummary: profileSummary(profile()), context: S.chatContext });
   } catch (e) {
     S.rt = null; S.rtMode = null;
+    if (e.code === 'quota') S.paywall = true;
     store.setChat([...store.chat(), { role: 'assistant', content: `⚠️ ${e.message}` }]);
   } finally { S.rtStarting = false; render(); }
 }
@@ -224,6 +267,7 @@ async function startVoice(mode) {
 function settingsView() {
   const custom = store.customTopics(), priv = store.privatePacks();
   return `<div class="stack">
+    ${accountCard()}
     ${onboardingView(profile())}
     <section class="card stack"><h3>Make cards for any topic (AI)</h3>
       <p class="muted small">Not covered here? e.g. "Terraform state", "Splunk SPL", "Palo Alto firewalls", "PostgreSQL ops".</p>
@@ -234,10 +278,6 @@ function settingsView() {
       <p class="muted small">Import a personal JSON pack (your own projects and stories). It stays on this device and is never shared.</p>
       <input type="file" id="importPack" accept="application/json,.json">
       ${priv.map(p => `<div class="item row between"><span>${esc(p.name)} · ${p.topics.length} topics</span><button class="link small" data-act="delpack" data-id="${esc(p.id)}">remove</button></div>`).join('')}
-    </section>
-    <section class="card stack"><h3>Access code</h3>
-      <p class="muted small">Only needed while the AI is in private beta.</p>
-      <form id="codeForm" class="row"><input id="code" type="password" value="${esc(store.accessCode())}" autocomplete="off"><button class="btn">Save</button></form>
     </section>
     <section class="card stack"><h3>Data</h3>
       <div class="row"><button class="btn" data-act="export">Export my data</button><button class="btn again" data-act="reset">Erase everything</button></div>
@@ -256,6 +296,7 @@ function render() {
     : S.view === 'settings' ? settingsView()
     : homeView();
   if (S.view === 'chat') { const m = document.getElementById('msgs'); if (m) m.scrollTop = m.scrollHeight; }
+  mountGoogleButton();
   window.scrollTo({ top: 0 });
 }
 
@@ -282,6 +323,7 @@ async function sendChat(text, { fromVoice = false } = {}) {
     store.setChat([...store.chat(), { role: 'assistant', content: reply }]);
     if (store.speak()) voice.speak(reply);
   } catch (e) {
+    if (e.code === 'quota') S.paywall = true;
     store.setChat([...store.chat(), { role: 'assistant', content: `⚠️ ${e.message}` }]);
   } finally { S.busy = false; render(); }
 }
@@ -308,7 +350,7 @@ app.addEventListener('submit', async e => {
   e.preventDefault();
   if (e.target.id === 'profileForm') return saveProfile(e.target);
   if (e.target.id === 'chatForm') { const i = document.getElementById('chatInput'); const v = i.value; i.value = ''; return sendChat(v); }
-  if (e.target.id === 'codeForm') { store.setAccessCode(document.getElementById('code').value.trim()); return alert('Saved.'); }
+  if (e.target.id === 'codeForm') { store.setAccessCode(document.getElementById('code').value.trim()); return render(); }
   if (e.target.id === 'genForm') {
     const topic = document.getElementById('genTopic').value.trim();
     S.busy = true; render();
@@ -316,7 +358,7 @@ app.addEventListener('submit', async e => {
       const r = await ai.generate(topic, profileSummary(profile()), 8);
       const id = 'c-' + topic.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40) + '-' + Date.now().toString(36);
       store.setCustomTopics([...store.customTopics(), { id, name: topic, blurb: 'AI-generated', tag: 'ai', roles: {}, concepts: r.concepts, qa: r.qa, custom: true }]);
-    } catch (err) { alert(err.message); }
+    } catch (err) { if (err.code === 'quota') S.paywall = true; alert(err.message); }
     S.busy = false; render();
   }
 });
@@ -381,6 +423,10 @@ document.addEventListener('click', async e => {
   else if (a === 'rtinterrupt') S.rt?.interrupt();
   else if (a === 'rtmute') { S.muted = !S.muted; S.rt?.setMuted(S.muted); render(); }
   else if (a === 'rtstop') S.rt?.stop();
+  else if (a === 'nsignin') nativeSignIn(b.dataset.p);
+  else if (a === 'upgrade') { const acc = store.account(); if (acc?.key) nativePurchase(acc.key); }
+  else if (a === 'restore') { const acc = store.account(); if (acc?.key) nativeRestore(acc.key); }
+  else if (a === 'signout') { S.rt?.stop(); store.setAccessCode(''); signOut(); S.paywall = false; render(); }
   else if (a === 'dropctx') { S.chatContext = ''; render(); }
   else if (a === 'clearchat') { store.setChat([]); S.chatContext = ''; render(); }
   else if (a === 'mic') {
@@ -417,8 +463,15 @@ document.addEventListener('click', async e => {
     return;
   }
   render();
-  // Pre-warm the API (avoids a cold start when the user first talks) and learn whether realtime voice is enabled.
-  ai.health().then(h => { S.voiceServer = !!h.voice; if (S.view === 'chat') render(); }).catch(() => {});
+  // Account changes (sign-in, usage updates, purchases) re-render unless a voice reply is streaming.
+  onAccountChange(acc => { if (!acc || acc.plan !== 'free' || (acc.msgsLeft > 0)) S.paywall = false; if (!S.live) render(); });
+  listenNative({ onError: msg => alert(msg), onPurchased: acc => { S.paywall = false; render(); if (acc?.plan === 'pro') alert('Pro unlocked. Thank you!'); } });
+  refreshAccount().catch(() => {});
+  // Pre-warm the API (avoids a cold start when the user first talks) and learn what's enabled.
+  ai.health().then(h => {
+    S.voiceServer = !!h.voice; S.googleClientId = h.googleClientId || ''; S.plans = h.plans || null;
+    if (S.view === 'chat' || S.view === 'settings') render();
+  }).catch(() => {});
   if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !window.Capacitor) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }

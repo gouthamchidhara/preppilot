@@ -1,0 +1,12 @@
+{
+  "name": "preppilot-sweeper",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/functions/*.js",
+  "description": "Timer function. deploy.ps1 copies api/src/lib into src/lib before packaging.",
+  "dependencies": {
+    "@azure/data-tables": "^13.3.2",
+    "@azure/functions": "^4.6.0"
+  }
+}

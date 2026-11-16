@@ -1,0 +1,93 @@
+// Sign-in. Web: Google Identity Services button. Inside the Expo app: native Google / Apple sign-in
+// via the WebView bridge (Google blocks its web sign-in inside embedded web views).
+import { apiBase } from './config.js';
+import { store } from './store.js';
+
+export const native = () => !!window.ReactNativeWebView;
+const toNative = msg => window.ReactNativeWebView?.postMessage(JSON.stringify(msg));
+
+export function authHeaders() {
+  const h = { 'x-client-id': store.clientId() };
+  const t = store.session();
+  if (t) h.authorization = `Bearer ${t}`;
+  const code = store.accessCode();
+  if (code) h['x-access-code'] = code;
+  return h;
+}
+
+export const signedIn = () => !!store.session() || !!store.accessCode();
+
+let onChange = () => {};
+export function onAccountChange(fn) { onChange = fn; }
+
+export function setAccount(a) { if (a) { store.setAccount(a); onChange(a); } }
+
+async function exchange(provider, idToken, name) {
+  const res = await fetch(`${apiBase()}/api/auth/${provider}`, {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ idToken, name }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Sign-in failed');
+  store.setSession(data.token);
+  setAccount(data.account);
+  return data.account;
+}
+
+export async function refreshAccount() {
+  if (!store.session()) return null;
+  const res = await fetch(`${apiBase()}/api/me`, { headers: authHeaders() });
+  if (res.status === 401) { signOut(); return null; }
+  const a = await res.json().catch(() => null);
+  if (res.ok) setAccount(a);
+  return a;
+}
+
+export function signOut() {
+  store.setSession(''); store.setAccount(null);
+  try { window.google?.accounts.id.disableAutoSelect(); } catch { /* not loaded */ }
+  toNative({ type: 'signout' });
+  onChange(null);
+}
+
+/* ---------- web: Google Identity Services ---------- */
+let gisLoaded;
+function loadGis() {
+  gisLoaded ||= new Promise((res, rej) => {
+    const s = Object.assign(document.createElement('script'), { src: 'https://accounts.google.com/gsi/client', async: true });
+    s.onload = res; s.onerror = () => rej(new Error('Could not load Google sign-in.'));
+    document.head.appendChild(s);
+  });
+  return gisLoaded;
+}
+
+export async function renderGoogleButton(el, clientId, onError) {
+  if (!el || !clientId) return;
+  await loadGis();
+  window.google.accounts.id.initialize({
+    client_id: clientId,
+    callback: r => exchange('google', r.credential).catch(e => onError?.(e.message)),
+    ux_mode: 'popup',
+    auto_select: false,
+  });
+  window.google.accounts.id.renderButton(el, { theme: 'filled_blue', size: 'large', text: 'continue_with', shape: 'pill' });
+}
+
+/* ---------- native app bridge ---------- */
+export function nativeSignIn(provider) { toNative({ type: 'signin', provider }); }
+export function nativePurchase(userKey) { toNative({ type: 'purchase', userKey }); }
+export function nativeRestore(userKey) { toNative({ type: 'restore', userKey }); }
+
+export function listenNative({ onError, onPurchased }) {
+  window.addEventListener('pp-native', async e => {
+    const m = e.detail || {};
+    try {
+      if (m.type === 'auth') await exchange(m.provider, m.idToken, m.name);
+      else if (m.type === 'purchased') {
+        const res = await fetch(`${apiBase()}/api/billing/refresh`, { method: 'POST', headers: { ...authHeaders(), 'content-type': 'application/json' }, body: '{}' });
+        const d = await res.json().catch(() => ({}));
+        if (d.account) setAccount(d.account);
+        onPurchased?.(d.account);
+      } else if (m.type === 'error') onError?.(m.message);
+    } catch (err) { onError?.(err.message); }
+  });
+}
