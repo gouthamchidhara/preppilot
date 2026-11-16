@@ -53,6 +53,7 @@ export function signOut() {
 
 /* ---------- web: Google Identity Services ---------- */
 let gisLoaded;
+let gisInit;
 function loadGis() {
   gisLoaded ||= new Promise((res, rej) => {
     const s = Object.assign(document.createElement('script'), { src: 'https://accounts.google.com/gsi/client', async: true });
@@ -65,13 +66,16 @@ function loadGis() {
 export async function renderGoogleButton(el, clientId, onError) {
   if (!el || !clientId) return;
   await loadGis();
-  window.google.accounts.id.initialize({
-    client_id: clientId,
-    callback: r => exchange('google', r.credential).catch(e => onError?.(e.message)),
-    ux_mode: 'popup',
-    auto_select: false,
-  });
-  window.google.accounts.id.renderButton(el, { theme: 'filled_blue', size: 'large', text: 'continue_with', shape: 'pill' });
+  if (!gisInit) {
+    gisInit = true;
+    window.google.accounts.id.initialize({
+      client_id: clientId,
+      callback: r => exchange('google', r.credential).catch(e => onError?.(e.message)),
+      ux_mode: 'redirect',
+      auto_select: false,
+    });
+  }
+  if (!el.childElementCount) window.google.accounts.id.renderButton(el, { theme: 'filled_blue', size: 'large', text: 'continue_with', shape: 'pill' });
 }
 
 /* ---------- native app bridge ---------- */
