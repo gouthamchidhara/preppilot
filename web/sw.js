@@ -1,6 +1,6 @@
 // App-shell cache for offline study. AI calls (/api) always go to the network.
-const VERSION = 'pp-v1';
-const SHELL = ['./', 'index.html', 'app.css', 'manifest.webmanifest', 'js/app.js', 'js/plan.js', 'js/store.js', 'js/ai.js', 'js/voice.js', 'js/config.js', 'content/packs/infra.json', 'icons/icon.svg', 'icons/icon-192.png'];
+const VERSION = 'pp-v2';
+const SHELL = ['./', 'index.html', 'app.css', 'manifest.webmanifest', 'js/app.js', 'js/plan.js', 'js/store.js', 'js/ai.js', 'js/voice.js', 'js/realtime.js', 'js/config.js', 'content/packs/infra.json', 'icons/icon.svg', 'icons/icon-192.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

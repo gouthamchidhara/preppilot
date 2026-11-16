@@ -13,6 +13,8 @@ param(
   [int]$BudgetAmount = 20,
   [string]$AccessCode = '',
   [string[]]$PreferredModels = @('gpt-4.1-mini', 'gpt-4o-mini', 'gpt-5-mini'),
+  [string[]]$RealtimeModels = @('gpt-realtime-mini', 'gpt-realtime-2.1-mini', 'gpt-realtime'),
+  [string[]]$TranscribeModels = @('gpt-4o-mini-transcribe', 'gpt-4o-transcribe'),
   [switch]$Yes
 )
 $ErrorActionPreference = 'Stop'
@@ -25,29 +27,47 @@ $blocked = @($env:PREPPILOT_BLOCKED_DOMAINS -split ',') + @(if (Test-Path privat
 foreach ($d in $blocked) { if ($acct.user.name -like "*@$($d.Trim())") { throw 'Signed in with an employer account. Run: az login (personal account), then az account set -s <personal-sub>.' } }
 if (-not $Yes) { if ((Read-Host 'Deploy PrepPilot here? (y/N)') -ne 'y') { exit 1 } }
 
-# 2. Pick a small chat model that is actually available in the region (versions retire over time).
+# 2. Pick models that are actually available in the region (versions retire over time).
 $models = az cognitiveservices model list -l $AiLocation -o json | ConvertFrom-Json
-$pick = $null
-foreach ($name in $PreferredModels) {
-  $cands = $models | Where-Object { $_.model.format -eq 'OpenAI' -and $_.model.name -eq $name -and
-    ($_.model.skus | Where-Object { $_.name -eq 'GlobalStandard' -and (-not $_.deprecationDate -or [datetime]$_.deprecationDate -gt (Get-Date).AddDays(30)) }) }
-  if ($cands) { $pick = $cands | Sort-Object { $_.model.version } -Descending | Select-Object -First 1; break }
+function Select-Model([string[]]$names) {
+  foreach ($name in $names) {
+    $cands = $models | Where-Object { $_.model.format -eq 'OpenAI' -and $_.model.name -eq $name -and
+      ($_.model.skus | Where-Object { $_.name -eq 'GlobalStandard' -and (-not $_.deprecationDate -or [datetime]$_.deprecationDate -gt (Get-Date).AddDays(30)) }) }
+    if ($cands) { return ($cands | Sort-Object { $_.model.version } -Descending | Select-Object -First 1).model }
+  }
+  return $null
 }
+$pick = Select-Model $PreferredModels
 if (-not $pick) {
   Write-Host 'None of the preferred models are available. Candidates in this region:'
   $models | Where-Object { $_.model.name -match 'mini' } | ForEach-Object { "  $($_.model.name) $($_.model.version)" } | Sort-Object -Unique
   throw 'Re-run with -PreferredModels <name>.'
 }
-$modelName = $pick.model.name; $modelVersion = $pick.model.version
+$modelName = $pick.name; $modelVersion = $pick.version
 $reasoning = [bool]($modelName -match '^(gpt-5|o\d)')
-Write-Host "Model: $modelName $modelVersion (reasoning=$reasoning)"
+Write-Host "Chat model:     $modelName $modelVersion (reasoning=$reasoning)"
+$rt = Select-Model $RealtimeModels
+$tr = Select-Model $TranscribeModels
+if ($rt) { Write-Host "Realtime voice: $($rt.name) $($rt.version)" } else { Write-Warning 'No realtime model available: voice mode will be off.' }
+if ($tr) { Write-Host "Transcription:  $($tr.name) $($tr.version)" }
 
 # 3. Infrastructure.
 az group create -n $ResourceGroup -l $Location -o none
-$out = az deployment group create -g $ResourceGroup -f infra/main.bicep `
-  -p location=$Location aiLocation=$AiLocation modelName=$modelName modelVersion=$modelVersion `
-     reasoningModel=$($reasoning.ToString().ToLower()) accessCode=$AccessCode budgetEmail=$BudgetEmail budgetAmount=$BudgetAmount `
-  --query properties.outputs -o json | ConvertFrom-Json
+$p = @{
+  location = $Location; aiLocation = $AiLocation; modelName = $modelName; modelVersion = $modelVersion
+  reasoningModel = $reasoning; accessCode = $AccessCode; budgetEmail = $BudgetEmail; budgetAmount = $BudgetAmount
+  realtimeModelName = $(if ($rt) { $rt.name } else { '' }); realtimeModelVersion = $(if ($rt) { $rt.version } else { '' })
+  transcribeModelName = $(if ($rt -and $tr) { $tr.name } else { '' }); transcribeModelVersion = $(if ($rt -and $tr) { $tr.version } else { '' })
+}
+$paramFile = Join-Path ([IO.Path]::GetTempPath()) "preppilot-params-$PID.json"
+@{ '$schema' = 'https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#'; contentVersion = '1.0.0.0'
+   parameters = @{} + ($p.GetEnumerator() | ForEach-Object -Begin { $h = @{} } -Process { $h[$_.Key] = @{ value = $_.Value } } -End { $h }) } |
+  ConvertTo-Json -Depth 5 | Set-Content $paramFile
+try {
+  $out = az deployment group create -g $ResourceGroup -n "preppilot-$(Get-Date -Format yyyyMMddHHmmss)" -f infra/main.bicep -p "@$paramFile" `
+    --query properties.outputs -o json | ConvertFrom-Json
+} finally { Remove-Item $paramFile -ErrorAction SilentlyContinue }
+if (-not $out) { throw 'Infrastructure deployment failed (see error above).' }
 $swa = $out.swaName.value; $hostName = $out.swaHostname.value
 Write-Host "Static Web App: $swa  https://$hostName"
 

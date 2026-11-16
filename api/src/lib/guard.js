@@ -3,6 +3,7 @@ import { timingSafeEqual } from 'node:crypto';
 const LIMITS = {
   chat: { max: Number(process.env.RATE_CHAT_PER_HOUR || 40), windowMs: 3600000 },
   generate: { max: Number(process.env.RATE_GENERATE_PER_HOUR || 6), windowMs: 3600000 },
+  voice: { max: Number(process.env.RATE_VOICE_PER_HOUR || 15), windowMs: 3600000 },
 };
 const DAILY_CAP = Number(process.env.DAILY_AI_CAP || 3000);
 

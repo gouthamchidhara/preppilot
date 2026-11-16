@@ -5,7 +5,13 @@ Users set a short profile (target role, level, background, self-rated strengths/
 
 - **A day-by-day plan** ordered by role relevance and their weak spots, ending with mock-interview days.
 - **Learn cards** (what / why / example / what to say) and **flashcards** with spaced repetition, filtered to their level.
-- **An AI coach** (chat + voice) for instant answers, "go deeper" on any card, answer grading and mock interviews.
+- **An AI coach** for instant answers, "go deeper" on any card, answer grading and mock interviews:
+  - **Talking mode**: hands-free speech-to-speech (Azure OpenAI Realtime over WebRTC). Replies start ~0.35 s after you
+    stop speaking; talk over it to interrupt. Measured: first reply token ~250 ms after the turn ends.
+  - **Listening mode**: mic stays open, the coach transcribes and does **not** interrupt while you practice a long answer;
+    tap "Your turn" for instant feedback (spoken, or text-only with "Speak replies" off).
+  - Typing during a voice session streams over the same connection. Without a voice session, text chat uses
+    `/api/chat` (~1.4 s for a full, non-streamed answer).
 - **AI-generated card sets** for any topic not covered (e.g. "Splunk SPL", "Terraform state").
 - **Private packs**: import your own JSON pack (projects, STAR stories). It stays on the device.
 
@@ -19,11 +25,14 @@ iOS / Android (Capacitor shell)  ─┐
 Browser / installed PWA          ─┼─HTTPS─> Azure Static Web Apps (Free)
                                   │          ├─ web/        static PWA (no build step)
                                   │          └─ api/        managed Azure Functions (Node 20)
-                                  │                 /api/chat  /api/generate  /api/health
+                                  │                 /api/chat  /api/generate  /api/realtime  /api/health
                                   │                       │ api-key (app setting, server-side only)
                                   │                       v
-                                  │                 Azure OpenAI (small chat model, low TPM quota)
-                                  └─ voice: browser Web Speech API (speech-to-text + text-to-speech)
+                                  │                 Azure AI Foundry (AIServices) account:
+                                  │                   gpt-4.1-mini (chat), gpt-realtime-mini (voice),
+                                  │                   gpt-4o-mini-transcribe (shows what you said)
+                                  └─ voice audio: WebRTC directly between device and Azure (after /api/realtime
+                                     mints a short-lived secret and exchanges SDP; instructions never reach the client)
 ```
 
 | Part | Where |
@@ -81,17 +90,22 @@ Import `private/packs/personal.json` in the app under Profile → Private packs.
 2. **Google Play**: `npm install`, `npm run cap:android` (needs Android Studio + JDK), build a signed AAB, upload in
    Play Console ($25 one-time developer account). New personal accounts must run a closed test with testers before
    production access.
-3. **Apple App Store**: `npm run cap:ios` on a Mac with Xcode, Apple Developer Program ($99/yr), App Store Connect.
-   Apple rejects apps that are "just a website" (guideline 4.2). Before submitting, add native value: native speech
-   recognition plugin (Web Speech recognition is not available in iOS WKWebView), offline mode, local notifications for
-   daily study reminders.
+3. **Apple App Store** (app record exists in App Store Connect): `npm run cap:ios` on a Mac with Xcode.
+   - `appId` in `capacitor.config.json` must equal the Bundle ID shown in App Store Connect → App Information.
+   - Add `NSMicrophoneUsageDescription` to `ios/App/App/Info.plist` ("PrepPilot uses the microphone for voice
+     practice with the AI coach."). Realtime voice uses WebRTC, which works in the iOS WebView (iOS 14.3+).
+   - Put the beta access code in App Review notes, or reviewers can't use the AI.
+   - Apple rejects "just a website" apps (guideline 4.2); realtime voice, offline study and daily reminders help.
 4. Both stores need: privacy policy URL, support URL, screenshots, content rating, and an AI disclosure.
    Data collection to declare: chat text sent to the AI service (not stored by PrepPilot).
 
 ## Known limitations / next steps
 
 - Rate limits are in-memory per Functions instance. Fine for a beta; move to Azure Table Storage or Redis for real scale.
+- **Before a public launch, replace the shared access code** with per-user protection (Sign in with Apple + per-user
+  quotas, or App Attest/DeviceCheck). Voice costs real money per minute; an open endpoint can be abused.
+  Voice sessions auto-end after 3 minutes of silence or 15 minutes total.
 - No accounts or sync across devices (by design for privacy). Export/import exists under Profile.
-- Voice input relies on the browser; iOS app needs `@capacitor-community/speech-recognition`.
+- Voice input relies on WebRTC + microphone permission; the 🎤 Dictate fallback uses the browser's speech API.
 - Answers are not streamed; add streaming when moving the API to a standalone Function App.
 - Content is infra-focused. Other fields work through AI-generated packs; curated packs per role would be better.

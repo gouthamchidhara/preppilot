@@ -14,7 +14,7 @@ if (existsSync(envFile)) {
     if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
   }
 }
-const { handleChat, handleGenerate, handleHealth } = await import('../api/src/lib/handlers.js');
+const { handleChat, handleGenerate, handleHealth, handleRealtime } = await import('../api/src/lib/handlers.js');
 
 const webRoot = resolve(root, 'web');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
@@ -35,6 +35,7 @@ createServer(async (req, res) => {
       const out = route === 'health' && req.method === 'GET' ? handleHealth()
         : route === 'chat' && req.method === 'POST' ? await handleChat(r, console.warn)
         : route === 'generate' && req.method === 'POST' ? await handleGenerate(r, console.warn)
+        : route === 'realtime' && req.method === 'POST' ? await handleRealtime(r, console.warn)
         : { status: 404, body: { error: 'not found' }, headers: {} };
       res.writeHead(out.status, { 'content-type': 'application/json', 'cache-control': 'no-store', ...out.headers });
       return res.end(JSON.stringify(out.body));

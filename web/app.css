@@ -48,6 +48,10 @@ details summary{cursor:pointer;font-weight:600}
 .composer{position:sticky;bottom:calc(64px + env(safe-area-inset-bottom));background:var(--bg);padding-top:8px;display:flex;flex-direction:column;gap:8px}
 .composer .row{justify-content:flex-end}
 .tabs{position:fixed;bottom:0;left:0;right:0;display:grid;grid-template-columns:repeat(4,1fr);background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.voicebar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.voicebar.live{border-color:var(--accent)}
+.status-you,.status-ai{background:var(--good-soft);color:var(--good)}
+.status-thinking,.status-connecting{background:var(--soft);color:var(--accent)}
 .tabs[hidden]{display:none}
 .tabs button{background:none;border:0;padding:14px 4px;font:600 13.5px system-ui;color:var(--muted);cursor:pointer}
 .tabs button[aria-current=true]{color:var(--accent)}

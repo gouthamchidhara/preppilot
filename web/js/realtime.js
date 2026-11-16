@@ -1,0 +1,106 @@
+// Realtime voice session (WebRTC). Speech in, speech/text out, with barge-in.
+//   talk   = hands-free conversation; the AI answers ~0.35s after you stop and stops when you interrupt
+//   listen = the AI only listens/transcribes; call respond() when you want feedback
+import { apiBase } from './config.js';
+import { store } from './store.js';
+
+const MAX_SESSION_MS = 15 * 60 * 1000; // cost guard
+const IDLE_MS = 3 * 60 * 1000;
+
+export const realtimeSupported = !!(window.RTCPeerConnection && navigator.mediaDevices?.getUserMedia);
+
+export class VoiceSession {
+  constructor(on) {
+    this.on = on; // { status(s), userStart(), user(text), delta(id, text), done(id, text), end(reason), error(msg) }
+    this.pc = null; this.dc = null; this.mic = null; this.audio = null; this.timers = [];
+  }
+
+  async start({ mode, speak, profileSummary, context }) {
+    this.mode = mode;
+    this.on.status('connecting');
+    const pc = this.pc = new RTCPeerConnection();
+    this.audio = Object.assign(document.createElement('audio'), { autoplay: true });
+    this.audio.setAttribute('playsinline', '');
+    pc.ontrack = e => { this.audio.srcObject = e.streams[0]; };
+    pc.onconnectionstatechange = () => {
+      if (['failed', 'disconnected'].includes(pc.connectionState)) this.stop('Connection lost.');
+    };
+
+    try {
+      this.mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+    } catch {
+      this.stop(); throw new Error('Microphone permission is needed for voice mode.');
+    }
+    pc.addTrack(this.mic.getAudioTracks()[0], this.mic);
+
+    this.dc = pc.createDataChannel('oai-events');
+    this.dc.onmessage = e => { try { this.handle(JSON.parse(e.data)); } catch { /* ignore non-JSON */ } };
+    this.dc.onopen = () => this.on.status(mode === 'listen' ? 'listening' : 'ready');
+
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    const res = await fetch(apiBase() + '/api/realtime', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-client-id': store.clientId(), 'x-access-code': store.accessCode() || '' },
+      body: JSON.stringify({ sdp: offer.sdp, mode, speak, profileSummary, context }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { this.stop(); throw new Error(data.error || `Voice failed (${res.status})`); }
+    await pc.setRemoteDescription({ type: 'answer', sdp: data.sdp });
+    this.degraded = data.degraded;
+    this.bump();
+    this.timers.push(setTimeout(() => this.stop('Session limit reached (15 min). Start again to continue.'), MAX_SESSION_MS));
+  }
+
+  bump() {
+    clearTimeout(this.idle);
+    this.idle = setTimeout(() => this.stop('Ended after 3 minutes of silence.'), IDLE_MS);
+  }
+
+  handle(e) {
+    this.bump();
+    switch (e.type) {
+      case 'input_audio_buffer.speech_started': this.on.status('you'); this.on.userStart(); break;
+      case 'input_audio_buffer.speech_stopped': this.on.status(this.mode === 'listen' ? 'listening' : 'thinking'); break;
+      case 'conversation.item.input_audio_transcription.completed': this.on.user(e.transcript || ''); break;
+      case 'response.output_audio_transcript.delta':
+      case 'response.output_text.delta': this.on.delta(e.response_id, e.delta || ''); break;
+      case 'response.output_audio_transcript.done': this.on.done(e.response_id, e.transcript); break;
+      case 'response.output_text.done': this.on.done(e.response_id, e.text); break;
+      case 'output_audio_buffer.started': this.on.status('ai'); break;
+      case 'output_audio_buffer.stopped': this.on.status(this.mode === 'listen' ? 'listening' : 'ready'); break;
+      default: break;
+    }
+  }
+
+  send(obj) { if (this.dc?.readyState === 'open') this.dc.send(JSON.stringify(obj)); }
+
+  // Typed message inside a live session: streamed back instantly over the data channel.
+  sendText(text) {
+    this.send({ type: 'conversation.item.create', item: { type: 'message', role: 'user', content: [{ type: 'input_text', text }] } });
+    this.send({ type: 'response.create' });
+    this.on.status('thinking');
+  }
+
+  // Listening mode: "your turn" -> commit whatever was said and ask for feedback now.
+  respond() {
+    this.send({ type: 'input_audio_buffer.commit' });
+    this.send({ type: 'response.create' });
+    this.on.status('thinking');
+  }
+
+  interrupt() { this.send({ type: 'response.cancel' }); this.send({ type: 'output_audio_buffer.clear' }); }
+
+  setMuted(m) { this.mic?.getAudioTracks().forEach(t => { t.enabled = !m; }); }
+
+  stop(reason) {
+    if (!this.pc && !this.mic) return;
+    this.timers.forEach(clearTimeout); clearTimeout(this.idle);
+    try { this.dc?.close(); } catch { /* already closed */ }
+    try { this.pc?.close(); } catch { /* already closed */ }
+    this.mic?.getTracks().forEach(t => t.stop());
+    if (this.audio) this.audio.srcObject = null;
+    this.pc = this.dc = this.mic = null;
+    this.on.end(reason || '');
+  }
+}

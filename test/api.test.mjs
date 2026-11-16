@@ -60,3 +60,32 @@ test('sanitizer drops malformed model output', () => {
   const ok = sanitizeGenerated({ qa: [{ l: 9, q: 'q', a: 'a' }] });
   assert.equal(ok.qa[0].l, 2);
 });
+
+const { handleRealtime } = await import('../api/src/lib/handlers.js');
+const { validateRealtime, sessionConfigs } = await import('../api/src/lib/realtime.js');
+
+test('voice endpoint reports not configured instead of failing', async () => {
+  assert.equal(handleHealth().body.voice, false);
+  assert.equal((await handleRealtime(req({ sdp: 'v=0\r\n' }))).status, 503);
+});
+
+test('voice validation rejects bad SDP and defaults safely', () => {
+  assert.ok(validateRealtime({ sdp: 'hello' }).error);
+  const v = validateRealtime({ sdp: 'v=0\r\n', mode: 'weird', voice: 'robot' });
+  assert.deepEqual([v.mode, v.voice, v.speak], ['talk', 'marin', true]);
+});
+
+test('listening mode never auto-replies; talking mode replies fast and allows barge-in', () => {
+  process.env.AZURE_OPENAI_REALTIME_DEPLOYMENT = 'rt';
+  process.env.AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT = 'tr';
+  const listen = sessionConfigs(validateRealtime({ sdp: 'v=0', mode: 'listen', speak: false }))[0].session;
+  const talk = sessionConfigs(validateRealtime({ sdp: 'v=0', mode: 'talk' }))[0].session;
+  assert.equal(listen.audio.input.turn_detection.create_response, false);
+  assert.deepEqual(listen.output_modalities, ['text']);
+  assert.equal(talk.audio.input.turn_detection.create_response, true);
+  assert.ok(talk.audio.input.turn_detection.silence_duration_ms <= 400);
+  assert.equal(talk.audio.input.turn_detection.interrupt_response, true);
+  assert.equal(talk.audio.input.transcription.model, 'tr');
+  assert.match(listen.instructions, /LISTENING MODE/);
+  delete process.env.AZURE_OPENAI_REALTIME_DEPLOYMENT; delete process.env.AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT;
+});

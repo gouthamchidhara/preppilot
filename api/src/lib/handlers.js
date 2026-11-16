@@ -3,6 +3,7 @@
 import { complete, llmConfigured } from './llm.js';
 import { rateLimit, checkAccessCode, validateChat, validateGenerate, sanitizeGenerated } from './guard.js';
 import { chatSystemPrompt, generateSystemPrompt, generateUserPrompt } from './prompts.js';
+import { realtimeConfigured, validateRealtime, startRealtime } from './realtime.js';
 
 const json = (status, body, headers = {}) => ({ status, body, headers });
 
@@ -54,6 +55,17 @@ export async function handleGenerate(req, log) {
   } catch (err) { return fail(err, log); }
 }
 
+export async function handleRealtime(req, log) {
+  if (!realtimeConfigured()) return json(503, { error: 'Voice mode is not configured on the server.' });
+  const v = validateRealtime(req.body);
+  if (v.error) return json(400, { error: v.error });
+  const blocked = gate('voice', req);
+  if (blocked) return blocked;
+  try {
+    return json(200, await startRealtime(v, log));
+  } catch (err) { return fail(err, log); }
+}
+
 export function handleHealth() {
-  return json(200, { ok: true, ai: llmConfigured() ? 'azure-openai' : 'mock', accessCode: !!process.env.ACCESS_CODE });
+  return json(200, { ok: true, ai: llmConfigured() ? 'azure-openai' : 'mock', voice: realtimeConfigured(), accessCode: !!process.env.ACCESS_CODE });
 }

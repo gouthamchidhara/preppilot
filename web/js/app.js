@@ -2,10 +2,12 @@ import { ROLES, LEVELS, buildPlan, rankTopics, dueCards, review, readiness, prof
 import { store } from './store.js';
 import { ai } from './ai.js';
 import { voice } from './voice.js';
+import { VoiceSession, realtimeSupported } from './realtime.js';
 
 const DAY = 86400000;
 const app = document.getElementById('app');
-const S = { view: 'home', topic: null, ci: 0, deck: null, di: 0, reveal: false, busy: false, listening: false, chatContext: '' };
+const S = { view: 'home', topic: null, ci: 0, deck: null, di: 0, reveal: false, busy: false, listening: false, chatContext: '',
+  rt: null, rtMode: null, rtStatus: '', rtStarting: false, voiceServer: false, live: null, pendingUser: false, muted: false };
 let PUBLIC = [];
 
 /* ---------- helpers ---------- */
@@ -116,24 +118,107 @@ function deckView() {
   </div>`;
 }
 
+const STATUS = { connecting: 'Connecting…', ready: 'Listening — just talk', listening: 'Listening (won\'t interrupt)', you: 'You\'re speaking…', thinking: 'Thinking…', ai: 'Speaking — talk to interrupt' };
+
+function voiceBar() {
+  const live = !!S.rt;
+  if (!live) {
+    if (!(S.voiceServer && realtimeSupported)) {
+      return `<div class="voicebar muted small">Realtime voice isn't available here${S.voiceServer ? ' (browser lacks WebRTC)' : ' (server not configured)'}; the 🎤 button below uses basic dictation.</div>`;
+    }
+    return `<div class="voicebar">
+      <button class="btn primary" data-act="rtstart" data-mode="talk" ${S.rtStarting ? 'disabled' : ''}>🎙 Talking mode</button>
+      <button class="btn" data-act="rtstart" data-mode="listen" ${S.rtStarting ? 'disabled' : ''}>👂 Listening mode</button>
+      <span class="muted small">Talking: hands-free back-and-forth, interrupt anytime. Listening: practice a long answer; tap "Your turn" for feedback.</span>
+    </div>`;
+  }
+  return `<div class="voicebar live">
+    <span class="pill status-${S.rtStatus}" id="rtStatus">${esc(STATUS[S.rtStatus] || S.rtStatus)}</span>
+    <span class="small muted">${S.rtMode === 'listen' ? 'Listening mode' : 'Talking mode'}</span>
+    ${S.rtMode === 'listen' ? '<button class="btn primary" data-act="rtrespond">Your turn →</button>' : ''}
+    <button class="btn" data-act="rtinterrupt">⏹ Stop talking</button>
+    <button class="btn" data-act="rtmute">${S.muted ? '🔇 Unmute' : '🎤 Mute'}</button>
+    <button class="btn again" data-act="rtstop">End</button>
+  </div>`;
+}
+
 function chatView() {
   const msgs = store.chat();
   const quick = ['Mock interview me on my weakest topic', 'Grade my answer to the last question', 'Explain BDP like I\'m in an interview', 'What would a senior panel ask about my background?'];
+  const live = S.live ? `<div class="msg assistant" id="liveMsg">${md(S.live.text) || '…'}</div>` : '';
   return `<div class="stack chat">
     <div class="row between"><h2>Ask PrepPilot</h2>
       <div class="row"><label class="small"><input type="checkbox" id="speakToggle" ${store.speak() ? 'checked' : ''}> Speak replies</label>
       <button class="link small" data-act="clearchat">Clear</button></div></div>
+    ${voiceBar()}
     ${S.chatContext ? `<div class="tip small">Context: ${esc(S.chatContext.split('\n')[0])} <button class="link small" data-act="dropctx">remove</button></div>` : ''}
-    <div class="msgs" id="msgs">${msgs.length ? msgs.map(m => `<div class="msg ${m.role}">${m.role === 'assistant' ? md(m.content) : fmt(m.content)}</div>`).join('') : `<div class="muted">Ask anything: concepts, commands, "grade my answer", or a mock interview.</div><div class="chips">${quick.map(q => `<button class="chip" data-act="quick" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>`}
-    ${S.busy ? '<div class="msg assistant muted">Thinking…</div>' : ''}</div>
+    <div class="msgs" id="msgs">${msgs.length || live ? msgs.map(m => `<div class="msg ${m.role}">${m.role === 'assistant' ? md(m.content) : fmt(m.content)}</div>`).join('') : `<div class="muted">Ask anything: concepts, commands, "grade my answer", or a mock interview.</div><div class="chips">${quick.map(q => `<button class="chip" data-act="quick" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>`}
+    ${live}${S.busy ? '<div class="msg assistant muted">Thinking…</div>' : ''}</div>
     <form id="chatForm" class="composer">
-      <textarea id="chatInput" rows="2" maxlength="4000" placeholder="Type or tap the mic…"></textarea>
+      <textarea id="chatInput" rows="2" maxlength="4000" placeholder="${S.rt ? 'Type — answers stream instantly' : 'Type or tap the mic…'}"></textarea>
       <div class="row">
-        <button type="button" class="btn ${S.listening ? 'again' : ''}" data-act="mic" ${voice.canListen ? '' : 'disabled title="Voice input not supported here"'}>${S.listening ? '■ Stop' : '🎤 Talk'}</button>
+        ${S.rt ? '' : `<button type="button" class="btn ${S.listening ? 'again' : ''}" data-act="mic" ${voice.canListen ? '' : 'disabled title="Voice input not supported here"'}>${S.listening ? '■ Stop' : '🎤 Dictate'}</button>`}
         <button class="btn primary" type="submit" ${S.busy ? 'disabled' : ''}>Send</button>
       </div>
     </form>
   </div>`;
+}
+
+/* ---------- realtime voice ---------- */
+function scrollMsgs() { const m = document.getElementById('msgs'); if (m) m.scrollTop = m.scrollHeight; }
+
+function rtHandlers() {
+  return {
+    status(s) {
+      S.rtStatus = s;
+      const el = document.getElementById('rtStatus');
+      if (el) { el.textContent = STATUS[s] || s; el.className = `pill status-${s}`; }
+    },
+    userStart() {
+      // Placeholder so the user's words appear before the AI reply even if transcription lands later.
+      if (!S.pendingUser) { store.setChat([...store.chat(), { role: 'user', content: '🎙 …' }]); S.pendingUser = true; if (!S.live) render(); }
+    },
+    user(text) {
+      const msgs = store.chat();
+      const i = msgs.map(m => m.content).lastIndexOf('🎙 …');
+      if (i >= 0) msgs[i] = { role: 'user', content: text.trim() || '(inaudible)' };
+      else if (text.trim()) msgs.push({ role: 'user', content: text.trim() });
+      store.setChat(msgs); S.pendingUser = false;
+      if (!S.live) render();
+    },
+    delta(id, text) {
+      if (!S.live || S.live.id !== id) { S.live = { id, text: '' }; S.pendingUser = false; render(); }
+      S.live.text += text;
+      const el = document.getElementById('liveMsg');
+      if (el) { el.innerHTML = md(S.live.text); scrollMsgs(); }
+    },
+    done(id, text) {
+      const final = text ?? S.live?.text ?? '';
+      S.live = null;
+      if (final.trim()) store.setChat([...store.chat(), { role: 'assistant', content: final }]);
+      render();
+    },
+    end(reason) {
+      S.rt = null; S.rtMode = null; S.rtStatus = ''; S.live = null; S.pendingUser = false; S.muted = false;
+      store.setChat(store.chat().filter(m => m.content !== '🎙 …'));
+      if (reason) store.setChat([...store.chat(), { role: 'assistant', content: `ℹ️ ${reason}` }]);
+      if (S.view === 'chat') render();
+    },
+  };
+}
+
+async function startVoice(mode) {
+  if (S.rt) S.rt.stop();
+  voice.stopSpeaking();
+  S.rtStarting = true; render();
+  const session = new VoiceSession(rtHandlers());
+  try {
+    S.rt = session; S.rtMode = mode;
+    await session.start({ mode, speak: store.speak() || mode === 'talk', profileSummary: profileSummary(profile()), context: S.chatContext });
+  } catch (e) {
+    S.rt = null; S.rtMode = null;
+    store.setChat([...store.chat(), { role: 'assistant', content: `⚠️ ${e.message}` }]);
+  } finally { S.rtStarting = false; render(); }
 }
 
 function settingsView() {
@@ -184,6 +269,12 @@ function startDeck(ids) {
 async function sendChat(text, { fromVoice = false } = {}) {
   text = text.trim();
   if (!text || S.busy) return;
+  if (S.rt) {
+    store.setChat([...store.chat(), { role: 'user', content: text }]);
+    render();
+    S.rt.sendText(text);
+    return;
+  }
   const msgs = [...store.chat(), { role: 'user', content: text }];
   store.setChat(msgs); S.busy = true; render();
   try {
@@ -285,6 +376,11 @@ document.addEventListener('click', async e => {
     sendChat(`Run a mock interview for my target role${weak ? `, starting with ${topicById(weak)?.name || weak}` : ''}. Ask one question at a time and grade each answer honestly.`);
   }
   else if (a === 'quick') sendChat(b.dataset.q);
+  else if (a === 'rtstart') startVoice(b.dataset.mode);
+  else if (a === 'rtrespond') S.rt?.respond();
+  else if (a === 'rtinterrupt') S.rt?.interrupt();
+  else if (a === 'rtmute') { S.muted = !S.muted; S.rt?.setMuted(S.muted); render(); }
+  else if (a === 'rtstop') S.rt?.stop();
   else if (a === 'dropctx') { S.chatContext = ''; render(); }
   else if (a === 'clearchat') { store.setChat([]); S.chatContext = ''; render(); }
   else if (a === 'mic') {
@@ -321,6 +417,8 @@ document.addEventListener('click', async e => {
     return;
   }
   render();
+  // Pre-warm the API (avoids a cold start when the user first talks) and learn whether realtime voice is enabled.
+  ai.health().then(h => { S.voiceServer = !!h.voice; if (S.view === 'chat') render(); }).catch(() => {});
   if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !window.Capacitor) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
