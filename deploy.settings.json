@@ -1,6 +1,6 @@
-{
-  "adminEmails": "",
-  "googleWebClientId": "",
-  "googleClientIds": "",
-  "appleAudiences": "com.gchid.preppilot"
+﻿{
+    "adminEmails":  "",
+    "googleWebClientId":  "372383686135-jj1mv49jbskilvqk6qfiqguh4uqjkdl5.apps.googleusercontent.com",
+    "googleClientIds":  "372383686135-jj1mv49jbskilvqk6qfiqguh4uqjkdl5.apps.googleusercontent.com,372383686135-dvfs7h64g3vlnhkclilepbjtrnah55rd.apps.googleusercontent.com",
+    "appleAudiences":  "com.gchid.preppilot"
 }
