@@ -1,22 +1,28 @@
 {
-  "name": "preppilot",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "description": "Personalized interview prep for infra, cloud, SRE and DevOps roles, with an AI coach (chat + voice).",
-  "scripts": {
-    "dev": "node dev/server.mjs",
-    "test": "node --test \"test/*.test.mjs\"",
-    "content": "node scripts/extract-content.mjs",
-    "cap:android": "npx cap add android && npx cap sync android && npx cap open android",
-    "cap:ios": "npx cap add ios && npx cap sync ios && npx cap open ios",
-    "cap:sync": "npx cap sync"
-  },
-  "engines": { "node": ">=20" },
-  "devDependencies": {
-    "@capacitor/android": "^7.0.0",
-    "@capacitor/cli": "^7.0.0",
-    "@capacitor/core": "^7.0.0",
-    "@capacitor/ios": "^7.0.0"
-  }
+    "name":  "preppilot",
+    "version":  "0.1.0",
+    "private":  true,
+    "type":  "module",
+    "description":  "Personalized interview prep for infra, cloud, SRE and DevOps roles, with an AI coach (chat + voice).",
+    "scripts":  {
+                    "dev":  "node dev/server.mjs",
+                    "test":  "node --test \"test/*.test.mjs\"",
+                    "content":  "node scripts/extract-content.mjs",
+                    "cap:android":  "npx cap add android \u0026\u0026 npx cap sync android \u0026\u0026 npx cap open android",
+                    "cap:ios":  "npx cap add ios \u0026\u0026 npx cap sync ios \u0026\u0026 npx cap open ios",
+                    "cap:sync":  "npx cap sync",
+                    "content:gen":  "node scripts/gen-pack.mjs",
+                    "content:index":  "node scripts/build-index.mjs",
+                    "content:validate":  "node scripts/validate-packs.mjs",
+                    "content:lock":  "node scripts/validate-packs.mjs --lock"
+                },
+    "engines":  {
+                    "node":  "\u003e=20"
+                },
+    "devDependencies":  {
+                            "@capacitor/android":  "^7.0.0",
+                            "@capacitor/cli":  "^7.0.0",
+                            "@capacitor/core":  "^7.0.0",
+                            "@capacitor/ios":  "^7.0.0"
+                        }
 }

@@ -205,3 +205,23 @@ Estimated effort: steps 1â€“6 â‰ˆ 3â€“4 days of engineering; step 7 â‰ˆ 0.5 day 
 - Drafting model: **gpt-4.1**.
 - Packs **go live without human review**, marked beta/"AI-written" with a report link.
 - Product manager and engineering manager roles are **removed from v1**.
+## 9. Implementation status (Nov 16, 2026)
+
+Done: steps 1–8. Step 9 (store screenshots) is open.
+
+- **Content:** 13 packs, 72 topics, 23 roles (11 dev, 4 data/AI, 6 infra, 2 quality). 56 new topics drafted by gpt-4.1
+  from the outlines in `content-src/packs/*.json`, all passing strict validation on the first try. Generation cost about $1.20.
+  Every role has at least 120 questions (`test/content.test.mjs` enforces it).
+- **Existing users:** a comparison of old and new code on 72 infra profiles (6 roles × 3 levels × ratings × dates) gave identical plans and
+  flashcard order. No published question changed (`content-src/content-lock.json` now guards this in CI).
+- **Commands:** `npm run content:gen -- <pack|all> [--only id]`, `content:validate`, `content:lock`, `content:index`.
+  The gpt-4.1 drafting deployment is in `infra/main.bicep` (`draftModelName`).
+
+Deviations from the plan above:
+- Outlines are JSON, not YAML (no parser dependency).
+- "Extra tech you use" is a per-role list of topic IDs (`roles[].extras` ? `profile.extras`) instead of free-form stacks.
+- A first load can fetch up to 4 packs (for example Java = java + core-dev + infra + behavioral, about 310 KB), not 2.
+  Developer roles pull a few topics (docker, cicd, cloud) from the 174 KB infra pack; split that pack if it matters.
+- Code examples are validated for shape only; compiling examples per language isn't implemented.
+- "Role not listed": the user names their role and picks the closest listed role. The AI role guide is one generated topic
+  (one generate call = 5 AI messages), not five, so it fits inside the free trial.

@@ -1,0 +1,14 @@
+{
+  "id": "python",
+  "name": "Python",
+  "topics": [
+    { "id": "python-core", "name": "Core Python", "tag": "py3.12", "stack": "python", "blurb": "Data model, collections, comprehensions, generators, decorators, typing",
+      "outline": ["Mutable vs immutable types, references, shallow vs deep copy", "Lists, dicts, sets, tuples: complexity and use cases", "Comprehensions, generators, iterators, yield", "Decorators and closures", "Context managers and with", "*args/**kwargs, default argument pitfalls", "Classes, dataclasses, dunder methods, properties", "Exceptions and custom exceptions", "Type hints and mypy", "GIL: what it means for threads vs processes"] },
+    { "id": "python-web", "name": "Python Web (FastAPI, Django, Flask)", "tag": "FastAPI", "stack": "python", "blurb": "Frameworks, ORM, validation, auth and deployment",
+      "outline": ["Choosing FastAPI vs Django vs Flask", "FastAPI: routing, Pydantic validation, dependency injection, OpenAPI", "Django: MVT, ORM, migrations, admin, middleware", "ORM performance: select_related/prefetch_related, N+1", "Authentication: sessions vs JWT", "WSGI vs ASGI, gunicorn/uvicorn workers", "Testing with pytest and fixtures", "Deploying Python services in containers"] },
+    { "id": "python-async", "name": "Async & Concurrency in Python", "tag": "asyncio", "stack": "python", "blurb": "asyncio, threads vs processes, GIL, concurrency patterns",
+      "outline": ["asyncio event loop, coroutines, await", "asyncio.gather, tasks, timeouts, cancellation", "Blocking calls in async code and how to avoid them", "threading vs multiprocessing vs concurrent.futures", "The GIL and free-threaded Python", "Async database and HTTP clients", "Common async bugs"] },
+    { "id": "python-packaging", "name": "Python Packaging & Tooling", "tag": "pip", "stack": "python", "blurb": "venv, pip, poetry/uv, pyproject, linting and testing tools",
+      "outline": ["Virtual environments and why they matter", "pip, requirements files, lock files; poetry and uv", "pyproject.toml and building packages", "Dependency conflicts and pinning", "Linting and formatting (ruff, black), type checking", "pytest structure, fixtures, parametrize, coverage"] }
+  ]
+}

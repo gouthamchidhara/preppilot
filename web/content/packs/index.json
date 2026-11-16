@@ -1,0 +1,525 @@
+{
+ "version": 1,
+ "packs": [
+  {
+   "id": "behavioral",
+   "name": "Behavioral",
+   "version": "45b89fbf30",
+   "bytes": 4441,
+   "topics": [
+    {
+     "id": "behavioral",
+     "name": "Behavioral & Your Story",
+     "blurb": "Intro, STAR stories, questions to ask, habits that cost offers"
+    }
+   ]
+  },
+  {
+   "id": "core-dev",
+   "name": "Developer fundamentals",
+   "version": "45e175614a",
+   "bytes": 94468,
+   "topics": [
+    {
+     "id": "dsa",
+     "name": "Data Structures & Algorithms",
+     "blurb": "Big-O, arrays, hashing, trees, graphs, DP, coding-round patterns",
+     "beta": true
+    },
+    {
+     "id": "system-design",
+     "name": "System Design",
+     "blurb": "Requirements, APIs, data, caching, queues, scaling and trade-offs",
+     "beta": true
+    },
+    {
+     "id": "api-design",
+     "name": "API Design",
+     "blurb": "REST, status codes, versioning, pagination, auth, gRPC and GraphQL",
+     "beta": true
+    },
+    {
+     "id": "sql",
+     "name": "SQL Essentials",
+     "blurb": "Joins, grouping, indexes, transactions and query tuning",
+     "beta": true
+    },
+    {
+     "id": "git",
+     "name": "Git & Collaboration",
+     "blurb": "Branching, merge vs rebase, conflicts, history recovery, code review",
+     "beta": true
+    },
+    {
+     "id": "testing",
+     "name": "Software Testing",
+     "blurb": "Unit, integration, E2E, mocks, TDD and test design",
+     "beta": true
+    },
+    {
+     "id": "oop-design-patterns",
+     "name": "OOP & Design Patterns",
+     "blurb": "SOLID, composition, common patterns and clean code",
+     "beta": true
+    },
+    {
+     "id": "concurrency",
+     "name": "Concurrency & Parallelism",
+     "blurb": "Threads, races, locks, async, deadlocks and thread safety",
+     "beta": true
+    },
+    {
+     "id": "web-fundamentals",
+     "name": "Web Fundamentals",
+     "blurb": "HTTP, cookies, sessions, CORS, auth flows, caching, TLS",
+     "beta": true
+    }
+   ]
+  },
+  {
+   "id": "data",
+   "name": "Data Engineering",
+   "version": "90f3f1b7ec",
+   "bytes": 83139,
+   "topics": [
+    {
+     "id": "sql-advanced",
+     "name": "Advanced SQL",
+     "blurb": "Window functions, CTEs, query tuning, analytics patterns",
+     "beta": true
+    },
+    {
+     "id": "data-modeling",
+     "name": "Data Modeling",
+     "blurb": "OLTP vs OLAP, dimensional modeling, SCDs, lakehouse",
+     "beta": true
+    },
+    {
+     "id": "etl-elt",
+     "name": "ETL / ELT Pipelines",
+     "blurb": "Batch design, incremental loads, idempotency, dbt",
+     "beta": true
+    },
+    {
+     "id": "spark",
+     "name": "Apache Spark",
+     "blurb": "Architecture, DataFrames, shuffles, partitioning, tuning",
+     "beta": true
+    },
+    {
+     "id": "airflow",
+     "name": "Orchestration (Airflow)",
+     "blurb": "DAGs, scheduling, retries, sensors, best practices",
+     "beta": true
+    },
+    {
+     "id": "streaming",
+     "name": "Streaming & Kafka",
+     "blurb": "Kafka, partitions, consumer groups, delivery semantics",
+     "beta": true
+    },
+    {
+     "id": "warehouses",
+     "name": "Cloud Warehouses & Lakehouses",
+     "blurb": "Snowflake, BigQuery, Databricks, Redshift: design and cost",
+     "beta": true
+    },
+    {
+     "id": "data-quality",
+     "name": "Data Quality & Governance",
+     "blurb": "Tests, observability, lineage, PII and governance",
+     "beta": true
+    }
+   ]
+  },
+  {
+   "id": "dotnet",
+   "name": ".NET",
+   "version": "9949175979",
+   "bytes": 41154,
+   "topics": [
+    {
+     "id": "csharp-core",
+     "name": "Core C#",
+     "blurb": "Types, LINQ, async/await, generics, records, nullability",
+     "beta": true
+    },
+    {
+     "id": "aspnet-core",
+     "name": "ASP.NET Core",
+     "blurb": "Middleware, DI, minimal APIs, config, auth, hosting",
+     "beta": true
+    },
+    {
+     "id": "efcore",
+     "name": "Entity Framework Core",
+     "blurb": "DbContext, tracking, migrations, loading, performance",
+     "beta": true
+    },
+    {
+     "id": "dotnet-runtime",
+     "name": ".NET Runtime & Performance",
+     "blurb": "CLR, GC, memory, threading, profiling",
+     "beta": true
+    }
+   ]
+  },
+  {
+   "id": "frontend",
+   "name": "Frontend",
+   "version": "351338dba4",
+   "bytes": 59968,
+   "topics": [
+    {
+     "id": "html-css",
+     "name": "HTML & CSS",
+     "blurb": "Semantics, box model, layout, responsive design",
+     "beta": true
+    },
+    {
+     "id": "react",
+     "name": "React",
+     "blurb": "Components, hooks, rendering, effects, performance",
+     "beta": true
+    },
+    {
+     "id": "angular",
+     "name": "Angular",
+     "blurb": "Components, DI, RxJS, change detection, signals",
+     "beta": true
+    },
+    {
+     "id": "browser-performance",
+     "name": "Browser & Web Performance",
+     "blurb": "Rendering pipeline, Core Web Vitals, bundles, caching",
+     "beta": true
+    },
+    {
+     "id": "accessibility",
+     "name": "Web Accessibility",
+     "blurb": "WCAG, semantics, keyboard, ARIA, testing",
+     "beta": true
+    },
+    {
+     "id": "state-management",
+     "name": "Frontend State Management",
+     "blurb": "Local vs global state, Redux, query caches",
+     "beta": true
+    }
+   ]
+  },
+  {
+   "id": "go",
+   "name": "Go",
+   "version": "81d1fe812f",
+   "bytes": 21576,
+   "topics": [
+    {
+     "id": "go-core",
+     "name": "Core Go",
+     "blurb": "Types, interfaces, errors, slices/maps, modules, testing",
+     "beta": true
+    },
+    {
+     "id": "go-concurrency",
+     "name": "Go Concurrency",
+     "blurb": "Goroutines, channels, select, context, sync",
+     "beta": true
+    }
+   ]
+  },
+  {
+   "id": "infra",
+   "name": "Infrastructure Engineering",
+   "version": "cbb2a36328",
+   "bytes": 178443,
+   "topics": [
+    {
+     "id": "linux",
+     "name": "Linux",
+     "blurb": "Boot, systemd, journalctl, df/du, memory, networking, performance"
+    },
+    {
+     "id": "scripting",
+     "name": "Scripting & Automation",
+     "blurb": "Bash, PowerShell, Python and jq for live exercises and fleet work"
+    },
+    {
+     "id": "windows",
+     "name": "Windows Server",
+     "blurb": "AD, Group Policy, DNS, PowerShell, event IDs"
+    },
+    {
+     "id": "network",
+     "name": "Networking",
+     "blurb": "OSI layers, subnets, DNS, TCP/UDP, firewalls"
+    },
+    {
+     "id": "lb",
+     "name": "Load Balancers & TLS",
+     "blurb": "VIPs, health checks, Nginx, certificates"
+    },
+    {
+     "id": "docker",
+     "name": "Docker",
+     "blurb": "Images, Dockerfiles, volumes, networks, debugging"
+    },
+    {
+     "id": "k8s",
+     "name": "Kubernetes",
+     "blurb": "Pods, deployments, services, ingress, troubleshooting"
+    },
+    {
+     "id": "cicd",
+     "name": "CI/CD & IaC",
+     "blurb": "Git, pipelines, Terraform, Ansible"
+    },
+    {
+     "id": "monitoring",
+     "name": "Monitoring",
+     "blurb": "Prometheus, Grafana, Dynatrace, alerting"
+    },
+    {
+     "id": "cloud",
+     "name": "Cloud (Azure/AWS)",
+     "blurb": "Governance, hub-spoke, private endpoints, SNAT, identity, HA, cost"
+    },
+    {
+     "id": "onboarding",
+     "name": "App Onboarding (End to End)",
+     "blurb": "Requirements, VM or container build, network, LB/TLS, monitoring, go-live, handover to the business"
+    },
+    {
+     "id": "troubleshoot",
+     "name": "Troubleshooting: Connectivity, Latency, Throughput",
+     "blurb": "A repeatable method, Linux/Windows tools, Azure Network Watcher, on-prem path"
+    },
+    {
+     "id": "virt",
+     "name": "VMware & Storage",
+     "blurb": "vSphere, snapshots, SAN/NAS, RAID, backups"
+    },
+    {
+     "id": "security",
+     "name": "Security & Change",
+     "blurb": "Hardening, vulnerabilities, change and incidents"
+    },
+    {
+     "id": "scenarios",
+     "name": "Senior Scenarios",
+     "blurb": "Design and 'what would you do' questions"
+    }
+   ]
+  },
+  {
+   "id": "java",
+   "name": "Java",
+   "version": "0563b611c3",
+   "bytes": 43639,
+   "topics": [
+    {
+     "id": "java-core",
+     "name": "Core Java",
+     "blurb": "Collections, generics, streams, records, exceptions, equals/hashCode",
+     "beta": true
+    },
+    {
+     "id": "jvm",
+     "name": "JVM Internals & Performance",
+     "blurb": "Memory, GC, class loading, profiling and tuning",
+     "beta": true
+    },
+    {
+     "id": "spring",
+     "name": "Spring & Spring Boot",
+     "blurb": "IoC, Boot auto-config, REST, data access, transactions, security",
+     "beta": true
+    },
+    {
+     "id": "java-build",
+     "name": "Maven & Gradle",
+     "blurb": "Builds, dependencies, versions, multi-module projects",
+     "beta": true
+    }
+   ]
+  },
+  {
+   "id": "ml",
+   "name": "Machine Learning & AI",
+   "version": "5e025fd1c5",
+   "bytes": 51452,
+   "topics": [
+    {
+     "id": "statistics",
+     "name": "Statistics & Probability",
+     "blurb": "Distributions, inference, A/B testing, regression basics",
+     "beta": true
+    },
+    {
+     "id": "ml-fundamentals",
+     "name": "ML Fundamentals",
+     "blurb": "Supervised/unsupervised, bias-variance, evaluation, features",
+     "beta": true
+    },
+    {
+     "id": "python-data",
+     "name": "Python for Data (pandas, NumPy)",
+     "blurb": "DataFrames, vectorization, joins, groupby, plotting",
+     "beta": true
+    },
+    {
+     "id": "ml-ops",
+     "name": "MLOps",
+     "blurb": "Training pipelines, model serving, monitoring, drift",
+     "beta": true
+    },
+    {
+     "id": "llm-apps",
+     "name": "LLM Applications",
+     "blurb": "Prompting, embeddings, RAG, agents, evaluation, safety",
+     "beta": true
+    }
+   ]
+  },
+  {
+   "id": "mobile",
+   "name": "Mobile",
+   "version": "712316a587",
+   "bytes": 42242,
+   "topics": [
+    {
+     "id": "ios-swift",
+     "name": "iOS & Swift",
+     "blurb": "Swift, SwiftUI/UIKit, concurrency, memory, app lifecycle",
+     "beta": true
+    },
+    {
+     "id": "android-kotlin",
+     "name": "Android & Kotlin",
+     "blurb": "Kotlin, Jetpack Compose, lifecycle, coroutines, architecture",
+     "beta": true
+    },
+    {
+     "id": "react-native",
+     "name": "React Native",
+     "blurb": "Architecture, navigation, native modules, performance",
+     "beta": true
+    },
+    {
+     "id": "flutter",
+     "name": "Flutter",
+     "blurb": "Dart, widgets, state management, rendering",
+     "beta": true
+    }
+   ]
+  },
+  {
+   "id": "node",
+   "name": "JavaScript & Node.js",
+   "version": "8f5e6931bf",
+   "bytes": 41717,
+   "topics": [
+    {
+     "id": "js-core",
+     "name": "Core JavaScript",
+     "blurb": "Scope, closures, this, prototypes, promises, event loop",
+     "beta": true
+    },
+    {
+     "id": "typescript",
+     "name": "TypeScript",
+     "blurb": "Types, generics, narrowing, utility types, config",
+     "beta": true
+    },
+    {
+     "id": "node-runtime",
+     "name": "Node.js Runtime",
+     "blurb": "Event loop, streams, workers, memory, performance",
+     "beta": true
+    },
+    {
+     "id": "express-nest",
+     "name": "Express & NestJS",
+     "blurb": "Routing, middleware, validation, auth, structure",
+     "beta": true
+    }
+   ]
+  },
+  {
+   "id": "python",
+   "name": "Python",
+   "version": "a4fb43a6ec",
+   "bytes": 41835,
+   "topics": [
+    {
+     "id": "python-core",
+     "name": "Core Python",
+     "blurb": "Data model, collections, comprehensions, generators, decorators, typing",
+     "beta": true
+    },
+    {
+     "id": "python-web",
+     "name": "Python Web (FastAPI, Django, Flask)",
+     "blurb": "Frameworks, ORM, validation, auth and deployment",
+     "beta": true
+    },
+    {
+     "id": "python-async",
+     "name": "Async & Concurrency in Python",
+     "blurb": "asyncio, threads vs processes, GIL, concurrency patterns",
+     "beta": true
+    },
+    {
+     "id": "python-packaging",
+     "name": "Python Packaging & Tooling",
+     "blurb": "venv, pip, poetry/uv, pyproject, linting and testing tools",
+     "beta": true
+    }
+   ]
+  },
+  {
+   "id": "quality",
+   "name": "Quality & Security",
+   "version": "7ea377987f",
+   "bytes": 62621,
+   "topics": [
+    {
+     "id": "test-strategy",
+     "name": "Test Strategy & QA Process",
+     "blurb": "Test plans, risk-based testing, defects, shift-left",
+     "beta": true
+    },
+    {
+     "id": "selenium-playwright",
+     "name": "UI Automation (Playwright, Selenium)",
+     "blurb": "Frameworks, locators, waits, flakiness, page objects",
+     "beta": true
+    },
+    {
+     "id": "api-testing",
+     "name": "API Testing",
+     "blurb": "REST testing, contracts, auth, tools",
+     "beta": true
+    },
+    {
+     "id": "performance-testing",
+     "name": "Performance Testing",
+     "blurb": "Load, stress, soak; tools, metrics, bottlenecks",
+     "beta": true
+    },
+    {
+     "id": "appsec",
+     "name": "Application Security (OWASP)",
+     "blurb": "OWASP Top 10, secure coding, auth, secrets, SAST/DAST",
+     "beta": true
+    },
+    {
+     "id": "threat-modeling",
+     "name": "Threat Modeling",
+     "blurb": "STRIDE, data flow diagrams, risk rating, mitigations",
+     "beta": true
+    }
+   ]
+  }
+ ]
+}

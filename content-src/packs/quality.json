@@ -1,0 +1,18 @@
+{
+  "id": "quality",
+  "name": "Quality & Security",
+  "topics": [
+    { "id": "test-strategy", "name": "Test Strategy & QA Process", "tag": "QA", "stack": "qa", "blurb": "Test plans, risk-based testing, defects, shift-left",
+      "outline": ["Test plan vs test strategy", "Risk-based testing and prioritization", "Test case design: equivalence partitioning, boundary values, decision tables", "Defect lifecycle and severity vs priority", "Shift-left and testing in CI", "Exploratory testing", "Metrics that matter and ones that don't"] },
+    { "id": "selenium-playwright", "name": "UI Automation (Playwright, Selenium)", "tag": "locator", "stack": "qa", "blurb": "Frameworks, locators, waits, flakiness, page objects",
+      "outline": ["Playwright vs Selenium vs Cypress", "Locator strategies and resilient selectors", "Auto-waiting vs explicit waits", "Page Object Model", "Flaky tests: causes and fixes", "Parallel runs, test data, CI integration", "Visual and cross-browser testing"] },
+    { "id": "api-testing", "name": "API Testing", "tag": "POST", "stack": "qa", "blurb": "REST testing, contracts, auth, tools",
+      "outline": ["What to test in an API: status, schema, headers, errors", "Postman/REST Assured/pytest+requests", "Auth flows in tests (tokens)", "Contract testing (Pact)", "Test data management and mocking dependencies", "Negative and security testing basics"] },
+    { "id": "performance-testing", "name": "Performance Testing", "tag": "k6", "stack": "qa", "blurb": "Load, stress, soak; tools, metrics, bottlenecks",
+      "outline": ["Load vs stress vs spike vs soak tests", "Defining goals: throughput, p95/p99 latency, error rate", "Tools: k6, JMeter, Gatling, Locust", "Realistic workload modeling", "Finding bottlenecks with APM", "Performance testing in CI"] },
+    { "id": "appsec", "name": "Application Security (OWASP)", "tag": "OWASP", "stack": "security", "blurb": "OWASP Top 10, secure coding, auth, secrets, SAST/DAST",
+      "outline": ["OWASP Top 10 with examples", "Injection and parameterized queries", "Broken access control, IDOR", "Authentication and session security", "Secrets management", "SAST, DAST, SCA in pipelines", "Secure code review checklist"] },
+    { "id": "threat-modeling", "name": "Threat Modeling", "tag": "STRIDE", "stack": "security", "blurb": "STRIDE, data flow diagrams, risk rating, mitigations",
+      "outline": ["What threat modeling is and when to do it", "Data flow diagrams and trust boundaries", "STRIDE categories with examples", "Risk rating (DREAD, CVSS, likelihood x impact)", "Mitigations and tracking them", "Threat modeling an example web app"] }
+  ]
+}

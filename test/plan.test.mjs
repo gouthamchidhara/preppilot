@@ -50,3 +50,25 @@ test('due cards respect level tiers and put missed cards first', () => {
   assert.ok(!cards.some(c => c.id === 'linux-0'));
   assert.equal(readiness(TOPICS, { level: 'senior' }, progress).known, 1);
 });
+
+test('catalog: topics outside the role are hidden; extras, custom and private topics count', async () => {
+  const { attachWeights, migrateProfile, effectiveRole } = await import('../web/js/plan.js');
+  const catalog = { roles: [{ id: 'backend-java', topics: { 'java-core': 3, dsa: 2 } }, { id: 'infra', topics: { linux: 3 } }] };
+  const raw = [{ id: 'linux', qa: [], concepts: [] }, { id: 'java-core', qa: [], concepts: [] }, { id: 'dsa', qa: [], concepts: [] }, { id: 'spark', qa: [], concepts: [] }];
+  const topics = attachWeights(raw, catalog);
+  const java = { roleId: 'backend-java' };
+  assert.deepEqual(rankTopics(topics, java).map(t => t.id), ['java-core', 'dsa']);
+  assert.deepEqual(rankTopics(topics, { ...java, extras: ['spark'] }).map(t => t.id), ['java-core', 'dsa', 'spark']);
+  assert.ok(rankTopics([...topics, { id: 'c-x', custom: true, qa: [], concepts: [] }], java).some(t => t.id === 'c-x'));
+  assert.equal(effectiveRole({ roleId: 'other', baseRoleId: 'backend-java' }), 'backend-java');
+  // Profiles saved before the catalog keep their infra role.
+  const old = migrateProfile({ role: 'sre', level: 'mid' });
+  assert.equal(old.roleId, 'sre');
+  assert.equal(old.role, undefined);
+});
+
+test('flashcards for an explicitly chosen topic work even when it is outside the role', () => {
+  const t = [{ id: 'spark', roles: {}, concepts: [], qa: [{ l: 1, q: 'q', a: 'a' }] }];
+  assert.equal(dueCards(t, { roleId: 'infra' }, {}, NOW).length, 0);
+  assert.equal(dueCards(t, { roleId: 'infra' }, {}, NOW, 20, { relevantOnly: false }).length, 1);
+});

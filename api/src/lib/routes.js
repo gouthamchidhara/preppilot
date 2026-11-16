@@ -13,4 +13,5 @@ export const ROUTES = {
   'POST realtime/end': h.handleRealtimeEnd,
   'POST billing/revenuecat': h.handleRevenueCatWebhook,
   'POST billing/refresh': h.handleBillingRefresh,
+  'POST telemetry/role': h.handleRoleTelemetry,
 };

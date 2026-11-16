@@ -1,0 +1,18 @@
+{
+  "id": "frontend",
+  "name": "Frontend",
+  "topics": [
+    { "id": "html-css", "name": "HTML & CSS", "tag": "<div>", "stack": "frontend", "blurb": "Semantics, box model, layout, responsive design",
+      "outline": ["Semantic HTML", "Box model, display, positioning", "Flexbox and Grid", "Specificity and the cascade", "Responsive design, media queries, mobile-first", "CSS custom properties and modern CSS", "Forms and native validation"] },
+    { "id": "react", "name": "React", "tag": "useState", "stack": "react", "blurb": "Components, hooks, rendering, effects, performance",
+      "outline": ["Components, props, state, one-way data flow", "Hooks rules; useState, useEffect, useRef, useMemo, useCallback", "Rendering and reconciliation, keys", "Effects pitfalls and dependency arrays", "Context vs props drilling", "Performance: memoization, code splitting, lazy loading", "Server components and Next.js basics", "Testing with React Testing Library"] },
+    { "id": "angular", "name": "Angular", "tag": "ng", "stack": "angular", "blurb": "Components, DI, RxJS, change detection, signals",
+      "outline": ["Components, templates, data binding", "Dependency injection and services", "RxJS observables, operators, subscriptions and leaks", "Change detection, OnPush, signals", "Routing, guards, lazy-loaded modules/standalone components", "Forms: reactive vs template-driven", "HttpClient and interceptors", "Testing with TestBed"] },
+    { "id": "browser-performance", "name": "Browser & Web Performance", "tag": "LCP", "stack": "frontend", "blurb": "Rendering pipeline, Core Web Vitals, bundles, caching",
+      "outline": ["Critical rendering path, reflow vs repaint", "Core Web Vitals: LCP, INP, CLS", "Bundle size, tree shaking, code splitting", "Images and fonts optimization", "Caching, CDNs, service workers", "Profiling with DevTools"] },
+    { "id": "accessibility", "name": "Web Accessibility", "tag": "a11y", "stack": "frontend", "blurb": "WCAG, semantics, keyboard, ARIA, testing",
+      "outline": ["WCAG principles (POUR) and levels", "Semantic elements before ARIA", "Keyboard navigation and focus management", "Color contrast and motion", "Screen reader testing", "Automated tools and their limits"] },
+    { "id": "state-management", "name": "Frontend State Management", "tag": "store", "stack": "frontend", "blurb": "Local vs global state, Redux, query caches",
+      "outline": ["Local vs shared vs server state", "Redux/Redux Toolkit principles", "Zustand/Context alternatives", "Server state with React Query/SWR", "Optimistic updates and cache invalidation", "Choosing a state approach for an app"] }
+  ]
+}

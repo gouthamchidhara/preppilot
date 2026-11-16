@@ -1,0 +1,14 @@
+{
+  "id": "java",
+  "name": "Java",
+  "topics": [
+    { "id": "java-core", "name": "Core Java", "tag": "Java 21", "stack": "java", "blurb": "Collections, generics, streams, records, exceptions, equals/hashCode",
+      "outline": ["JDK/JRE/JVM, Java 17/21 LTS features (records, sealed classes, pattern matching, text blocks, virtual threads)", "equals/hashCode contract, immutability, String pool", "Collections: List/Set/Map implementations and complexity; HashMap internals", "Generics, wildcards, type erasure", "Streams and lambdas, Optional", "Checked vs unchecked exceptions, try-with-resources", "Interfaces vs abstract classes, default methods", "Concurrency utilities: ExecutorService, CompletableFuture, ConcurrentHashMap, synchronized vs Lock"] },
+    { "id": "jvm", "name": "JVM Internals & Performance", "tag": "-Xmx", "stack": "java", "blurb": "Memory, GC, class loading, profiling and tuning",
+      "outline": ["Heap, stack, metaspace, memory areas", "Garbage collectors: G1, ZGC, Parallel; generational GC", "OutOfMemoryError types and diagnosis (heap dumps, jcmd, jmap)", "Thread dumps and high-CPU diagnosis (jstack, async-profiler)", "JIT compilation and warm-up", "Class loading and classpath problems", "Container awareness: -XX:MaxRAMPercentage, CPU limits", "Common JVM flags in production"] },
+    { "id": "spring", "name": "Spring & Spring Boot", "tag": "@Bean", "stack": "java", "blurb": "IoC, Boot auto-config, REST, data access, transactions, security",
+      "outline": ["Inversion of control, bean scopes, dependency injection styles", "Spring Boot auto-configuration, starters, profiles, externalized config", "Building REST APIs: @RestController, validation, exception handling", "Spring Data JPA, repositories, N+1 problem, lazy loading", "@Transactional: propagation, isolation, self-invocation pitfall", "Spring Security basics: filter chain, JWT/OAuth2 resource server", "Actuator, health checks, metrics with Micrometer", "Testing: @SpringBootTest, slices, MockMvc, Testcontainers"] },
+    { "id": "java-build", "name": "Maven & Gradle", "tag": "mvn", "stack": "java", "blurb": "Builds, dependencies, versions, multi-module projects",
+      "outline": ["Maven lifecycle and phases, pom structure", "Gradle tasks, Kotlin DSL basics", "Dependency scopes, transitive dependencies, conflicts and BOMs", "Multi-module builds", "Reproducible builds and artifact repositories", "Dependency vulnerability scanning"] }
+  ]
+}

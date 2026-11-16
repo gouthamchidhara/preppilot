@@ -1,0 +1,14 @@
+{
+  "id": "mobile",
+  "name": "Mobile",
+  "topics": [
+    { "id": "ios-swift", "name": "iOS & Swift", "tag": "SwiftUI", "stack": "ios", "blurb": "Swift, SwiftUI/UIKit, concurrency, memory, app lifecycle",
+      "outline": ["Value vs reference types, optionals, protocols", "ARC, retain cycles, weak/unowned", "SwiftUI state (State, Binding, Observable) vs UIKit", "Swift concurrency: async/await, actors, MainActor", "App lifecycle and background tasks", "Networking, Codable, persistence (Core Data/SwiftData)", "Testing and App Store release basics"] },
+    { "id": "android-kotlin", "name": "Android & Kotlin", "tag": "Compose", "stack": "android", "blurb": "Kotlin, Jetpack Compose, lifecycle, coroutines, architecture",
+      "outline": ["Kotlin null safety, data classes, extension functions", "Activity/fragment lifecycle and configuration changes", "Jetpack Compose state and recomposition", "Coroutines, Flow, scopes and dispatchers", "Architecture: MVVM, ViewModel, repository, Hilt", "Room, WorkManager", "Performance and ANRs"] },
+    { "id": "react-native", "name": "React Native", "tag": "Expo", "stack": "react-native", "blurb": "Architecture, navigation, native modules, performance",
+      "outline": ["How React Native renders: bridge vs new architecture (JSI, Fabric)", "Expo vs bare workflow", "Navigation", "Native modules and permissions", "List performance (FlatList) and re-renders", "OTA updates and app store releases"] },
+    { "id": "flutter", "name": "Flutter", "tag": "Widget", "stack": "flutter", "blurb": "Dart, widgets, state management, rendering",
+      "outline": ["Dart basics: null safety, async/await, isolates", "Stateless vs stateful widgets, build method", "Widget tree, element tree, render tree", "State management (Provider, Riverpod, Bloc)", "Platform channels", "Performance and jank"] }
+  ]
+}

@@ -1,7 +1,8 @@
 export function chatSystemPrompt({ profile, context, voice }) {
   return [
-    'You are PrepPilot, a blunt, practical interview coach for infrastructure, cloud, SRE, DevOps, networking and IT operations roles.',
-    'Answer accurately and concisely. Prefer commands, numbers and concrete steps over theory. If something depends on the platform or version, say so.',
+    'You are PrepPilot, a blunt, practical interview coach for software development, data and AI, infrastructure and cloud, and quality and security roles.',
+    'Tailor every answer to the user\'s target role, tech stack and level from their profile; use their language and frameworks in examples.',
+    'Answer accurately and concisely. Prefer code, commands, numbers and concrete steps over theory. If something depends on the version or platform, say so.',
     'Be honest: if the user\'s answer is weak, say what is missing and how an interviewer would probe it. Do not flatter.',
     'If you are not sure, say so instead of guessing. Never invent company-specific facts.',
     'When asked to quiz or mock-interview, ask one question at a time and grade the reply (strong / ok / weak) with the missing points.',
@@ -16,7 +17,7 @@ export function chatSystemPrompt({ profile, context, voice }) {
 export function generateSystemPrompt() {
   return [
     'You create interview-prep study cards. Output ONLY a JSON object with this shape:',
-    '{"concepts":[{"t":"title","what":"what it is (2-3 sentences)","why":"why interviewers ask","ex":"commands, config or a diagram as plain text with \\n newlines","tip":"one line to say in the interview"}],',
+    '{"concepts":[{"t":"title","what":"what it is (2-3 sentences)","why":"why interviewers ask","ex":"code, commands, config or a diagram as plain text with \\n newlines","tip":"one line to say in the interview"}],',
     ' "qa":[{"l":1,"q":"question","a":"model answer, 2-5 sentences"}]}',
     'l is difficulty: 1 core, 2 mid, 3 senior. Be technically accurate and current. No markdown inside values.',
   ].join('\n');

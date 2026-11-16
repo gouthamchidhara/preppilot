@@ -1,0 +1,14 @@
+{
+  "id": "node",
+  "name": "JavaScript & Node.js",
+  "topics": [
+    { "id": "js-core", "name": "Core JavaScript", "tag": "ES2024", "stack": "javascript", "blurb": "Scope, closures, this, prototypes, promises, event loop",
+      "outline": ["var/let/const, hoisting, temporal dead zone", "Closures and scope", "this binding rules, arrow functions", "Prototypes and classes", "Equality, type coercion, truthiness", "Promises, async/await, error handling", "The event loop: microtasks vs macrotasks", "Modules: ESM vs CommonJS", "Immutability and array methods (map/filter/reduce)"] },
+    { "id": "typescript", "name": "TypeScript", "tag": "tsc", "stack": "javascript", "blurb": "Types, generics, narrowing, utility types, config",
+      "outline": ["Structural typing", "interface vs type alias", "Union and intersection types, narrowing, discriminated unions", "Generics and constraints", "Utility types (Partial, Pick, Omit, Record, ReturnType)", "unknown vs any vs never", "strict mode and tsconfig essentials", "Typing APIs and runtime validation (zod)"] },
+    { "id": "node-runtime", "name": "Node.js Runtime", "tag": "node", "stack": "javascript", "blurb": "Event loop, streams, workers, memory, performance",
+      "outline": ["Node event loop phases and libuv thread pool", "Blocking the event loop and how to detect it", "Streams and back-pressure", "Worker threads vs cluster vs child processes", "Memory leaks and heap snapshots", "Error handling, unhandled rejections, graceful shutdown", "npm, package-lock, semver, supply-chain security", "Environment config and secrets"] },
+    { "id": "express-nest", "name": "Express & NestJS", "tag": "app.get", "stack": "javascript", "blurb": "Routing, middleware, validation, auth, structure",
+      "outline": ["Express middleware chain and error middleware", "Routing and request validation", "NestJS modules, controllers, providers, DI", "Authentication with JWT/passport", "Database access (Prisma/TypeORM) and N+1", "Testing APIs (supertest, Jest)", "Production concerns: logging, rate limiting, helmet, CORS"] }
+  ]
+}

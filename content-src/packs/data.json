@@ -1,0 +1,22 @@
+{
+  "id": "data",
+  "name": "Data Engineering",
+  "topics": [
+    { "id": "sql-advanced", "name": "Advanced SQL", "tag": "OVER()", "stack": "sql", "blurb": "Window functions, CTEs, query tuning, analytics patterns",
+      "outline": ["Window functions: partitions, frames, LAG/LEAD, running totals", "Recursive CTEs", "Top-N per group, deduplication, gaps and islands", "Pivoting and conditional aggregation", "Query plans, join algorithms (hash, merge, nested loop)", "Partition pruning and clustering in warehouses", "Slowly changing data in SQL (MERGE/upsert)"] },
+    { "id": "data-modeling", "name": "Data Modeling", "tag": "star schema", "stack": "data", "blurb": "OLTP vs OLAP, dimensional modeling, SCDs, lakehouse",
+      "outline": ["OLTP vs OLAP", "Normalization vs dimensional modeling", "Facts, dimensions, grain, star vs snowflake", "Slowly changing dimensions (types 1, 2)", "Data vault basics", "Medallion (bronze/silver/gold) architecture", "Modeling for analytics in dbt"] },
+    { "id": "etl-elt", "name": "ETL / ELT Pipelines", "tag": "dbt", "stack": "data", "blurb": "Batch design, incremental loads, idempotency, dbt",
+      "outline": ["ETL vs ELT and why ELT won in the cloud", "Full vs incremental loads, watermarks, CDC", "Idempotent and re-runnable pipelines, backfills", "Late-arriving data", "File formats: CSV, JSON, Parquet, Avro, Delta/Iceberg", "dbt models, tests, sources, incremental models", "Handling schema changes"] },
+    { "id": "spark", "name": "Apache Spark", "tag": "PySpark", "stack": "spark", "blurb": "Architecture, DataFrames, shuffles, partitioning, tuning",
+      "outline": ["Driver, executors, jobs, stages, tasks", "Lazy evaluation, transformations vs actions", "Narrow vs wide transformations, shuffles", "Partitioning, repartition vs coalesce, skew handling", "Joins: broadcast vs sort-merge", "Caching and persistence", "Spark UI for debugging", "Structured Streaming basics"] },
+    { "id": "airflow", "name": "Orchestration (Airflow)", "tag": "DAG", "stack": "airflow", "blurb": "DAGs, scheduling, retries, sensors, best practices",
+      "outline": ["DAGs, tasks, operators, dependencies", "Scheduling, data intervals, catchup and backfill", "Retries, SLAs, alerting", "XComs and passing data (and why not to pass big data)", "Sensors and deferrable operators", "Idempotent task design", "Alternatives: Dagster, Prefect, cloud-native orchestrators"] },
+    { "id": "streaming", "name": "Streaming & Kafka", "tag": "topic", "stack": "kafka", "blurb": "Kafka, partitions, consumer groups, delivery semantics",
+      "outline": ["Kafka topics, partitions, offsets, brokers, replication", "Producers: keys, ordering, acks, idempotent producer", "Consumer groups and rebalancing", "At-most-once, at-least-once, exactly-once", "Stream processing: windows, watermarks, state", "Schema registry and evolution", "Batch vs streaming trade-offs"] },
+    { "id": "warehouses", "name": "Cloud Warehouses & Lakehouses", "tag": "Snowflake", "stack": "warehouse", "blurb": "Snowflake, BigQuery, Databricks, Redshift: design and cost",
+      "outline": ["Warehouse vs lake vs lakehouse", "Separation of storage and compute", "Snowflake: virtual warehouses, micro-partitions, clustering", "BigQuery: slots, partitioning, clustering, pricing", "Databricks/Delta Lake: ACID tables, time travel, OPTIMIZE/Z-order", "Cost control and query optimization", "Access control and data sharing"] },
+    { "id": "data-quality", "name": "Data Quality & Governance", "tag": "expect", "stack": "data", "blurb": "Tests, observability, lineage, PII and governance",
+      "outline": ["Dimensions of data quality", "Testing data: dbt tests, Great Expectations", "Data observability: freshness, volume, schema, distribution", "Lineage and catalogs", "PII handling, masking, GDPR basics", "Data contracts", "Incident handling for bad data"] }
+  ]
+}

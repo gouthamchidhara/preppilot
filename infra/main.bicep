@@ -29,6 +29,11 @@ param transcribeModelName string = ''
 param transcribeModelVersion string = ''
 param transcribeCapacity int = 50
 
+@description('Model used offline by scripts/gen-pack.mjs to draft study content (not used by the app).')
+param draftModelName string = 'gpt-4.1'
+param draftModelVersion string = '2025-04-14'
+param draftCapacity int = 200
+
 @secure()
 @description('Optional beta access code required by the API. Empty = open.')
 param accessCode string = ''
@@ -83,7 +88,7 @@ resource tableService 'Microsoft.Storage/storageAccounts/tableServices@2023-05-0
   name: 'default'
 }
 
-resource tables 'Microsoft.Storage/storageAccounts/tableServices/tables@2023-05-01' = [for t in [ 'ppusers', 'ppdaily', 'ppcalls' ]: {
+resource tables 'Microsoft.Storage/storageAccounts/tableServices/tables@2023-05-01' = [for t in [ 'ppusers', 'ppdaily', 'ppcalls', 'pproles' ]: {
   parent: tableService
   name: t
 }]
@@ -136,6 +141,17 @@ resource transcribe 'Microsoft.CognitiveServices/accounts/deployments@2024-10-01
     versionUpgradeOption: 'OnceNewDefaultVersionAvailable'
   }
   dependsOn: [ model, realtime ]
+}
+
+resource draft 'Microsoft.CognitiveServices/accounts/deployments@2024-10-01' = if (!empty(draftModelName)) {
+  parent: aoai
+  name: empty(draftModelName) ? 'none-draft' : draftModelName
+  sku: { name: 'GlobalStandard', capacity: draftCapacity }
+  properties: {
+    model: { format: 'OpenAI', name: draftModelName, version: draftModelVersion }
+    versionUpgradeOption: 'OnceNewDefaultVersionAvailable'
+  }
+  dependsOn: [ model, realtime, transcribe ]
 }
 
 resource swa 'Microsoft.Web/staticSites@2023-12-01' = {

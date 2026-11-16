@@ -1,0 +1,14 @@
+{
+  "id": "dotnet",
+  "name": ".NET",
+  "topics": [
+    { "id": "csharp-core", "name": "Core C#", "tag": "C# 12", "stack": "dotnet", "blurb": "Types, LINQ, async/await, generics, records, nullability",
+      "outline": ["Value vs reference types, boxing, structs vs classes, records", "Generics and constraints", "LINQ: deferred execution, IEnumerable vs IQueryable", "async/await, Task vs ValueTask, ConfigureAwait, deadlocks", "Delegates, events, lambdas", "Nullable reference types", "Exceptions and using/IDisposable", "Modern C# features (pattern matching, primary constructors, collection expressions)"] },
+    { "id": "aspnet-core", "name": "ASP.NET Core", "tag": "Kestrel", "stack": "dotnet", "blurb": "Middleware, DI, minimal APIs, config, auth, hosting",
+      "outline": ["Request pipeline and middleware order", "Built-in DI: transient, scoped, singleton and captive dependencies", "Minimal APIs vs controllers", "Configuration and options pattern, environments", "Authentication/authorization: JWT bearer, policies", "Model binding and validation", "Health checks, logging, OpenTelemetry", "Hosting: Kestrel, reverse proxies, containers"] },
+    { "id": "efcore", "name": "Entity Framework Core", "tag": "DbContext", "stack": "dotnet", "blurb": "DbContext, tracking, migrations, loading, performance",
+      "outline": ["DbContext lifetime and unit of work", "Change tracking vs AsNoTracking", "Migrations workflow", "Eager, lazy and explicit loading; N+1", "Raw SQL and compiled queries", "Concurrency tokens", "Performance pitfalls and diagnosis"] },
+    { "id": "dotnet-runtime", "name": ".NET Runtime & Performance", "tag": "GC", "stack": "dotnet", "blurb": "CLR, GC, memory, threading, profiling",
+      "outline": [".NET vs .NET Framework, LTS releases", "CLR, JIT, tiered compilation, AOT", "Garbage collection generations, LOH, server vs workstation GC", "Span<T>, Memory<T> and allocation reduction", "Thread pool starvation and diagnosis", "dotnet-counters, dotnet-trace, dotnet-dump"] }
+  ]
+}

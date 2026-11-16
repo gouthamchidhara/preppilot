@@ -1,13 +1,6 @@
 // Personalization and spaced repetition. Pure functions: no DOM, no storage.
-
-export const ROLES = [
-  { id: 'infra', name: 'Infrastructure / Systems engineer' },
-  { id: 'sre', name: 'SRE / Production engineering' },
-  { id: 'cloud', name: 'Cloud engineer / architect' },
-  { id: 'devops', name: 'DevOps / Platform engineer' },
-  { id: 'network', name: 'Network engineer' },
-  { id: 'support', name: 'IT support / Operations' },
-];
+// Topic relevance comes from the role catalog (web/content/roles.json): attachWeights() copies each role's
+// weight onto topic.roles at load time, so scoring stays a pure function of (topic, profile).
 
 export const LEVELS = [
   { id: 'junior', name: 'Entry / 0-3 years', tiers: [1, 2] },
@@ -21,10 +14,39 @@ export function tiersFor(level) {
   return (LEVELS.find(l => l.id === level) || LEVELS[1]).tiers;
 }
 
+// Role used for scoring. "Other" roles borrow the closest listed role.
+export function effectiveRole(profile) {
+  const id = profile?.roleId || profile?.role || 'infra';
+  return id === 'other' ? (profile?.baseRoleId || 'infra') : id;
+}
+
+// Profiles saved before the role catalog used `role`; the infra role IDs are unchanged.
+export function migrateProfile(p) {
+  if (!p) return p;
+  const out = { ...p };
+  if (!out.roleId) out.roleId = out.role || 'infra';
+  delete out.role;
+  out.extras ||= [];
+  return out;
+}
+
+export function attachWeights(topics, catalog) {
+  const byTopic = {};
+  for (const r of catalog?.roles || []) for (const [id, w] of Object.entries(r.topics || {})) (byTopic[id] ||= {})[r.id] = w;
+  return topics.map(t => ({ ...t, roles: byTopic[t.id] || {} }));
+}
+
+export function topicWeight(topic, profile) {
+  if (topic.custom || topic.private) return 2; // the user's own content always counts
+  const w = topic.roles?.[effectiveRole(profile)] ?? 0;
+  return profile?.extras?.includes(topic.id) ? Math.max(w, 2) : w;
+}
+
 // Higher score = study earlier. Role relevance dominates; self-rated weak topics move up, strong ones down.
+// Score 0 = not relevant for this role (hidden from the plan, still browsable).
 export function scoreTopic(topic, profile) {
-  const role = profile?.role || 'infra';
-  const weight = topic.roles?.[role] ?? 2;
+  const weight = topicWeight(topic, profile);
+  if (!weight) return 0;
   let score = weight * 10;
   if (profile?.weak?.includes(topic.id)) score += 12;
   if (profile?.strong?.includes(topic.id)) score -= 8;
@@ -36,6 +58,7 @@ export function scoreTopic(topic, profile) {
 export function rankTopics(topics, profile) {
   return topics
     .map((t, i) => ({ topic: t, score: scoreTopic(t, profile), i }))
+    .filter(x => x.score > 0)
     .sort((a, b) => b.score - a.score || a.i - b.i)
     .map(x => ({ ...x.topic, score: x.score }));
 }
@@ -98,9 +121,10 @@ export function isKnown(state) {
 }
 
 // Cards the user should see now: due cards for their level, weakest topics first, capped.
-export function dueCards(topics, profile, progress, now = Date.now(), limit = 20) {
+// relevantOnly=false when the user explicitly picked topics (e.g. browsing a topic outside their role).
+export function dueCards(topics, profile, progress, now = Date.now(), limit = 20, { relevantOnly = true } = {}) {
   const tiers = tiersFor(profile?.level);
-  const ranked = rankTopics(topics, profile);
+  const ranked = relevantOnly ? rankTopics(topics, profile) : topics;
   const out = [];
   for (const t of ranked) {
     t.qa.forEach((q, i) => {
@@ -124,15 +148,18 @@ export function readiness(topics, profile, progress) {
   return { known: k, total: n, pct: n ? Math.round((k * 100) / n) : 0 };
 }
 
-export function profileSummary(profile) {
+// roleName/topicName come from the catalog and loaded packs (kept out of this pure module).
+export function profileSummary(profile, { roleName = id => id, topicName = id => id } = {}) {
   if (!profile) return 'No profile.';
-  const role = ROLES.find(r => r.id === profile.role)?.name || profile.role;
-  const level = LEVELS.find(l => l.id === profile.level)?.name || profile.level;
+  const p = migrateProfile(profile);
+  const role = p.roleId === 'other' ? `${p.otherRole || 'Other'} (closest listed role: ${roleName(p.baseRoleId)})` : roleName(p.roleId);
+  const level = LEVELS.find(l => l.id === p.level)?.name || p.level;
   const parts = [`Target role: ${role}.`, `Level: ${level}.`];
-  if (profile.background) parts.push(`Background: ${profile.background}`);
-  if (profile.goal) parts.push(`Goal: ${profile.goal}`);
-  if (profile.strong?.length) parts.push(`Self-rated strong: ${profile.strong.join(', ')}.`);
-  if (profile.weak?.length) parts.push(`Self-rated weak: ${profile.weak.join(', ')}.`);
-  if (profile.interviewDate) parts.push(`Interview date: ${profile.interviewDate}.`);
+  if (p.extras?.length) parts.push(`Also uses: ${p.extras.map(topicName).join(', ')}.`);
+  if (p.background) parts.push(`Background: ${p.background}`);
+  if (p.goal) parts.push(`Goal: ${p.goal}`);
+  if (p.strong?.length) parts.push(`Self-rated strong: ${p.strong.map(topicName).join(', ')}.`);
+  if (p.weak?.length) parts.push(`Self-rated weak: ${p.weak.map(topicName).join(', ')}.`);
+  if (p.interviewDate) parts.push(`Interview date: ${p.interviewDate}.`);
   return parts.join(' ');
 }

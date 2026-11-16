@@ -1,0 +1,10 @@
+{
+  "id": "go",
+  "name": "Go",
+  "topics": [
+    { "id": "go-core", "name": "Core Go", "tag": "go1.23", "stack": "go", "blurb": "Types, interfaces, errors, slices/maps, modules, testing",
+      "outline": ["Structs, methods, value vs pointer receivers", "Interfaces and implicit implementation", "Slices vs arrays, capacity and append gotchas, maps", "Error handling, wrapping, errors.Is/As", "Generics", "Packages and modules", "defer, panic, recover", "Testing, table-driven tests, benchmarks"] },
+    { "id": "go-concurrency", "name": "Go Concurrency", "tag": "goroutine", "stack": "go", "blurb": "Goroutines, channels, select, context, sync",
+      "outline": ["Goroutines and the scheduler", "Buffered vs unbuffered channels", "select, timeouts, fan-in/fan-out, worker pools", "context for cancellation and deadlines", "sync.Mutex, WaitGroup, Once, atomic", "Goroutine leaks and the race detector", "net/http server patterns and graceful shutdown"] }
+  ]
+}

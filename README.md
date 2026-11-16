@@ -1,6 +1,7 @@
 # PrepPilot
 
-Personalized interview prep for infrastructure, cloud, SRE, DevOps, networking and IT-ops roles.
+Personalized interview prep for software developers (Java, Python, .NET, Node, Go, frontend, mobile), data and AI,
+infrastructure/cloud/SRE/DevOps, QA and security roles: 23 roles, 72 topics.
 Users set a short profile (target role, level, background, self-rated strengths/weaknesses, interview date) and get:
 
 - **A day-by-day plan** ordered by role relevance and their weak spots, ending with mock-interview days.
@@ -79,7 +80,11 @@ CI: `.github/workflows/deploy.yml` runs tests on every push and deploys if the r
 
 ## Content
 
-`web/content/packs/infra.json` is generated from the source study guide:
+Role catalog: `web/content/roles.json` (which topics each role needs, weight 1-3). Packs: `web/content/packs/*.json`, loaded on demand.
+To add a pack: write an outline in `content-src/packs/<pack>.json`, run `npm run content:gen -- <pack>` (gpt-4.1, publishes as beta),
+add the topics to roles in `roles.json`, then `npm run content:validate` and `npm run content:lock`. See `docs/PLAN-MULTI-ROLE.md`.
+
+`web/content/packs/infra.json` and `behavioral.json` are generated from the source study guide:
 
 ```powershell
 npm run content -- "C:\path\to\Infra Interview Prep.html"

@@ -1,0 +1,16 @@
+{
+  "id": "ml",
+  "name": "Machine Learning & AI",
+  "topics": [
+    { "id": "statistics", "name": "Statistics & Probability", "tag": "p < 0.05", "stack": "ml", "blurb": "Distributions, inference, A/B testing, regression basics",
+      "outline": ["Descriptive statistics, distributions (normal, binomial, Poisson)", "Probability rules, conditional probability, Bayes theorem", "Sampling, central limit theorem, confidence intervals", "Hypothesis testing, p-values, type I/II errors, power", "A/B test design and pitfalls (peeking, multiple comparisons)", "Correlation vs causation", "Linear and logistic regression interpretation"] },
+    { "id": "ml-fundamentals", "name": "ML Fundamentals", "tag": "fit()", "stack": "ml", "blurb": "Supervised/unsupervised, bias-variance, evaluation, features",
+      "outline": ["Supervised vs unsupervised vs reinforcement learning", "Bias-variance trade-off, over/underfitting, regularization", "Train/validation/test splits, cross-validation, leakage", "Metrics: accuracy, precision, recall, F1, ROC-AUC, RMSE", "Class imbalance", "Trees, random forests, gradient boosting", "Feature engineering and scaling", "Neural network basics"] },
+    { "id": "python-data", "name": "Python for Data (pandas, NumPy)", "tag": "pandas", "stack": "python", "blurb": "DataFrames, vectorization, joins, groupby, plotting",
+      "outline": ["NumPy arrays and vectorization", "pandas Series/DataFrame, indexing (loc/iloc)", "groupby, aggregation, pivot tables", "merge/join and their pitfalls", "Missing data", "Performance: avoid apply loops, dtypes, polars", "Plotting basics and notebooks hygiene"] },
+    { "id": "ml-ops", "name": "MLOps", "tag": "model v2", "stack": "ml", "blurb": "Training pipelines, model serving, monitoring, drift",
+      "outline": ["ML lifecycle and where MLOps fits", "Experiment tracking and model registry (MLflow)", "Feature stores", "Batch vs online serving, latency", "CI/CD for models, reproducibility", "Monitoring: data drift, concept drift, performance decay", "A/B and shadow deployments for models"] },
+    { "id": "llm-apps", "name": "LLM Applications", "tag": "RAG", "stack": "ml", "blurb": "Prompting, embeddings, RAG, agents, evaluation, safety",
+      "outline": ["How LLMs work at a high level: tokens, context window, temperature", "Prompt design and structured outputs", "Embeddings and vector search", "RAG: chunking, retrieval, reranking, grounding", "Tool calling and agents", "Evaluation: offline evals, LLM-as-judge, hallucination checks", "Cost and latency optimization", "Safety: prompt injection, PII, content filters"] }
+  ]
+}

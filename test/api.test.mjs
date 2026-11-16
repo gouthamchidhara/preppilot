@@ -176,3 +176,14 @@ test('listening mode never auto-replies; talking mode replies fast and allows ba
   assert.equal(talk.audio.input.turn_detection.interrupt_response, true);
   delete process.env.AZURE_OPENAI_REALTIME_DEPLOYMENT; delete process.env.AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT;
 });
+
+test('unlisted-role telemetry stores only a normalized role name and is rate limited', async () => {
+  const h = { 'x-client-id': 'tele-client-0001' };
+  assert.equal((await call('POST telemetry/role', { role: ' x' }, h)).status, 400);
+  assert.equal((await call('POST telemetry/role', { role: 'Salesforce <b>Developer</b>!!' }, h)).status, 200);
+  const { getDb } = await import('../api/src/lib/db.js');
+  const rows = await (await getDb()).list('roles');
+  assert.deepEqual(rows.map(r => [r.role, r.count]), [['salesforce developer', 1]]);
+  for (let i = 0; i < 4; i++) await call('POST telemetry/role', { role: 'sap basis' }, h);
+  assert.equal((await call('POST telemetry/role', { role: 'sap basis' }, h)).status, 429);
+});

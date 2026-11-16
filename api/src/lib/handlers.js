@@ -8,6 +8,8 @@ import { identify, verifyIdToken, signSession } from './auth.js';
 import { upsertUser, status, consumeMsgs, refundMsgs, reserveVoice, refundVoice, recordCall, endCall, sweepCalls, deleteUser } from './account.js';
 import { COST, limits } from './plans.js';
 import { webhookAuthorized, applyWebhook, refreshFromRevenueCat } from './billing.js';
+import { getDb } from './db.js';
+import { createHash } from 'node:crypto';
 
 const json = (status, body, headers = {}) => ({ status, body, headers });
 const denied = r => json(r.status, { error: r.message, code: r.code });
@@ -156,6 +158,19 @@ export async function handleBillingRefresh(req, log) {
     const r = await refreshFromRevenueCat(w.ident.key);
     return json(200, { ...r, account: await status(w.ident) });
   } catch (e) { return fail(e, log); }
+}
+
+/* ---------- telemetry ---------- */
+// Anonymous count of roles users typed under "Other / not listed". No account, IP or free text beyond the role.
+export async function handleRoleTelemetry(req) {
+  const role = String(req.body?.role || '').replace(/<[^>]*>/g, ' ').toLowerCase().replace(/[^a-z0-9 +#./-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 60);
+  if (role.length < 2) return json(400, { error: 'role required' });
+  const client = req.headers['x-client-id'];
+  const key = typeof client === 'string' && /^[a-zA-Z0-9-]{8,64}$/.test(client) ? client : 'anon';
+  if (!rateLimit('telemetry', key).ok) return json(429, { error: 'Too many requests.' });
+  const rowKey = createHash('sha1').update(role).digest('hex').slice(0, 20);
+  await (await getDb()).update('roles', rowKey, r => ({ role, count: (r?.count || 0) + 1, last: new Date().toISOString().slice(0, 10) }));
+  return json(200, { ok: true });
 }
 
 export function handleHealth() {

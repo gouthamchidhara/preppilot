@@ -33,24 +33,7 @@ const REWRITES = SAN.rewrites || [];
 const LEAK = new RegExp(SAN.leak, 'i');
 const LEAK_CASED = SAN.leakCased ? new RegExp(SAN.leakCased) : /$^/;
 
-const ROLE_WEIGHTS = {
-  linux:        { infra: 3, sre: 3, cloud: 2, devops: 2, network: 1, support: 2 },
-  scripting:    { infra: 2, sre: 3, cloud: 2, devops: 3, network: 1, support: 1 },
-  windows:      { infra: 3, sre: 1, cloud: 1, devops: 1, network: 1, support: 3 },
-  network:      { infra: 3, sre: 2, cloud: 2, devops: 1, network: 3, support: 2 },
-  lb:           { infra: 3, sre: 2, cloud: 2, devops: 1, network: 3, support: 1 },
-  docker:       { infra: 2, sre: 3, cloud: 2, devops: 3, network: 1, support: 1 },
-  k8s:          { infra: 2, sre: 3, cloud: 3, devops: 3, network: 1, support: 1 },
-  cicd:         { infra: 2, sre: 2, cloud: 2, devops: 3, network: 1, support: 1 },
-  monitoring:   { infra: 2, sre: 3, cloud: 2, devops: 2, network: 2, support: 2 },
-  cloud:        { infra: 2, sre: 2, cloud: 3, devops: 2, network: 2, support: 1 },
-  onboarding:   { infra: 3, sre: 2, cloud: 3, devops: 2, network: 2, support: 2 },
-  troubleshoot: { infra: 3, sre: 3, cloud: 3, devops: 2, network: 3, support: 3 },
-  virt:         { infra: 3, sre: 1, cloud: 1, devops: 1, network: 1, support: 2 },
-  security:     { infra: 2, sre: 2, cloud: 2, devops: 2, network: 2, support: 2 },
-  scenarios:    { infra: 2, sre: 2, cloud: 2, devops: 2, network: 2, support: 1 },
-  behavioral:   { infra: 2, sre: 2, cloud: 2, devops: 2, network: 2, support: 2 },
-};
+// Role relevance lives in web/content/roles.json (hand-maintained), not on topics.
 
 const BEHAVIORAL = {
   id: 'behavioral', name: 'Behavioral & Your Story', tag: 'STAR', blurb: 'Intro, STAR stories, questions to ask, habits that cost offers',
@@ -58,7 +41,7 @@ const BEHAVIORAL = {
     { t: 'Your 60-second intro', what: 'Answer to "Tell me about yourself": present role and years, two things you own today with one number each, one past role in a sentence, what you want next.', why: 'First question in every interview; it sets the frame for everything after.', ex: '"I\'m a [role] with [N] years in [areas].\nToday I own [thing 1, with a number] and [thing 2, with a number].\nBefore that I [one line].\nI\'m looking for a role where I can [what this job offers]."', tip: 'Rewrite the last sentence for each job posting. Practice until it\'s 55-65 seconds without notes.' },
     { t: 'STAR stories', what: 'Situation, Task, Action, Result. Prepare five stories of about 90 seconds. Say "I" for your part.', why: 'Most behavioral questions can be answered with one of five good stories.', ex: '1. Something you automated (with time saved)\n2. A project you delivered end to end\n3. A production incident you handled\n4. A disagreement you resolved with data\n5. Something you learned fast\n\nEach: situation (1 line), task (1 line), actions (3-4 lines, "I"), result (a number)', tip: 'Numbers make stories believable: hours saved, machines, % fewer tickets, minutes of downtime.' },
     { t: 'When the honest answer is "only a little"', what: 'Say what you have done, what you have not, and how you would approach it.', why: 'Bluffing gets caught on the second follow-up; a clear honest answer scores well.', ex: '"I\'ve worked alongside it: [specific thing].\nI haven\'t owned it end to end, but here\'s how I\'d approach it: [two sentences]."', tip: 'Interviewers hire people who know their limits and can reason past them.' },
-    { t: 'Questions to ask them', what: 'Have three ready that show you are thinking about the actual job.', why: '"Any questions for us?" always comes, and "no" is a weak ending.', ex: 'What does on-call look like, and how often does it page?\nHow much is automated vs manual today?\nWhat\'s the biggest infrastructure problem you want solved this year?\nHow are changes approved?', tip: 'Leave salary and benefits questions until there is an offer.' },
+    { t: 'Questions to ask them', what: 'Have three ready that show you are thinking about the actual job.', why: '"Any questions for us?" always comes, and "no" is a weak ending.', ex: 'What does on-call look like, and how often does it page?\nHow much is automated vs manual today?\nWhat\'s the biggest technical problem you want solved this year?\nHow are changes approved?', tip: 'Leave salary and benefits questions until there is an offer.' },
     { t: 'Habits that cost offers', what: 'Patterns that make strong people look weak.', why: 'Easy to fix once you hear them in a recording.', ex: '"We" for everything        -> "I" for your part\nTool lists with no context  -> what you did with one tool\nNo numbers                  -> add one per story\nBlaming other teams         -> describe the fix, not the fault\nRambling past 2 minutes     -> stop and offer more detail', tip: 'Record one answer per day on your phone and listen back.' },
   ],
   qa: [
@@ -80,9 +63,7 @@ function rewriteAll(obj) {
 }
 
 const publicTopics = TOPICS.filter(t => !PERSONAL.has(t.id)).map(rewriteAll);
-publicTopics.push(BEHAVIORAL);
-for (const t of publicTopics) {
-  t.roles = ROLE_WEIGHTS[t.id] || { infra: 2, sre: 2, cloud: 2, devops: 2, network: 2, support: 2 };
+for (const t of [...publicTopics, BEHAVIORAL]) {
   const m = JSON.stringify(t).match(LEAK) || JSON.stringify(t).match(LEAK_CASED);
   if (m) throw new Error(`Personal reference "${m[0]}" left in public topic "${t.id}". Add a rewrite.`);
 }
@@ -93,6 +74,7 @@ const personal = { id: 'personal', name: 'My personal pack', version: 1, private
 mkdirSync(resolve(root, 'web/content/packs'), { recursive: true });
 mkdirSync(resolve(root, 'private/packs'), { recursive: true });
 writeFileSync(resolve(root, 'web/content/packs/infra.json'), JSON.stringify(pub));
+writeFileSync(resolve(root, 'web/content/packs/behavioral.json'), JSON.stringify({ id: 'behavioral', name: 'Behavioral', version: 1, topics: [BEHAVIORAL] }));
 writeFileSync(resolve(root, 'private/packs/personal.json'), JSON.stringify(personal, null, 1));
 
 const count = p => p.topics.reduce((a, t) => [a[0] + t.concepts.length, a[1] + t.qa.length], [0, 0]);
