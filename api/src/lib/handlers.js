@@ -5,7 +5,7 @@ import { rateLimit, validateChat, validateGenerate, sanitizeGenerated } from './
 import { chatSystemPrompt, generateSystemPrompt, generateUserPrompt } from './prompts.js';
 import { realtimeConfigured, validateRealtime, startRealtime, hangupCall } from './realtime.js';
 import { identify, verifyIdToken, signSession } from './auth.js';
-import { upsertUser, status, consumeMsgs, refundMsgs, reserveVoice, refundVoice, recordCall, endCall, sweepCalls } from './account.js';
+import { upsertUser, status, consumeMsgs, refundMsgs, reserveVoice, refundVoice, recordCall, endCall, sweepCalls, deleteUser } from './account.js';
 import { COST, limits } from './plans.js';
 import { webhookAuthorized, applyWebhook, refreshFromRevenueCat } from './billing.js';
 
@@ -129,6 +129,14 @@ export async function handleRealtimeEnd(req) {
   if (typeof id !== 'string' || !/^[\w-]{3,128}$/.test(id)) return json(400, { error: 'callId required' });
   const ended = await endCall(id, { key: w.ident.key, hangup: hangupCall });
   return json(200, { ended: !!ended, usedSec: ended?.usedSec ?? null, account: await status(w.ident) });
+}
+
+export async function handleDeleteAccount(req) {
+  const w = who(req);
+  if (w.error) return w.error;
+  if (w.ident.viaCode) return json(400, { error: 'Beta-code sessions have no account to delete.' });
+  await deleteUser(w.ident.key);
+  return json(200, { deleted: true });
 }
 
 export async function handleSweep() {

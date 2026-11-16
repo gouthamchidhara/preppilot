@@ -131,6 +131,19 @@ test('voice is refused once free minutes are gone', async () => {
   assert.equal(r.status, 402);
 });
 
+test('users can delete their account; re-signing up does not reset the free trial', async () => {
+  process.env.FREE_MSGS = '2';
+  const h = await signIn('gone@gmail.com', 'gone');
+  assert.equal((await ask(h)).status, 200);
+  assert.equal((await call('POST me/delete', {}, h)).status, 200);
+  assert.equal((await call('GET me', null, h)).status, 401);
+  assert.equal((await ask(h)).status, 401);
+  const h2 = await signIn('gone@gmail.com', 'gone');
+  const me = (await call('GET me', null, h2)).body;
+  assert.equal(me.msgsLeft, 1);
+  assert.equal(me.email, 'gone@gmail.com');
+});
+
 test('per-user rate limit', () => {
   for (let i = 0; i < 1000; i++) assert.ok(rateLimit('voice', 'u1').ok);
   assert.equal(rateLimit('voice', 'u1').ok, false);

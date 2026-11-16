@@ -10,7 +10,9 @@ const err = (status, code, message) => ({ ok: false, status, code, message });
 export async function upsertUser(ident, now = Date.now()) {
   const db = await getDb();
   return db.update('users', ident.key, u => {
-    const user = u || { key: ident.key, provider: ident.provider, createdAt: now, free: { msgs: 0, voiceSec: 0 }, pro: { periodStart: now, msgs: 0, voiceSec: 0 } };
+    const fresh = { key: ident.key, provider: ident.provider, createdAt: now, free: { msgs: 0, voiceSec: 0 }, pro: { periodStart: now, msgs: 0, voiceSec: 0 } };
+    // A deleted account keeps only anonymous free-trial counters, so re-signing up doesn't reset the trial.
+    const user = !u ? fresh : u.deleted ? { ...fresh, free: u.free || fresh.free } : u;
     if (ident.email) user.email = ident.email;
     if (ident.name && !user.name) user.name = ident.name;
     user.lastLogin = now;
@@ -18,10 +20,16 @@ export async function upsertUser(ident, now = Date.now()) {
   });
 }
 
+// Account deletion: drop personal data; keep only the sign-in ID and free-trial usage.
+export async function deleteUser(key, now = Date.now()) {
+  await (await getDb()).update('users', key, u => (u ? { key, deleted: true, deletedAt: now, free: u.free || { msgs: 0, voiceSec: 0 } } : undefined));
+}
+
 export async function loadUser(ident) {
   if (ident?.viaCode) return { key: ident.key, admin: true };
   if (!ident) return null;
-  return (await getDb()).get('users', ident.key);
+  const u = await (await getDb()).get('users', ident.key);
+  return u && !u.deleted ? u : null;
 }
 
 export async function status(ident, now = Date.now()) {

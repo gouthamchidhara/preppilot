@@ -153,7 +153,7 @@ function accountCard() {
   if (!signedIn()) {
     const offer = P ? `Free trial: ${P.free.msgs} AI messages + ${P.free.voiceMin} voice minutes. Pro: ${P.pro.price} for ${P.pro.msgs} messages + ${P.pro.voiceMin} voice minutes a month.` : '';
     const buttons = native()
-      ? '<div class="row"><button class="btn primary" data-act="nsignin" data-p="apple"> Sign in with Apple</button><button class="btn" data-act="nsignin" data-p="google">Continue with Google</button></div>'
+      ? `<div class="row">${window.PP_PLATFORM === 'ios' ? '<button class="btn primary" data-act="nsignin" data-p="apple"> Sign in with Apple</button>' : ''}<button class="btn ${window.PP_PLATFORM === 'ios' ? '' : 'primary'}" data-act="nsignin" data-p="google">Continue with Google</button></div>`
       : (S.googleClientId ? '<div id="gbtn"></div>' : '<p class="muted small">Sign-in is being set up. Check back soon.</p>');
     return `<section class="card stack" id="accountCard">
       <h3>Sign in to use the AI coach</h3>
@@ -168,13 +168,17 @@ function accountCard() {
   const usage = a.unlimited ? 'Unlimited AI (admin)'
     : `${a.msgsLeft} of ${a.limits.msgs} messages · ${mins(a.voiceSecLeft)} of ${mins(a.limits.voiceSec)} voice min left${a.plan === 'pro' && a.periodEnds ? ` · resets ${new Date(a.periodEnds).toLocaleDateString()}` : ''}`;
   const upgrade = a.plan !== 'free' ? ''
-    : native() ? `<button class="btn primary" data-act="upgrade">Upgrade to Pro · ${esc(P?.pro.price || '$4.99/month')}</button><button class="link small" data-act="restore">Restore purchase</button>`
+    : native() ? `<button class="btn primary" data-act="upgrade">Upgrade to Pro · ${esc(P?.pro.price || '$4.99/month')}</button><button class="link small" data-act="restore">Restore purchase</button>
+      <p class="small muted">Pro: ${P ? `${P.pro.msgs} AI messages + ${P.pro.voiceMin} voice minutes per month. ` : ''}Auto-renews monthly at ${esc(P?.pro.price || '$4.99/month')} until cancelled in your ${window.PP_PLATFORM === 'android' ? 'Google Play' : 'Apple ID'} subscription settings at least 24 hours before renewal.
+      <a class="link small" href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener">Terms of Use</a> · <a class="link small" href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a></p>`
     : `<span class="small muted">Upgrade to Pro (${esc(P?.pro.price || '$4.99/month')}) in the PrepPilot iPhone app; it unlocks here too.</span>`;
   return `<section class="card stack ${S.paywall ? 'paywall' : ''}" id="accountCard">
     <div class="row between"><div><b>${esc(a.name || a.email || 'Signed in')}</b> <span class="pill">${esc(a.plan.toUpperCase())}</span></div>
       <button class="link small" data-act="signout">Sign out</button></div>
     <div class="small muted">${esc(usage)}</div>
     ${upgrade ? `<div class="row">${upgrade}</div>` : ''}
+    <div class="row small"><a class="link small" href="privacy.html" target="_blank" rel="noopener">Privacy</a>
+      ${a.key === 'code:admin' ? '' : '<button class="link small" data-act="delacct">Delete account</button>'}</div>
   </section>`;
 }
 
@@ -427,6 +431,14 @@ document.addEventListener('click', async e => {
   else if (a === 'upgrade') { const acc = store.account(); if (acc?.key) nativePurchase(acc.key); }
   else if (a === 'restore') { const acc = store.account(); if (acc?.key) nativeRestore(acc.key); }
   else if (a === 'signout') { S.rt?.stop(); store.setAccessCode(''); signOut(); S.paywall = false; render(); }
+  else if (a === 'delacct') {
+    if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = 'Tap again to permanently delete your account'; return; }
+    try {
+      await ai.post('/api/me/delete', {});
+      S.rt?.stop(); signOut(); S.paywall = false; render();
+      alert('Your account and AI usage data were deleted. If you subscribed to Pro, cancel the subscription in Settings → Apple ID → Subscriptions (or Google Play → Subscriptions).');
+    } catch (err) { alert(err.message); }
+  }
   else if (a === 'dropctx') { S.chatContext = ''; render(); }
   else if (a === 'clearchat') { store.setChat([]); S.chatContext = ''; render(); }
   else if (a === 'mic') {

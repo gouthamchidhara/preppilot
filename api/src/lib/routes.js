@@ -4,6 +4,7 @@ import * as h from './handlers.js';
 export const ROUTES = {
   'GET health': () => h.handleHealth(),
   'GET me': h.handleMe,
+  'POST me/delete': h.handleDeleteAccount,
   'POST auth/google': (req, log) => h.handleAuth('google', req, log),
   'POST auth/apple': (req, log) => h.handleAuth('apple', req, log),
   'POST chat': h.handleChat,

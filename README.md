@@ -15,8 +15,13 @@ Users set a short profile (target role, level, background, self-rated strengths/
 - **AI-generated card sets** for any topic not covered (e.g. "Splunk SPL", "Terraform state").
 - **Private packs**: import your own JSON pack (projects, STAR stories). It stays on the device.
 
-No accounts. Profile and progress live in the browser/device (localStorage). Only chat text, the profile summary
-and the current card are sent to the API when the user asks the AI something.
+Study data (profile, progress, chats) lives only on the device (localStorage). Signing in is needed only for AI;
+the server then stores just the account ID, email, plan and usage counters. Chat text, the profile summary and the
+current card are sent to the API only when the user asks the AI something.
+
+**Plans and launch:** the guide is free without an account. AI needs sign-in (Google, or Apple in the iOS app): free trial,
+then Pro at $4.99/month through in-app purchase. Usage is enforced on the server. See
+[docs/MONETIZATION-AND-LAUNCH.md](docs/MONETIZATION-AND-LAUNCH.md) for pricing math, enforcement design and the setup steps.
 
 ## Architecture
 
