@@ -1,7 +1,7 @@
 # Plan: PrepPilot for every tech role (execution brief)
 
 **Owner:** Luna. **Repo:** `C:\Projects\PrepPilot` (github.com/gouthamchidhara/preppilot, CI auto-deploys `main`).
-**Goal:** Anyone (Java/Python/.NET/frontend developer, data engineer, data scientist, QA, security, PM, and the existing
+**Goal:** Anyone (Java/Python/.NET/frontend developer, data engineer, data scientist, QA, security, and the existing
 infra/cloud/SRE/DevOps/network/support roles) gets a study guide, flashcards and plan built for their role, stack and level.
 The AI coach and the pricing model stay as they are.
 
@@ -41,8 +41,7 @@ Data, not code. Each role lists the topics it needs, with a weight (3 = core, 2 
     { "id": "dev", "name": "Software development" },
     { "id": "data", "name": "Data & AI" },
     { "id": "infra", "name": "Infrastructure & cloud" },
-    { "id": "quality", "name": "Quality & security" },
-    { "id": "product", "name": "Product & delivery" }
+    { "id": "quality", "name": "Quality & security" }
   ],
   "roles": [
     {
@@ -55,13 +54,13 @@ Data, not code. Each role lists the topics it needs, with a weight (3 = core, 2 
 }
 ```
 
-Roles in v1 (24). Add more later by editing this JSON only:
+Roles in v1 (22). Add more later by editing this JSON only:
 - **dev:** backend-java, backend-python, backend-dotnet, backend-node, backend-go, frontend-react, frontend-angular,
   fullstack-js, mobile-ios, mobile-android, mobile-cross (React Native/Flutter)
 - **data:** data-engineer, data-analyst, data-scientist, ml-engineer
 - **infra:** infra, sre, cloud, devops, network, support (existing IDs, unchanged)
 - **quality:** qa-automation, security-engineer
-- **product:** product-manager, engineering-manager (optional, behind a flag if content isn't ready)
+- Product/engineering-manager roles: **out of scope for v1** (owner decision).
 
 ### 2.2 Content packs (one file per topic family, loaded on demand)
 `web/content/packs/<packId>.json`, same topic schema as today (`id, name, tag, blurb, concepts[], qa[]`) **without** the
@@ -81,7 +80,6 @@ Roles in v1 (24). Add more later by editing this JSON only:
 | `data` | data-modeling, etl-elt, spark, airflow, streaming (Kafka), warehouses (Snowflake/BigQuery/Databricks), data-quality, sql-advanced |
 | `ml` | ml-fundamentals, statistics, python-data (pandas/numpy), ml-ops, llm-apps (RAG, evaluation) |
 | `quality` | test-strategy, selenium-playwright, api-testing, performance-testing, appsec (OWASP), threat-modeling |
-| `product` | product-sense, metrics, prioritization, stakeholder-mgmt, people-management |
 | `behavioral` (shared) | behavioral (move the existing topic here; keep ID `behavioral`) |
 
 Rule: a topic exists in exactly one pack; roles reference topics across packs. The existing `cloud`, `docker`, `k8s`,
@@ -106,7 +104,7 @@ The client fetches the manifest + `roles.json`, then only the packs the user's r
 Then "Build my plan". The profile summary sent to the AI includes role name and stacks.
 
 ### 2.5 AI changes (small)
-- `api/src/lib/prompts.js`: persona becomes "interview coach for software, data, infrastructure, quality and product
+- `api/src/lib/prompts.js`: persona becomes "interview coach for software, data, infrastructure and quality
   roles"; the role, stack and level come from `profileSummary`. Keep the honesty/grading rules.
 - `generateSystemPrompt` unchanged; the UI pre-fills the topic with the role's stack ("Spring Boot transactions").
 - No change to quotas or pricing.
@@ -122,15 +120,15 @@ Then "Build my plan". The profile summary sent to the AI includes role name and 
 
 ## 3. Content production (the real work)
 
-Writing ~120 new topics by hand isn't realistic. Use AI to draft, then gate quality with scripts and a human review.
+Writing ~120 new topics by hand isn't realistic. Use AI (gpt-4.1) to draft and gate quality with scripts; packs publish as beta without a human review.
 
 ### 3.1 Generator script `scripts/gen-pack.mjs`
 - Input: `content-src/<pack>.yaml` listing topics: `id, name, blurb, stack, outline` (5–10 bullet subtopics the
   card must cover, written by a human; this is what keeps quality high), target `concepts` (6–10) and `qa` (12–20, mix of tiers 1/2/3).
-- Calls Azure OpenAI (use a stronger model than chat for drafting, e.g. `gpt-4.1` or `gpt-5`; add a deployment or
+- Calls Azure OpenAI (**`gpt-4.1`**, owner decision; add a `gpt-4.1` deployment to the Foundry account, e.g. in Bicep, or
   run with `AZURE_OPENAI_DEPLOYMENT` override), one topic per call, JSON mode, schema from `generateSystemPrompt`
   extended with "cover every outline bullet; code examples must compile/run; no vendor marketing".
-- Writes `content-src/drafts/<pack>/<topic>.json`. Never overwrites a reviewed file.
+- Writes the topic into its pack in `web/content/packs/` after validation passes. Never overwrites a published topic.
 - Cost estimate: ~120 topics × ~6K output tokens ≈ 0.7M tokens, under $10 even on a large model. One-time.
 
 ### 3.2 Validation script `scripts/validate-packs.mjs` (also run in CI via `npm test`)
@@ -143,19 +141,20 @@ Writing ~120 new topics by hand isn't realistic. Use AI to draft, then gate qual
   run a syntax check where a local toolchain exists (python `py_compile`, `node --check`, `tsc --noEmit`, `javac`,
   `dotnet` skip if missing). Report, don't block, for missing toolchains.
 
-### 3.3 Review gate (human)
-- A topic moves from `content-src/drafts/` to `web/content/packs/` only after review. Use a checklist per topic:
-  technically correct and current (versions named), answers interview-length (2–5 sentences), at least 3 tier-3
-  questions per topic, no hallucinated APIs, one "say this in the interview" tip per card.
-- Suggested reviewers: a practitioner per family (ask friends/colleagues; personal time only). If no reviewer,
-  ship the pack with `"beta": true`; the UI shows a "Beta content" label and a "Report a problem" link.
+### 3.3 Publishing (no human review gate, owner decision)
+- Drafts that pass `validate-packs.mjs` publish automatically: the generator writes straight to `web/content/packs/`
+  (still never overwriting a published topic; changes to published topics must be append-only).
+- Every AI-drafted topic gets `"beta": true`. The UI shows a small "AI-written" label on those cards and a
+  "Report a problem" link (opens a prefilled GitHub issue: topic ID, card/question index, user note; no PII).
+- Prompt-side quality rules stay mandatory: cover every outline bullet, name versions, 2�5 sentence answers,
+  = 3 tier-3 questions per topic, one interview tip per card, no invented APIs.
+- Optional later: spot-check the 5 most-viewed topics per pack when someone with that background is available.
 
 ### 3.4 Order of packs (by expected users)
 1. `core-dev` + `behavioral` (needed by every developer role)
 2. `java`, `python`, `dotnet`, `node`, `frontend`
 3. `data`, `ml`
 4. `quality`, `mobile`, `go`
-5. `product`
 
 ---
 
@@ -201,8 +200,8 @@ Estimated effort: steps 1–6 ≈ 3–4 days of engineering; step 7 ≈ 0.5–1 
 - Localization.
 - Web payments (Stripe or RevenueCat Web Billing).
 
-## 8. Open decisions for the owner (Goutham)
+## 8. Owner decisions (Nov 16, 2026)
 
-- Model for drafting content (`gpt-4.1` vs `gpt-5`): quality vs cost; one-time either way.
-- Whether to ship beta packs without a human reviewer.
-- Whether product/engineering-manager roles are in v1.
+- Drafting model: **gpt-4.1**.
+- Packs **go live without human review**, marked beta/"AI-written" with a report link.
+- Product manager and engineering manager roles are **removed from v1**.
