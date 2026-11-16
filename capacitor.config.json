@@ -1,0 +1,8 @@
+{
+  "appId": "com.gouthamchidhara.preppilot",
+  "appName": "PrepPilot",
+  "webDir": "web",
+  "plugins": {
+    "CapacitorHttp": { "enabled": true }
+  }
+}

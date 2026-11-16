@@ -1,0 +1,15 @@
+node_modules/
+api/node_modules/
+# personal content and secrets never go to git
+private/
+api/.env
+api/local.settings.json
+.env
+*.pfx
+*.p12
+*.keystore
+*.jks
+# native shells are generated with `npx cap add`; commit them later if you customize native code
+android/
+ios/
+.swa/
