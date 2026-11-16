@@ -32,7 +32,7 @@ const call = (route, body, headers = {}) => ROUTES[route]({ body, headers, ip: '
 async function signIn(email, sub = email) {
   const r = await call('POST auth/google', { idToken: idToken({ sub, email }) });
   assert.equal(r.status, 200, JSON.stringify(r.body));
-  return { authorization: `Bearer ${r.body.token}` };
+  return { 'x-session-token': r.body.token };
 }
 const ask = (h, text = 'hi') => call('POST chat', { messages: [{ role: 'user', content: text }] }, h);
 
@@ -43,7 +43,7 @@ beforeEach(async () => {
 
 test('AI requires sign-in; the study guide (static) does not touch the API', async () => {
   assert.equal((await ask({})).status, 401);
-  assert.equal((await ask({ authorization: 'Bearer forged.token.here' })).status, 401);
+  assert.equal((await ask({ 'x-session-token': 'forged.token.here' })).status, 401);
 });
 
 test('Google sign-in rejects bad signatures, wrong audience, unverified email', async () => {

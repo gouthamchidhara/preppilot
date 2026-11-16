@@ -9,7 +9,9 @@ const toNative = msg => window.ReactNativeWebView?.postMessage(JSON.stringify(ms
 export function authHeaders() {
   const h = { 'x-client-id': store.clientId() };
   const t = store.session();
-  if (t) h.authorization = `Bearer ${t}`;
+  // Azure SWA overwrites `authorization` with its own platform JWT before it reaches the
+  // Functions handler, so the session token must travel in a custom header.
+  if (t) h['x-session-token'] = t;
   const code = store.accessCode();
   if (code) h['x-access-code'] = code;
   return h;

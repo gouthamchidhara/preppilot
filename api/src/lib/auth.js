@@ -83,11 +83,12 @@ export function verifySession(token, now = Date.now()) {
   } catch { return null; }
 }
 
-// Identity for a request: our session token, or the legacy beta ACCESS_CODE (treated as admin).
+// Identity for a request: our session token (x-session-token), or the legacy beta ACCESS_CODE (treated as admin).
+// Azure SWA overwrites `authorization` with its own platform JWT, so the session token lives in a custom header.
 export function identify(headers) {
-  const auth = headers.authorization || '';
-  if (auth.startsWith('Bearer ')) {
-    const s = verifySession(auth.slice(7));
+  const token = headers['x-session-token'] || '';
+  if (token) {
+    const s = verifySession(token);
     if (s) return s;
   }
   const code = process.env.ACCESS_CODE;
