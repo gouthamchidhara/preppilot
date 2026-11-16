@@ -2,7 +2,7 @@ import * as h from './handlers.js';
 
 // "METHOD route" -> handler(req, log). Routes are relative to /api/.
 export const ROUTES = {
-  'GET health': () => h.handleHealth(),
+  'GET health': req => h.handleHealth(req),
   'GET me': h.handleMe,
   'POST me/delete': h.handleDeleteAccount,
   'POST auth/google': (req, log) => h.handleAuth('google', req, log),

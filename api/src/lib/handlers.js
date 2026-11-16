@@ -173,7 +173,7 @@ export async function handleRoleTelemetry(req) {
   return json(200, { ok: true });
 }
 
-export function handleHealth() {
+export function handleHealth(req) {
   const L = limits();
   // Self-test: sign and immediately verify a token to confirm the runtime reads SESSION_SECRET.
   let sessionVerify = 'unknown';
@@ -189,6 +189,7 @@ export function handleHealth() {
     sessionSecretSet: !!process.env.SESSION_SECRET,
     sessionVerify,
     secretHash,
+    authHeaderSeen: req?.headers?.authorization ? 'present' : 'absent',
     ai: llmConfigured() ? 'azure-openai' : 'mock',
     voice: realtimeConfigured(),
     googleClientId: process.env.GOOGLE_WEB_CLIENT_ID || '',
