@@ -168,7 +168,7 @@ Writing ~120 new topics by hand isn't realistic. Use AI (gpt-4.1) to draft and g
 | 4 | New onboarding (family → role → stacks → weak/strong of core topics) + "Browse all topics" | `web/js/app.js`, `web/app.css` | Under 60 s to complete; works on 375 px wide screen |
 | 5 | Persona-neutral prompts | `api/src/lib/prompts.js` | AI answers in the role's language (spot check Java + data engineer) |
 | 6 | Content pipeline: `gen-pack.mjs`, `validate-packs.mjs`, `content-lock.json`, CI wiring | `scripts/*`, `content-src/*`, `package.json` | `npm test` fails on a broken pack, renamed topic or shrunk Q&A list |
-| 7 | Packs, in the order of 3.4, each as its own PR: outline YAML → drafts → review → publish → add roles to `roles.json` | `content-src/`, `web/content/packs/` | Each role has ≥ 8 topics, ≥ 120 Q&As across them, validation green |
+| 7 | Packs, in the order of 3.4, each as its own PR: outline YAML → generate → validate → publish (beta) → add roles to `roles.json` | `content-src/`, `web/content/packs/` | Each role has ≥ 8 topics, ≥ 120 Q&As across them, validation green |
 | 8 | "Role not listed" flow + anonymous role telemetry | `web/js/app.js`, `api/src/lib/handlers.js`, `routes.js`, `infra/main.bicep` (table `pproles`) | Typing an unknown role yields a usable plan; AI build button works for signed-in users |
 | 9 | Store listing refresh: screenshots for 3 roles (Java dev, data engineer, infra), description mentions all families | `docs/` | Ready for App Store submission |
 
