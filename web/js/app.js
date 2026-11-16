@@ -1,4 +1,4 @@
-import { LEVELS, buildPlan, rankTopics, dueCards, review, readiness, profileSummary, migrateProfile, effectiveRole } from './plan.js';
+import { LEVELS, buildPlan, rankTopics, dueCards, review, readiness, profileSummary, migrateProfile, effectiveRoles } from './plan.js';
 import { store } from './store.js';
 import { ai } from './ai.js';
 import { voice } from './voice.js';
@@ -10,7 +10,7 @@ const DAY = 86400000;
 const app = document.getElementById('app');
 const S = { view: 'home', topic: null, ci: 0, deck: null, di: 0, reveal: false, busy: false, listening: false, chatContext: '',
   rt: null, rtMode: null, rtStatus: '', rtStarting: false, voiceServer: false, live: null, pendingUser: false, muted: false,
-  googleClientId: '', plans: null, paywall: false, draft: null };
+  googleClientId: '', plans: null, paywall: false, draft: null, roleSearch: '' };
 
 /* ---------- helpers ---------- */
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -51,28 +51,30 @@ function captureDraft() {
 }
 
 function onboardingView(existing) {
-  S.draft ||= migrateProfile(existing || { roleId: '', level: 'mid', strong: [], weak: [], extras: [] });
+  S.draft ||= migrateProfile(existing || { roleIds: [], level: 'mid', strong: [], weak: [], extras: [] });
   const d = S.draft;
   const cat = getCatalog();
-  const role = roleById(effectiveRole(d));
-  const chosen = d.roleId && (d.roleId !== 'other' || d.baseRoleId);
+  const roles = effectiveRoles(d).map(roleById).filter(Boolean);
+  const chosen = d.roleIds.length && (!d.roleIds.includes('other') || d.baseRoleId);
   const rate = id => (d.strong?.includes(id) ? 'strong' : d.weak?.includes(id) ? 'weak' : '');
-  const core = role ? Object.entries(role.topics).filter(([, w]) => w === 3).map(([id]) => id) : [];
-  const roleBtn = r => `<button type="button" class="chip ${d.roleId === r.id ? 'on' : ''}" data-act="pickrole" data-id="${r.id}" data-search="${esc((r.name + ' ' + (r.keywords || '')).toLowerCase())}">${esc(r.name)}</button>`;
+  const core = [...new Set(roles.flatMap(role => Object.entries(role.topics).filter(([, w]) => w === 3).map(([id]) => id)))];
+  const extras = [...new Set(roles.flatMap(role => role.extras || []))];
+  const roleBtn = r => `<button type="button" class="chip ${d.roleIds.includes(r.id) ? 'on' : ''}" aria-pressed="${d.roleIds.includes(r.id)}" data-act="pickrole" data-id="${r.id}" data-search="${esc((r.name + ' ' + (r.keywords || '')).toLowerCase())}">${esc(r.name)}</button>`;
   return `<form class="card stack" id="profileForm">
     <h2>${existing ? 'Edit your profile' : 'Set up your prep'}</h2>
     <p class="muted">Stays on this device. Used to pick your topics, question difficulty and to tailor AI answers.</p>
-    <fieldset class="stack"><legend>1. What role are you preparing for?</legend>
-      <input id="roleSearch" placeholder="Search: java, spark, react, kubernetes…" autocomplete="off">
+    <fieldset class="stack"><legend>1. What roles are you preparing for? Select one or more.</legend>
+      <input id="roleSearch" value="${esc(S.roleSearch)}" placeholder="Search: java, spark, react, kubernetes…" autocomplete="off" aria-label="Search roles">
       ${cat.families.map(f => `<div class="rolefam"><div class="eyebrow">${esc(f.name)}</div><div class="chips">${cat.roles.filter(r => r.family === f.id).map(roleBtn).join('')}</div></div>`).join('')}
-      <div class="chips"><button type="button" class="chip ${d.roleId === 'other' ? 'on' : ''}" data-act="pickrole" data-id="other" data-search="other not listed">Other / not listed</button></div>
-      ${d.roleId === 'other' ? `<label>Your role<input name="otherRole" maxlength="60" value="${esc(d.otherRole || '')}" placeholder="e.g. Salesforce developer" required></label>
+      <div class="chips"><button type="button" class="chip ${d.roleIds.includes('other') ? 'on' : ''}" aria-pressed="${d.roleIds.includes('other')}" data-act="pickrole" data-id="other" data-search="other not listed">Other / not listed</button></div>
+      ${d.roleIds.length > 1 ? '<p class="tip small" role="status">These roles cover different topics. Your plan combines them; select one role for a single-role plan, or practice cards for one role from the plan page.</p>' : ''}
+      ${d.roleIds.includes('other') ? `<label>Your role<input name="otherRole" maxlength="60" value="${esc(d.otherRole || '')}" placeholder="e.g. Salesforce developer" required></label>
         <label>Closest role above (used to pick your starter topics)<select name="baseRoleId" data-act="baserole" required><option value="">Choose…</option>${cat.roles.map(r => `<option value="${r.id}" ${d.baseRoleId === r.id ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}</select></label>` : ''}
     </fieldset>
     ${chosen ? `
     <label>2. Experience<select name="level">${LEVELS.map(l => `<option value="${l.id}" ${d.level === l.id ? 'selected' : ''}>${esc(l.name)}</option>`).join('')}</select></label>
-    ${role?.extras?.length ? `<fieldset><legend>3. Extra tech you use (optional)</legend>
-      <div class="chips">${role.extras.map(id => `<button type="button" class="chip extra ${d.extras?.includes(id) ? 'on' : ''}" data-act="extra" data-id="${id}">${esc(topicName(id))}</button>`).join('')}</div></fieldset>` : ''}
+    ${extras.length ? `<fieldset><legend>3. Extra tech you use (optional)</legend>
+      <div class="chips">${extras.map(id => `<button type="button" class="chip extra ${d.extras?.includes(id) ? 'on' : ''}" data-act="extra" data-id="${id}">${esc(topicName(id))}</button>`).join('')}</div></fieldset>` : ''}
     <label>Your background (1-3 lines)<textarea name="background" rows="3" maxlength="600" placeholder="e.g. 4 yrs Java microservices, some AWS, want a senior backend role">${esc(d.background || '')}</textarea></label>
     <label>What you're preparing for<input name="goal" maxlength="200" value="${esc(d.goal || '')}" placeholder="e.g. Senior backend interviews at product companies"></label>
     <label>Interview date (optional)<input type="date" name="interviewDate" value="${esc(d.interviewDate || '')}"></label>
@@ -86,18 +88,17 @@ function onboardingView(existing) {
 async function saveProfile() {
   captureDraft();
   const d = S.draft;
-  if (!d?.roleId || (d.roleId === 'other' && (!d.baseRoleId || !d.otherRole))) return alert('Choose a role first.');
+  if (!d?.roleIds.length || (d.roleIds.includes('other') && (!d.baseRoleId || !d.otherRole))) return alert('Choose a role and complete the Other role details if selected.');
   const prev = profile();
-  const p = { ...d, planStart: prev?.planStart || Date.now() };
-  if (p.roleId !== 'other') { delete p.otherRole; delete p.baseRoleId; }
-  // Keep only ratings/extras that still belong to the chosen role.
-  const role = roleById(effectiveRole(p));
-  p.extras = (p.extras || []).filter(id => role?.extras?.includes(id));
-  p.strong = (p.strong || []).filter(id => role?.topics?.[id]);
-  p.weak = (p.weak || []).filter(id => role?.topics?.[id]);
+  const p = { ...d, roleId: d.roleIds[0], planStart: prev?.planStart || Date.now() };
+  if (!p.roleIds.includes('other')) { delete p.otherRole; delete p.baseRoleId; }
+  const roles = effectiveRoles(p).map(roleById).filter(Boolean);
+  p.extras = (p.extras || []).filter(id => roles.some(role => role.extras?.includes(id)));
+  p.strong = (p.strong || []).filter(id => roles.some(role => role.topics?.[id]));
+  p.weak = (p.weak || []).filter(id => roles.some(role => role.topics?.[id]));
   store.setProfile(p);
   S.draft = null;
-  if (p.roleId === 'other' && p.otherRole !== prev?.otherRole) ai.reportRole(p.otherRole).catch(() => {});
+  if (p.roleIds.includes('other') && p.otherRole !== prev?.otherRole) ai.reportRole(p.otherRole).catch(() => {});
   app.innerHTML = '<div class="card">Loading your topics…</div>';
   try { await ensureForProfile(p); } catch { alert('Could not download your topics. Check your connection.'); }
   S.view = 'home'; render();
@@ -116,10 +117,11 @@ function homeView() {
   const dayLabel = d => d.kind === 'mock' ? 'Mock interview (AI) + review missed' : d.kind === 'review' ? 'Mixed review of due cards' : d.topics.map(topicName).join(' + ');
   const mine = new Set(relevant.map(t => t.id));
   const others = getManifest().packs.map(pk => ({ ...pk, topics: pk.topics.filter(t => !mine.has(t.id)) })).filter(pk => pk.topics.length);
-  const label = p.roleId === 'other' ? p.otherRole : roleName(p.roleId);
+  const roleIds = migrateProfile(p).roleIds;
+  const label = id => id === 'other' ? p.otherRole : roleName(id);
   return `<div class="stack">
     <section class="card">
-      <div class="row between"><div><div class="eyebrow">Readiness · ${esc(label)}</div><div class="big">${r.pct}%</div></div>
+      <div class="row between"><div><div class="eyebrow">Readiness · ${esc(roleIds.map(label).join(', '))}</div><div class="big">${r.pct}%</div></div>
       <div class="muted small">${r.known}/${r.total} known · ${due} due now</div></div>
       <div class="bar"><i style="width:${r.pct}%"></i></div>
     </section>
@@ -132,7 +134,8 @@ function homeView() {
         ${today.kind === 'mock' ? '<button class="btn" data-act="mock">Start AI mock interview</button>' : ''}
       </div>
     </section>
-    ${p.roleId === 'other' ? `<section class="card stack"><h3>Make it specific to ${esc(p.otherRole)}</h3>
+    ${roleIds.length > 1 ? `<section class="card stack"><h3>Practice one role</h3><p class="muted small">Focused cards use the role's listed topics. Shared topics may appear in more than one role.</p><div class="chips">${roleIds.map(id => `<button class="chip" data-act="roledeck" data-id="${esc(id)}">${esc(label(id))}</button>`).join('')}</div></section>` : ''}
+    ${roleIds.includes('other') ? `<section class="card stack"><h3>Make it specific to ${esc(p.otherRole)}</h3>
       <p class="muted small">Your plan starts from the closest listed role. Sign in and let the AI build topics for your exact role (uses 5 AI messages).</p>
       <div class="row"><button class="btn primary" data-act="buildrole" ${S.busy ? 'disabled' : ''}>${S.busy ? 'Building…' : 'Build my role guide with AI'}</button></div></section>` : ''}
     <details class="card"><summary>Full plan (${plan.length} days)</summary><ol class="plan">${plan.map((d, i) => `<li class="${i === ti ? 'cur' : ''}">${esc(d.date)} · ${esc(dayLabel(d))}</li>`).join('')}</ol></details>
@@ -373,6 +376,7 @@ function render() {
     : homeView();
   if (S.view === 'chat') { const m = document.getElementById('msgs'); if (m) m.scrollTop = m.scrollHeight; }
   mountGoogleButton();
+  filterRoles();
   window.scrollTo({ top: 0 });
 }
 
@@ -382,6 +386,13 @@ function startDeck(ids) {
   const list = ids ? topics().filter(t => ids.includes(t.id)) : topics();
   S.deck = { cards: dueCards(list, profile(), store.progress(), Date.now(), 20, { relevantOnly: !ids }), results: [] };
   S.di = 0; S.reveal = false; S.view = 'deck'; render();
+}
+
+function startRoleDeck(id) {
+  const p = profile();
+  const role = roleById(id === 'other' ? p.baseRoleId : id);
+  const list = rankTopics(topics().filter(t => role?.topics?.[t.id]), { ...p, roleIds: [id], roleId: id, extras: [] });
+  startDeck(list.map(t => t.id));
 }
 
 async function openTopic(id) {
@@ -444,11 +455,16 @@ app.addEventListener('submit', async e => {
   }
 });
 
-app.addEventListener('input', e => {
-  if (e.target.id !== 'roleSearch') return;
-  const q = e.target.value.trim().toLowerCase();
+function filterRoles() {
+  const q = S.roleSearch.trim().toLowerCase();
   document.querySelectorAll('#profileForm [data-act=pickrole]').forEach(b => { b.hidden = !!q && !b.dataset.search.includes(q) && b.dataset.id !== 'other'; });
   document.querySelectorAll('#profileForm .rolefam').forEach(f => { f.hidden = ![...f.querySelectorAll('[data-act=pickrole]')].some(b => !b.hidden); });
+}
+
+app.addEventListener('input', e => {
+  if (e.target.id !== 'roleSearch') return;
+  S.roleSearch = e.target.value;
+  filterRoles();
 });
 
 app.addEventListener('change', async e => {
@@ -471,6 +487,7 @@ document.addEventListener('click', async e => {
   if (!b || b.disabled) return;
   if (b.dataset.nav) {
     S.draft = null;
+    S.roleSearch = '';
     if (b.dataset.nav === 'deck') return startDeck(null);
     S.view = b.dataset.nav; return render();
   }
@@ -486,10 +503,10 @@ document.addEventListener('click', async e => {
   if (a === 'extra') { b.classList.toggle('on'); return; }
   if (a === 'pickrole') {
     captureDraft();
-    S.draft.roleId = id;
-    if (id !== 'other') { delete S.draft.baseRoleId; }
+    S.draft.roleIds = S.draft.roleIds.includes(id) ? S.draft.roleIds.filter(r => r !== id) : [...S.draft.roleIds, id];
     const scroll = window.scrollY;
     app.innerHTML = S.view === 'settings' ? settingsView() : onboardingView(null);
+    filterRoles();
     window.scrollTo({ top: scroll });
     return;
   }
@@ -499,6 +516,7 @@ document.addEventListener('click', async e => {
   else if (a === 'cnext') { S.ci++; render(); }
   else if (a === 'cprev') { S.ci--; render(); }
   else if (a === 'deck') startDeck(id ? id.split(',') : null);
+  else if (a === 'roledeck') startRoleDeck(id);
   else if (a === 'reveal') { S.reveal = true; render(); }
   else if (a === 'grade') {
     const q = S.deck.cards[S.di], ok = b.dataset.ok === '1', prog = store.progress();

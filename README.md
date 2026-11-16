@@ -2,10 +2,12 @@
 
 Personalized interview prep for software developers (Java, Python, .NET, Node, Go, frontend, mobile), data and AI,
 infrastructure/cloud/SRE/DevOps, QA and security roles: 23 roles, 72 topics.
-Users set a short profile (target role, level, background, self-rated strengths/weaknesses, interview date) and get:
+Users set a short profile (one or more target roles, level, background, self-rated strengths/weaknesses, interview date) and get:
 
 - **A day-by-day plan** ordered by role relevance and their weak spots, ending with mock-interview days.
 - **Learn cards** (what / why / example / what to say) and **flashcards** with spaced repetition, filtered to their level.
+- **Multi-role prep** combines selected roles into one plan; role-specific flashcards allow focused practice. Shared topics
+  and their card progress are not duplicated. Select one role in Profile for a single-role plan.
 - **An AI coach** for instant answers, "go deeper" on any card, answer grading and mock interviews:
   - **Talking mode**: hands-free speech-to-speech (Azure OpenAI Realtime over WebRTC). Replies start ~0.35 s after you
     stop speaking; talk over it to interrupt. Measured: first reply token ~250 ms after the turn ends.

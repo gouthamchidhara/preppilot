@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildPlan, rankTopics, review, dueCards, readiness, daysUntil, INTERVAL_DAYS } from '../web/js/plan.js';
+import { buildPlan, rankTopics, review, dueCards, readiness, daysUntil, INTERVAL_DAYS, effectiveRoles, migrateProfile, profileSummary, topicWeight } from '../web/js/plan.js';
 
 const mk = (id, roles, nConcepts = 3, tiers = [1, 2, 3]) => ({
   id, name: id, roles,
@@ -71,4 +71,24 @@ test('flashcards for an explicitly chosen topic work even when it is outside the
   const t = [{ id: 'spark', roles: {}, concepts: [], qa: [{ l: 1, q: 'q', a: 'a' }] }];
   assert.equal(dueCards(t, { roleId: 'infra' }, {}, NOW).length, 0);
   assert.equal(dueCards(t, { roleId: 'infra' }, {}, NOW, 20, { relevantOnly: false }).length, 1);
+});
+
+test('multiple roles combine topics and questions without duplicating shared topics', () => {
+  const topics = [mk('java', { java: 3 }), mk('python', { python: 3 }), mk('linux', { infra: 3 }), mk('shared', { java: 1, python: 3, infra: 2 })];
+  const p = { roleIds: ['java', 'python', 'infra'], roleId: 'java', level: 'mid' };
+  assert.deepEqual(new Set(rankTopics(topics, p).map(t => t.id)), new Set(['java', 'python', 'linux', 'shared']));
+  assert.equal(topicWeight(topics[3], p), 3);
+  const cards = dueCards(topics, p, {}, NOW, 100);
+  for (const id of ['java', 'python', 'linux', 'shared']) assert.equal(cards.filter(c => c.topic === id).length, 3);
+  assert.deepEqual(new Set(buildPlan(topics, p, NOW).flatMap(d => d.topics)), new Set(['java', 'python', 'linux', 'shared']));
+  assert.match(profileSummary(p), /Target roles: java, python, infra/);
+});
+
+test('migration and other-role mapping preserve legacy profiles and explicit empty selections', () => {
+  assert.deepEqual(migrateProfile({ roleId: 'infra' }).roleIds, ['infra']);
+  assert.deepEqual(migrateProfile({ role: 'sre' }).roleIds, ['sre']);
+  assert.deepEqual(migrateProfile({ roleIds: [], roleId: 'infra' }).roleIds, []);
+  const p = migrateProfile({ roleIds: ['java', 'other'], baseRoleId: 'python', otherRole: 'Data developer' });
+  assert.deepEqual(effectiveRoles(p), ['java', 'python']);
+  assert.match(profileSummary(p), /java, Data developer \(closest listed role: python\)/);
 });

@@ -1,6 +1,6 @@
 // Study content: role catalog, pack manifest, and on-demand pack loading.
 // Only the packs a user's role needs are downloaded; the service worker keeps them for offline use.
-import { attachWeights, effectiveRole } from './plan.js';
+import { attachWeights, effectiveRoles } from './plan.js';
 
 let catalog = { families: [], roles: [] };
 let manifest = { packs: [] };
@@ -23,10 +23,10 @@ export const getManifest = () => manifest;
 export const roleById = id => catalog.roles.find(r => r.id === id);
 export const topicMeta = id => meta.get(id);
 
-// Topic IDs a profile needs: the role's topics, chosen extras, self-rated topics, behavioral.
+// Topic IDs a profile needs: selected roles' topics, extras, self-rated topics, behavioral.
 export function topicIdsFor(profile) {
-  const role = roleById(effectiveRole(profile));
-  return new Set([...Object.keys(role?.topics || {}), ...(profile?.extras || []), ...(profile?.weak || []), ...(profile?.strong || []), 'behavioral']);
+  const roleTopics = effectiveRoles(profile).flatMap(id => Object.keys(roleById(id)?.topics || {}));
+  return new Set([...roleTopics, ...(profile?.extras || []), ...(profile?.weak || []), ...(profile?.strong || []), 'behavioral']);
 }
 
 export async function ensureTopics(ids) {

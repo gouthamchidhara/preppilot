@@ -20,11 +20,17 @@ export function effectiveRole(profile) {
   return id === 'other' ? (profile?.baseRoleId || 'infra') : id;
 }
 
+export function effectiveRoles(profile) {
+  const ids = Array.isArray(profile?.roleIds) ? profile.roleIds : [profile?.roleId || profile?.role || 'infra'];
+  return [...new Set(ids.map(id => id === 'other' ? profile?.baseRoleId : id).filter(Boolean))];
+}
+
 // Profiles saved before the role catalog used `role`; the infra role IDs are unchanged.
 export function migrateProfile(p) {
   if (!p) return p;
   const out = { ...p };
-  if (!out.roleId) out.roleId = out.role || 'infra';
+  out.roleIds = Array.isArray(out.roleIds) ? [...new Set(out.roleIds.filter(Boolean))] : [out.roleId || out.role || 'infra'];
+  out.roleId = out.roleIds[0] || '';
   delete out.role;
   out.extras ||= [];
   return out;
@@ -38,7 +44,7 @@ export function attachWeights(topics, catalog) {
 
 export function topicWeight(topic, profile) {
   if (topic.custom || topic.private) return 2; // the user's own content always counts
-  const w = topic.roles?.[effectiveRole(profile)] ?? 0;
+  const w = Math.max(0, ...effectiveRoles(profile).map(id => topic.roles?.[id] ?? 0));
   return profile?.extras?.includes(topic.id) ? Math.max(w, 2) : w;
 }
 
@@ -152,9 +158,9 @@ export function readiness(topics, profile, progress) {
 export function profileSummary(profile, { roleName = id => id, topicName = id => id } = {}) {
   if (!profile) return 'No profile.';
   const p = migrateProfile(profile);
-  const role = p.roleId === 'other' ? `${p.otherRole || 'Other'} (closest listed role: ${roleName(p.baseRoleId)})` : roleName(p.roleId);
+  const role = p.roleIds.map(id => id === 'other' ? `${p.otherRole || 'Other'} (closest listed role: ${roleName(p.baseRoleId)})` : roleName(id)).join(', ');
   const level = LEVELS.find(l => l.id === p.level)?.name || p.level;
-  const parts = [`Target role: ${role}.`, `Level: ${level}.`];
+  const parts = [`Target ${p.roleIds.length === 1 ? 'role' : 'roles'}: ${role}.`, `Level: ${level}.`];
   if (p.extras?.length) parts.push(`Also uses: ${p.extras.map(topicName).join(', ')}.`);
   if (p.background) parts.push(`Background: ${p.background}`);
   if (p.goal) parts.push(`Goal: ${p.goal}`);

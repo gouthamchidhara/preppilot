@@ -45,6 +45,28 @@ test('personal topics never ship in web/', () => {
   assert.ok(!readdirSync(new URL('../web/content/packs/', import.meta.url)).includes('personal.json'));
 });
 
+test('multi-role profiles request topics for every selected role and other-role base', async () => {
+  const { initContent, topicIdsFor } = await import('../web/js/content.js');
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async url => ({
+    ok: true,
+    json: async () => JSON.parse(readFileSync(new URL(`../web/${url}`, import.meta.url), 'utf8')),
+  });
+  try {
+    await initContent();
+    const java = topicIdsFor({ roleIds: ['backend-java'] });
+    const python = topicIdsFor({ roleIds: ['backend-python'] });
+    const infra = topicIdsFor({ roleIds: ['other'], baseRoleId: 'infra' });
+    const combined = topicIdsFor({ roleIds: ['backend-java', 'backend-python', 'other'], baseRoleId: 'infra' });
+    for (const id of [...java, ...python, ...infra]) assert.ok(combined.has(id), `${id} missing`);
+    assert.ok(combined.has('java-core'));
+    assert.ok(combined.has('python-core'));
+    assert.ok(combined.has('linux'));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 // Leak rules name real employers/projects, so they live only in the git-ignored private file.
 // They apply to packs built from the personal source guide; AI packs are drafted from public outlines only
 // (and legitimately contain strings like "WCAG AA").
