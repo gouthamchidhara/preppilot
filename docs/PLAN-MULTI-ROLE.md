@@ -172,7 +172,7 @@ Writing ~120 new topics by hand isn't realistic. Use AI (gpt-4.1) to draft and g
 | 8 | "Role not listed" flow + anonymous role telemetry | `web/js/app.js`, `api/src/lib/handlers.js`, `routes.js`, `infra/main.bicep` (table `pproles`) | Typing an unknown role yields a usable plan; AI build button works for signed-in users |
 | 9 | Store listing refresh: screenshots for 3 roles (Java dev, data engineer, infra), description mentions all families | `docs/` | Ready for App Store submission |
 
-Estimated effort: steps 1–6 ≈ 3–4 days of engineering; step 7 ≈ 0.5–1 day per pack including review; step 8 ≈ 1 day.
+Estimated effort: steps 1–6 ≈ 3–4 days of engineering; step 7 ≈ 0.5 day per pack (outline + generate + validate); step 8 ≈ 1 day.
 
 ---
 
