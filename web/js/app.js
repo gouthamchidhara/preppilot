@@ -97,7 +97,7 @@ function freeCardIds() {
   const ids = new Set();
   for (const rid of effectiveRoles(migrateProfile(p))) {
     const role = roleById(rid);
-    const pool = topics().filter(t => role?.topics?.[t.id] && !['behavioral', 'scenarios'].includes(t.id)).flatMap(t => t.qa.map((_, i) => `${t.id}-${i}`));
+    const pool = topics().filter(t => (role?.topics?.[t.id] || 0) >= 3 && !['behavioral', 'scenarios'].includes(t.id)).flatMap(t => t.qa.map((_, i) => `${t.id}-${i}`));
     shuffle(pool, seeded(rid + store.clientId())).slice(0, FREE_CARDS).forEach(id => ids.add(id));
   }
   return ids;
@@ -444,7 +444,7 @@ function livePromo() {
 
 // One real card from the user's own stack, different each time, answerable in place.
 function quickCard(relevant) {
-  const open = relevant.filter(t => !isLocked(t.id) && t.qa.length);
+  const open = relevant.filter(t => !isLocked(t.id) && t.qa.length && !['behavioral', 'scenarios'].includes(t.id));
   if (!open.length) return '';
   if (!S.qc || !open.some(t => t.id === S.qc.topic)) {
     const t = open[Math.floor(Math.random() * open.length)];
