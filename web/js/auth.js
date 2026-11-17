@@ -84,6 +84,10 @@ export function nativeSignIn(provider) { toNative({ type: 'signin', provider });
 export function nativePurchase(userKey) { toNative({ type: 'purchase', userKey }); }
 export function nativeBuyLive(userKey) { toNative({ type: 'buyLive', userKey }); }
 export function nativeRestore(userKey) { toNative({ type: 'restore', userKey }); }
+// Badge + daily reminder: no-ops on the web (no WebView bridge there).
+export function notifyBadge(count) { toNative({ type: 'badge', count }); }
+export function notifyDaily(title, body) { toNative({ type: 'daily', title, body }); }
+export function promptNotifications() { toNative({ type: 'promptNotifications' }); }
 
 export function listenNative({ onError, onPurchased, onCancelled }) {
   window.addEventListener('pp-native', async e => {

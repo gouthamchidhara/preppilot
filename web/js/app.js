@@ -3,7 +3,7 @@ import { store } from './store.js';
 import { ai } from './ai.js';
 import { voice } from './voice.js';
 import { VoiceSession, realtimeSupported } from './realtime.js';
-import { native, signedIn, signOut, renderGoogleButton, refreshAccount, onAccountChange, nativeSignIn, nativePurchase, nativeBuyLive, nativeRestore, listenNative } from './auth.js';
+import { native, signedIn, signOut, renderGoogleButton, refreshAccount, onAccountChange, nativeSignIn, nativePurchase, nativeBuyLive, nativeRestore, listenNative, notifyBadge, notifyDaily, promptNotifications } from './auth.js';
 import { initContent, getCatalog, getManifest, roleById, topicMeta, ensureTopics, ensureForProfile, loadedTopics, reportUrl } from './content.js';
 import { diagramHtml } from './diagrams.js';
 
@@ -83,6 +83,53 @@ function offer() {
 }
 const storeName = () => (window.PP_PLATFORM === 'android' ? 'Google Play' : 'App Store');
 const liveState = () => { const a = store.account(); return { credits: a?.sessionCredits || 0, left: a?.liveSecLeft || 0 }; };
+
+/* ---------- badge + daily notification (native app only) ---------- */
+// The daily nudge rotates one per day through web/content/nudges.json.
+// {topic} and {due} are filled in from today's plan. The native side only
+// schedules what it is sent; nothing here prompts without the user having
+// finished a flashcard round first (see the grade handler below).
+let NUDGES = null;
+async function loadNudges() {
+  try {
+    const res = await fetch('content/nudges.json');
+    if (res.ok) NUDGES = await res.json();
+  } catch { /* fallback nudge below */ }
+}
+const FALLBACK_NUDGE = { title: 'Today', body: 'A quick round of {topic} is waiting.' };
+function pickNudge(topic, due) {
+  const list = NUDGES?.nudges?.length ? NUDGES.nudges : [FALLBACK_NUDGE];
+  const pool = due === 0 ? list.filter(n => !n.body.includes('{due}')) : list;
+  const use = pool.length ? pool : list;
+  const today = new Date().toISOString().slice(0, 10);
+  let idx = store.nudgeIndex();
+  if (store.nudgeDay() !== today) { idx = (idx + 1) % use.length; store.setNudgeIndex(idx); store.setNudgeDay(today); }
+  const n = use[idx % use.length];
+  return { title: n.title, body: n.body.replaceAll('{topic}', topic).replaceAll('{due}', String(due)) };
+}
+function dailyReminder() {
+  const p = profile();
+  if (!p) return null;
+  const plan = planFor(p);
+  const ti = Math.min(todayIndex(p), plan.length - 1);
+  const day = plan[ti];
+  const prog = store.progress();
+  const due = dueCards(topics(), p, prog, Date.now(), 999);
+  const topic = day.kind === 'learn' ? topicName(day.topics[0]) : due[0] ? topicName(due[0].topic) : 'practice';
+  const line = day.kind === 'live' ? 'Live coach practice test today'
+    : day.kind === 'review' ? (due.length ? `${due.length} card${due.length === 1 ? '' : 's'} due for review` : 'Nothing due — pick any topic')
+    : `Today: ${topic}`;
+  const n = pickNudge(topic, due.length);
+  return { title: n.title, body: `${line}. ${n.body}`.slice(0, 240), due: due.length };
+}
+let lastBadge = -1, lastDailyKey = '';
+function syncNativeHome() {
+  const d = dailyReminder();
+  if (!d) return;
+  if (d.due !== lastBadge) { lastBadge = d.due; notifyBadge(d.due); }
+  const key = `${d.title}|${d.body}`;
+  if (key !== lastDailyKey) { lastDailyKey = key; notifyDaily(d.title, d.body); }
+}
 
 /* ---------- onboarding ---------- */
 // The form re-renders when the role changes (role decides which extras and self-rating chips appear),
@@ -713,6 +760,8 @@ function render() {
     store.setSuggestAsked(true);
     suggestSheet();
   }
+  // Native app: keep the icon badge and the daily reminder in step with the plan.
+  if (native() && key === 'home' && profile()) syncNativeHome();
 }
 
 /* ---------- purchases ---------- */
@@ -943,7 +992,10 @@ document.addEventListener('click', async e => {
     // The card leaves the stack to the side it was graded on, then the next one is dealt.
     S.grading = true;
     document.getElementById('flash')?.classList.add(ok ? 'out-r' : 'out-l');
-    setTimeout(() => { S.grading = false; S.deck.results.push(ok); S.di++; S.reveal = false; render(); }, 170);
+    setTimeout(() => { S.grading = false; S.deck.results.push(ok); S.di++; S.reveal = false;
+      // First finished round: a sensible moment to ask about daily reminders.
+      if (S.di >= S.deck.cards.length && native() && !store.notifAsked()) { store.setNotifAsked(true); promptNotifications(); }
+      render(); }, 170);
   }
   else if (a === 'askcard') {
     const t = topicById(S.topic), c = t.concepts[S.ci];
@@ -1015,6 +1067,7 @@ document.addEventListener('click', async e => {
 (async function boot() {
   try {
     await initContent();
+    loadNudges().catch(() => {});
     const p = profile();
     if (p) {
       const migrated = migrateProfile(p);

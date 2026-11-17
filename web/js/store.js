@@ -4,6 +4,7 @@ const K = {
   privatePacks: 'pp.privatePacks', chat: 'pp.chat', clientId: 'pp.clientId', access: 'pp.accessCode', speak: 'pp.speak',
   session: 'pp.session', account: 'pp.account', liveSettings: 'pp.liveSettings',
   suggestAsked: 'pp.suggestAsked', lastProvider: 'pp.lastProvider',
+  nudgeIndex: 'pp.nudgeIndex', nudgeDay: 'pp.nudgeDay', notifAsked: 'pp.notifAsked',
 };
 
 const read = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
@@ -34,6 +35,12 @@ export const store = {
   setSuggestAsked: v => write(K.suggestAsked, v),
   lastProvider: () => read(K.lastProvider, ''),
   setLastProvider: p => write(K.lastProvider, p),
+  nudgeIndex: () => read(K.nudgeIndex, 0),
+  setNudgeIndex: i => write(K.nudgeIndex, i),
+  nudgeDay: () => read(K.nudgeDay, ''),
+  setNudgeDay: d => write(K.nudgeDay, d),
+  notifAsked: () => read(K.notifAsked, false),
+  setNotifAsked: v => write(K.notifAsked, v),
   clientId() {
     let id = read(K.clientId, null);
     if (!id) { id = crypto.randomUUID(); write(K.clientId, id); }

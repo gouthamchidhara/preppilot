@@ -26,7 +26,7 @@ npm install
 npm test
 ```
 
-**Expected:** 40 tests pass (1 skipped). If any fail, STOP and fix before continuing.
+**Expected:** 46 tests pass (1 skipped). If any fail, STOP and fix before continuing.
 
 ---
 
@@ -101,6 +101,8 @@ npx eas-cli build:list --platform ios --limit 1
 ```
 
 **Build completes when status = "FINISHED".**
+
+> Badge and daily notifications use `expo-notifications`, a native module. They only take effect after a fresh native build from this branch — an over-the-air/web deploy is not enough. The first launch after install asks nothing; the permission prompt appears once, right after the first finished flashcard round.
 
 ---
 

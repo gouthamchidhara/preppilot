@@ -40,6 +40,7 @@ module.exports = {
     },
     plugins: [
       'expo-apple-authentication',
+      'expo-notifications',
       ...(iosUrlScheme ? [['@react-native-google-signin/google-signin', { iosUrlScheme }]] : []),
     ],
     extra: {
