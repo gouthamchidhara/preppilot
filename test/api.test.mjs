@@ -213,7 +213,7 @@ test('quota messages quote the configured price and limits', async () => {
   for (let i = 0; i < 15; i++) await ask(h);
   const r = await ask(h);
   assert.equal(r.status, 402);
-  assert.match(r.body.error, /\$7\.99\/month/);
+  assert.match(r.body.error, /\$10\.99\/month/);
 });
 
 test('voice is refused once free minutes are gone', async () => {
@@ -366,15 +366,17 @@ test('profile suggest: signed-in only, maps experience to known roles', async ()
   assert.ok([200, 422].includes(r.status));
 });
 
-test('Pro runs Live AI from monthly minutes, up to 30 minutes in one go', async () => {
-  const { reserveVoice: rv, status: st } = await import('../api/src/lib/account.js');
-  const h = await signIn('prolive@gmail.com', 'prolive');
+test('Pro includes two 30-minute Live AI sessions a month; a dropped call resumes the same one', async () => {
+  const { startProLive, status: st } = await import('../api/src/lib/account.js');
+  await signIn('prolive@gmail.com', 'prolive');
   const key = 'google:prolive';
   await call('POST billing/revenuecat', { event: { type: 'INITIAL_PURCHASE', app_user_id: key, entitlement_ids: ['pro'], expiration_at_ms: Date.now() + 30 * 86400000 } }, { authorization: 'Bearer hook-secret' });
-  const r = await rv({ key }, Date.now(), 30 * 60);
-  assert.equal(r.ok, true);
-  assert.equal(r.allowedSec, 30 * 60);
-  assert.equal((await st({ key })).voiceSecLeft, 15 * 60);
-  assert.equal((await call('GET health')).body.plans.pro.liveMin, 30);
-  void h;
+  const t0 = Date.now();
+  assert.deepEqual(await startProLive(key, t0), { ok: true, allowedSec: 1800, resumed: false });
+  assert.deepEqual(await startProLive(key, t0 + 600000), { ok: true, allowedSec: 1200, resumed: true });
+  assert.equal((await st({ key }, t0)).proLiveLeft, 1);
+  assert.equal((await startProLive(key, t0 + 1900000)).ok, true);
+  assert.equal((await startProLive(key, t0 + 4000000)).ok, false);
+  const h = (await call('GET health')).body.plans.pro;
+  assert.equal(h.liveMin, 30); assert.equal(h.liveSessions, 2); assert.equal(h.price, '$10.99/month');
 });

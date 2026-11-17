@@ -91,7 +91,7 @@ Without this the "Start Pro" button in the app fails, and App Review rejects the
 Check only. Report what is missing.
 
 1. `https://appstoreconnect.apple.com/agreements/`: the **Paid Apps** agreement is Active. If not, stop: only the human can sign it, and subscriptions cannot be sold without it.
-2. `https://appstoreconnect.apple.com/apps/6835532732/distribution/subscriptions`: `pro_monthly` exists at $7.99/month, and its status is "Ready to Submit" or better. "Missing Metadata" means the human still has to finish it.
+2. `https://appstoreconnect.apple.com/apps/6835532732/distribution/subscriptions`: `pro_monthly` exists at $10.99/month, and its status is "Ready to Submit" or better. "Missing Metadata" means the human still has to finish it.
 3. Report whether a product called `mock_session_60min` still exists. The app no longer uses it. Do not delete it; tell the human.
 
 **Done when:** all three are reported.

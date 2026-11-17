@@ -205,6 +205,34 @@ export async function startLiveSession(key, now = Date.now()) {
   return out;
 }
 
+// Pro's included Live AI: proLiveSessions a month, each a window of up to proLiveSec. Rejoining inside
+// the window (dropped connection) resumes it instead of using another session.
+export async function startProLive(key, now = Date.now()) {
+  const L = limits();
+  let out = { ok: false };
+  await (await getDb()).update('users', key, u => {
+    if (!u || u.deleted) return undefined;
+    rollPeriod(u, now);
+    const left = Math.floor(((u.proLiveUntil || 0) - now) / 1000);
+    if (left >= L.minCallSec) { out = { ok: true, allowedSec: left, resumed: true }; return undefined; }
+    if ((u.pro.liveUsed || 0) >= L.proLiveSessions) return undefined;
+    u.pro.liveUsed = (u.pro.liveUsed || 0) + 1;
+    u.proLiveUntil = now + L.proLiveSec * 1000;
+    out = { ok: true, allowedSec: L.proLiveSec, resumed: false };
+    return u;
+  });
+  return out;
+}
+
+export async function cancelProLive(key) {
+  await (await getDb()).update('users', key, u => {
+    if (!u?.pro) return undefined;
+    u.pro.liveUsed = Math.max(0, (u.pro.liveUsed || 0) - 1);
+    delete u.proLiveUntil;
+    return u;
+  });
+}
+
 // The voice connection could not be set up for a fresh session: give the credit back.
 export async function cancelLiveSession(key) {
   await (await getDb()).update('users', key, u => {

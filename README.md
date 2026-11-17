@@ -23,7 +23,7 @@ the server then stores just the account ID, email, plan and usage counters. Chat
 current card are sent to the API only when the user asks the AI something.
 
 **Plans and launch:** the guide is free without an account. AI needs sign-in (Google, or Apple in the iOS app): free trial,
-then Pro at $7.99/month, or a one-time $10.99 60-minute Live coach practice test, through in-app purchase. Usage is enforced on the server. See
+then Pro at $10.99/month (with two 30-minute Live AI sessions), or a one-time $15.99 60-minute Live AI session, through in-app purchase. Usage is enforced on the server. See
 [docs/MONETIZATION-AND-LAUNCH.md](docs/MONETIZATION-AND-LAUNCH.md) for pricing math, enforcement design and the setup steps.
 
 ## Architecture

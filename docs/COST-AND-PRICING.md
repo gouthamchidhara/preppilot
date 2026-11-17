@@ -142,3 +142,12 @@ Apple keeps 15% under the Small Business Program (under $1M a year), 30% otherwi
 | Free user, maximum | $0 | $0 | about $0.10 | -$0.10 |
 
 Recommendation: raise Live AI to $14.99 (we keep about $9 to $11) and Pro to $9.99 once there are reviews (we keep about $5 to $8 even for heavy users). Grandfather existing subscribers. Prices are set in App Store Connect and RevenueCat; the app shows `PRO_PRICE_LABEL` and `LIVE_PRICE_LABEL`.
+
+
+### Prices set by the owner (November 2026): Pro $10.99/month with two 30-minute Live AI sessions; Live AI hour $15.99
+
+| Product | User pays | We receive (85%) | Our AI cost | We keep |
+| --- | --- | --- | --- | --- |
+| Live AI, 60 minutes | $15.99 | $13.59 | $2 to $4 | $9.60 to $11.60 |
+| Pro, light user | $10.99 | $9.34 | about $0.50 | about $8.80 |
+| Pro, heaviest user (500 messages, 45 voice min, both 30-min Live AI sessions) | $10.99 | $9.34 | $3.30 to $6 | $3.30 to $6 |

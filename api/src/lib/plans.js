@@ -3,7 +3,7 @@
 //   voice (gpt-realtime-mini)     ~ $0.02-0.04 per conversation minute (+ ~$0.003/min transcription)
 // Free:  15 messages + 2 voice minutes, lifetime            -> worst case ~ $0.10 per free user
 //        global free pool per day: 200 msgs + 10 voice min  -> worst case ~ $0.65/day across ALL free users
-// Pro:   $7.99/month (≈ $6.79 after Apple's 15%), 500 msgs + 45 voice min -> worst case ~ $2.45/month
+// Pro:   $10.99/month (≈ $9.34 after Apple's 15%), 500 msgs + 45 voice min + two 30-min Live AI sessions -> worst case ~ $6/month
 const num = (k, d) => (process.env[k] !== undefined && process.env[k] !== '' ? Number(process.env[k]) : d);
 
 export function limits() {
@@ -15,13 +15,14 @@ export function limits() {
     liveCallSec: num('LIVE_CALL_SEC', 60 * 60),
     // Pro can run Live AI from its monthly voice minutes, up to this long in one go.
     proLiveSec: num('PRO_LIVE_SEC', 30 * 60),
+    proLiveSessions: num('PRO_LIVE_SESSIONS', 2), // Live AI sessions included in each Pro month
     minCallSec: 20,
   };
 }
 
 export const COST = { chat: 1, generate: 5 };
-export const proPriceLabel = () => process.env.PRO_PRICE_LABEL || '$7.99/month';
-export const livePriceLabel = () => process.env.LIVE_PRICE_LABEL || '$10.99';
+export const proPriceLabel = () => process.env.PRO_PRICE_LABEL || '$10.99/month';
+export const livePriceLabel = () => process.env.LIVE_PRICE_LABEL || '$15.99';
 const MONTH = 30 * 86400000;
 
 export function adminEmails() {
@@ -59,6 +60,8 @@ export function usageStatus(user, now = Date.now()) {
     msgsLeft: Math.max(0, lim.msgs - bucket.msgs),
     voiceSecLeft: Math.max(0, lim.voiceSec - bucket.voiceSec),
     sessionCredits: user.sessionCredits || 0,
+    proLiveLeft: plan === 'pro' ? Math.max(0, L.proLiveSessions - (user.pro?.liveUsed || 0)) : 0,
+    proLiveSecLeft: plan === 'pro' ? Math.max(0, Math.floor(((user.proLiveUntil || 0) - now) / 1000)) : 0,
     liveSecLeft,
     limits: { msgs: lim.msgs, voiceSec: lim.voiceSec, period: lim.period },
     proUntil: plan === 'pro' ? user.proUntil : undefined,
