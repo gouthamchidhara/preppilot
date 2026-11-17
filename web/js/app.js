@@ -10,7 +10,7 @@ const DAY = 86400000;
 const app = document.getElementById('app');
 const S = { view: 'home', topic: null, ci: 0, deck: null, di: 0, reveal: false, busy: false, listening: false, chatContext: '',
   rt: null, rtMode: null, rtStatus: '', rtStarting: false, voiceServer: false, live: null, pendingUser: false, muted: false,
-  googleClientId: '', plans: null, paywall: false, draft: null, roleSearch: '' };
+  googleClientId: '', plans: null, paywall: false, draft: null, roleSearch: '', showPlans: false };
 
 /* ---------- helpers ---------- */
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -373,11 +373,69 @@ function settingsView() {
   </div>`;
 }
 
+function plansView() {
+  const P = S.plans;
+  const a = store.account();
+  return `<div class="stack">
+    <div class="hero">
+      <h1>Choose your prep plan</h1>
+      <p>AI coaching, mock interviews, and personalized study — pick what fits your goals.</p>
+    </div>
+    <div class="plans-grid">
+      <div class="plan-card" data-act="pickfree">
+        <div class="eyebrow">Start Free</div>
+        <div class="price">$0</div>
+        <ul class="features">
+          <li>Personalized study plan</li>
+          <li>Full interview guide</li>
+          <li>Flashcards with spaced repetition</li>
+          <li>${P?.free.msgs || 15} AI messages total</li>
+          <li>${P?.free.voiceMin || 2} voice minutes total</li>
+        </ul>
+        <button class="btn" style="width:100%">Continue Free</button>
+      </div>
+      <div class="plan-card featured" data-act="buysub">
+        <div class="plan-badge">Most Popular</div>
+        <div class="eyebrow">Pro — Monthly</div>
+        <div class="price">${esc(P?.pro.price || '$11.99')}<span>/month</span></div>
+        <ul class="features">
+          <li>Everything in Free</li>
+          <li>Unlimited study guide + flashcards</li>
+          <li>${P?.pro.msgs || 500} AI messages/month</li>
+          <li>${P?.pro.voiceMin || 30} voice minutes/month</li>
+          <li>AI mock interviews</li>
+          <li>Priority responses</li>
+        </ul>
+        <button class="btn primary" style="width:100%">Start Pro</button>
+        <p class="small muted center" style="margin-top:8px">Auto-renews monthly · Cancel anytime</p>
+      </div>
+      <div class="plan-card" data-act="buymock">
+        <div class="eyebrow">One-Time</div>
+        <div class="price">$10.99</div>
+        <ul class="features">
+          <li>60-min voice mock interview</li>
+          <li>AI asks real interview questions</li>
+          <li>Instant feedback on answers</li>
+          <li>Overall assessment at end</li>
+          <li>No subscription needed</li>
+        </ul>
+        <button class="btn" style="width:100%">Buy Session</button>
+        <p class="small muted center" style="margin-top:8px">One-time purchase · Use anytime</p>
+      </div>
+    </div>
+    <div class="card center">
+      <p class="muted small">Free plan includes full study guide, flashcards, and personalized plan. Upgrade anytime for AI coaching.</p>
+      <button class="link small" data-act="pickfree" style="margin-top:8px">Skip for now — use the free guide →</button>
+    </div>
+  </div>`;
+}
+
 function render() {
   const p = profile();
   document.querySelectorAll('nav [data-nav]').forEach(b => b.setAttribute('aria-current', String(b.dataset.nav === S.view)));
-  document.querySelector('nav').hidden = !p;
-  app.innerHTML = !p ? onboardingView(null)
+  document.querySelector('nav').hidden = !p || S.showPlans;
+  app.innerHTML = S.showPlans ? plansView()
+    : !p ? onboardingView(null)
     : S.view === 'learn' ? learnView()
     : S.view === 'deck' && S.deck ? deckView()
     : S.view === 'chat' ? chatView()
@@ -556,6 +614,11 @@ document.addEventListener('click', async e => {
   }
   else if (a === 'quick') sendChat(b.dataset.q);
   else if (a === 'rtstart') startVoice(b.dataset.mode);
+  else if (a === 'pickfree') { S.showPlans = false; render(); }
+  else if (a === 'buysub') {
+    if (native()) { const acc = store.account(); nativePurchase(acc?.key || ''); }
+    else { alert('Pro subscription is available in the PrepPilot iPhone app. The AI features unlock here too.'); S.showPlans = false; render(); }
+  }
   else if (a === 'buymock') {
     if (!signedIn()) { S.view = 'chat'; return render(); }
     if (native()) {
@@ -563,6 +626,7 @@ document.addEventListener('click', async e => {
       nativeBuyMock(acc?.key || '');
     } else {
       alert('Mock interview sessions can be purchased in the PrepPilot iPhone app. The credit unlocks here too.');
+      S.showPlans = false; render();
     }
   }
   else if (a === 'rtrespond') S.rt?.respond();
@@ -623,7 +687,13 @@ document.addEventListener('click', async e => {
   }
   render();
   // Account changes (sign-in, usage updates, purchases) re-render unless a voice reply is streaming.
-  onAccountChange(acc => { if (!acc || acc.plan !== 'free' || (acc.msgsLeft > 0)) S.paywall = false; if (!S.live) render(); });
+  let prevAccount = null;
+  onAccountChange(acc => {
+    if (acc && !prevAccount && acc.plan === 'free') S.showPlans = true; // fresh sign-in → show plans
+    prevAccount = acc;
+    if (!acc || acc.plan !== 'free' || (acc.msgsLeft > 0)) S.paywall = false;
+    if (!S.live) render();
+  });
   listenNative({ onError: msg => alert(msg), onPurchased: acc => { S.paywall = false; render(); if (acc?.plan === 'pro') alert('Pro unlocked. Thank you!'); } });
   refreshAccount().catch(() => {});
   // Pre-warm the API (avoids a cold start when the user first talks) and learn what's enabled.

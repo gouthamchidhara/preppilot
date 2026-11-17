@@ -71,7 +71,7 @@ export async function renderGoogleButton(el, clientId, onError) {
     window.google.accounts.id.initialize({
       client_id: clientId,
       callback: r => exchange('google', r.credential).catch(e => onError?.(e.message)),
-      ux_mode: 'redirect',
+      ux_mode: 'popup',
       auto_select: false,
     });
   }
