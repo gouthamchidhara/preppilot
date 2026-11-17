@@ -265,7 +265,8 @@ details[open] summary::after { content: "–"; }
 .scene { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 6px 0 0; }
 .scene .label { font-size: 12px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: var(--ink); }
 .scene .muted { white-space: nowrap; }
-.dg-active rect { stroke: var(--accent); stroke-width: 2; }
+.dg-active rect { stroke: var(--accent); stroke-width: 2; animation: dg-pulse 2.4s ease-in-out infinite; }
+@keyframes dg-pulse { 0%, 100% { stroke-opacity: 1; } 50% { stroke-opacity: .4; } }
 /* Growing bars. */
 .dg-track { fill: var(--sunk); }
 .dg-grow { fill: var(--accent); transform-box: fill-box; transform-origin: left center; transform: scaleX(0); animation: dg-grow .8s cubic-bezier(.2, .7, .2, 1) forwards; }

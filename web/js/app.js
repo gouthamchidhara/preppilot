@@ -13,7 +13,7 @@ const DAY = 86400000;
 const app = document.getElementById('app');
 const S = { view: 'home', topic: null, ci: 0, deck: null, di: 0, reveal: false, busy: false, listening: false, chatContext: '',
   rt: null, rtMode: null, rtStatus: '', rtStarting: false, voiceServer: false, live: null, pendingUser: false, muted: false,
-  googleClientId: '', plans: null, paywall: false, draft: null, roleSearch: '', showPlans: false, fullPlan: false, allTopics: false, buying: null, buyBusy: false, healthLoaded: false, lastView: '', liveHint: null, suggestPending: false, dgStages: {}, prevMap: null };
+  googleClientId: '', plans: null, paywall: false, draft: null, roleSearch: '', showPlans: false, fullPlan: false, allTopics: false, buying: null, buyBusy: false, healthLoaded: false, lastView: '', liveHint: null, suggestPending: false, dgStages: {}, prevMap: null, sheetDg: null };
 
 /* ---------- helpers ---------- */
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -50,10 +50,20 @@ function toast(msg, kind = '') {
   setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 300); }, kind === 'bad' ? 6000 : 4200);
 }
 const oops = msg => toast(msg, 'bad');
-function closeSheet() { document.getElementById('sheet')?.remove(); }
+function closeSheet() { document.getElementById('sheet')?.remove(); S.sheetDg = null; }
 function sheet(html) {
   closeSheet();
   document.body.appendChild(Object.assign(document.createElement('div'), { id: 'sheet', innerHTML: `<div role="dialog" aria-modal="true">${html}</div>` }));
+}
+// The diagram sheet lives outside #app, so a plain render() never refreshes
+// it — the player inside it has to rebuild the sheet itself.
+function dgSheetHtml(id) {
+  return `<div class="stack"><h2>${esc(topicName(id))}</h2>${diagramHtml(id, S.dgStages[id] ?? null)}<button class="btn block" data-act="closesheet">Back to the cards</button></div>`;
+}
+function refreshDgSheet(id) {
+  if (S.sheetDg !== id || !document.getElementById('sheet')) return;
+  sheet(dgSheetHtml(id));
+  S.sheetDg = id; // sheet() clears it via closeSheet(); restore it.
 }
 
 const topics = () => [...loadedTopics(), ...store.customTopics(), ...store.privatePacks().flatMap(p => p.topics.map(t => ({ ...t, private: true })))];
@@ -288,8 +298,8 @@ function homeView() {
         // A tile that moved up a state since the last render gets a brief highlight.
         const order = { unseen: 0, weak: 1, ok: 2, strong: 3 };
         const fresh = prevMap && prevMap[t.id] !== undefined && order[t.state] > order[prevMap[t.id]];
-        return `<button class="tile ${t.state}${fresh ? ' tile-fresh' : ''}" data-act="learn" data-id="${t.id}" style="animation-delay:${i * 60}ms" aria-label="${esc(t.name)}: ${t.state === 'strong' ? 'solid' : t.state === 'ok' ? 'getting there' : t.state === 'weak' ? 'shaky' : 'not started'}, ${t.known} of ${t.total} cards known">
-        <span class="t">${esc(t.name)}</span><span class="bar"><i style="width:${t.pct}%;animation-delay:${i * 60 + 150}ms"></i></span>
+        return `<button class="tile ${t.state}${fresh ? ' tile-fresh' : ''}" data-act="learn" data-id="${t.id}" style="animation-delay:${S._stagger ? i * 60 : 0}ms" aria-label="${esc(t.name)}: ${t.state === 'strong' ? 'solid' : t.state === 'ok' ? 'getting there' : t.state === 'weak' ? 'shaky' : 'not started'}, ${t.known} of ${t.total} cards known">
+        <span class="t">${esc(t.name)}</span><span class="bar"><i style="width:${t.pct}%;animation-delay:${S._stagger ? i * 60 + 150 : 0}ms"></i></span>
         <span class="m">${t.state === 'strong' ? 'Solid' : t.state === 'ok' ? 'Getting there' : t.state === 'weak' ? 'Shaky' : 'Not started'} · ${t.total ? `${t.known}/${t.total}` : 'no cards here'}</span></button>`; }).join('')}</div>
       <p class="muted small">${map.counts.strong} solid · ${map.counts.ok} getting there · ${map.counts.weak} shaky · ${map.counts.unseen} not started</p>
     </section>
@@ -877,7 +887,10 @@ function startDgAutoplay() {
 
 // After a render, count the [data-countup] numbers up to their final value
 // (they are rendered at the final value, so nothing breaks if this never runs).
-function animateIn() {
+// Only on entering a view: background re-renders (account, health check)
+// must not replay the count-up or the map stagger from zero.
+function animateIn(changed) {
+  if (!changed) return;
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
   document.querySelectorAll('[data-countup]').forEach(el => {
     const target = Number(el.dataset.countup);
@@ -903,6 +916,9 @@ function render() {
   document.querySelectorAll('nav [data-nav]').forEach(b => b.setAttribute('aria-current', String(b.dataset.nav === (S.view === 'learn' ? 'home' : S.view))));
   document.querySelector('nav').hidden = !p || S.showPlans;
   document.getElementById('topRight').innerHTML = topRight();
+  // The home map assembles (tiles stagger in) only when the user arrives at
+  // home, not on every background re-render.
+  S._stagger = changed && key === 'home';
   const html = key === 'plans' ? plansView()
     : key === 'onboard' ? onboardingView(null)
     : key === 'learn' ? learnView()
@@ -913,6 +929,7 @@ function render() {
     : key === 'settings' ? settingsView()
     : homeView();
   app.innerHTML = `<div class="${changed ? 'view' : ''}">${html}</div>`;
+  S._stagger = false;
   if (keep) { const i = document.getElementById('chatInput'); if (i) { i.value = keep.value; if (keep.focus) i.focus(); } }
   mountGoogleButton();
   filterRoles();
@@ -931,7 +948,7 @@ function render() {
   // else the player stops so timers never outlive their screen.
   if (key === 'plans' && changed) startDgAutoplay();
   else if (key !== 'plans') stopDgAutoplay();
-  animateIn();
+  animateIn(changed);
 }
 
 /* ---------- purchases ---------- */
@@ -1234,10 +1251,10 @@ document.addEventListener('click', async e => {
   else if (a === 'roledeck') startRoleDeck(id);
   else if (a === 'reveal') { S.reveal = true; render(); }
   else if (a === 'grade') gradeCard(b.dataset.ok === '1');
-  else if (a === 'dgprev') { stopDgAutoplay(); S.dgStages[id] = prevStage(S.dgStages[id] ?? null); render(); }
-  else if (a === 'dgnext') { stopDgAutoplay(); S.dgStages[id] = nextStage(S.dgStages[id] ?? null, (diagramFor(id)?.steps.length || 1)); render(); }
-  else if (a === 'dgreplay') { stopDgAutoplay(); S.dgStages[id] = null; render(); }
-  else if (a === 'dgsheet') { sheet(`<div class="stack"><h2>${esc(topicName(id))}</h2>${diagramHtml(id, S.dgStages[id] ?? null)}<button class="btn block" data-act="closesheet">Back to the cards</button></div>`); }
+  else if (a === 'dgprev') { stopDgAutoplay(); S.dgStages[id] = prevStage(S.dgStages[id] ?? null); refreshDgSheet(id); render(); }
+  else if (a === 'dgnext') { stopDgAutoplay(); S.dgStages[id] = nextStage(S.dgStages[id] ?? null, (diagramFor(id)?.steps.length || 1)); refreshDgSheet(id); render(); }
+  else if (a === 'dgreplay') { stopDgAutoplay(); S.dgStages[id] = null; refreshDgSheet(id); render(); }
+  else if (a === 'dgsheet') { sheet(dgSheetHtml(id)); S.sheetDg = id; }
   else if (a === 'askcard') {
     const t = topicById(S.topic), c = t.concepts[S.ci];
     S.chatContext = cardContext(t, c); S.view = 'chat'; render();
