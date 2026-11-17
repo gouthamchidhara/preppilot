@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildPlan, rankTopics, review, dueCards, readiness, knowledgeMap, daysUntil, INTERVAL_DAYS, effectiveRoles, migrateProfile, profileSummary, topicWeight } from '../web/js/plan.js';
+import { buildPlan, rankTopics, review, isKnown, dueCards, readiness, knowledgeMap, daysUntil, INTERVAL_DAYS, effectiveRoles, migrateProfile, profileSummary, topicWeight } from '../web/js/plan.js';
 
 const mk = (id, roles, nConcepts = 3, tiers = [1, 2, 3]) => ({
   id, name: id, roles,
@@ -40,6 +40,15 @@ test('spaced repetition: correct moves up a box, a miss resets to due now', () =
   assert.equal(s.box, 2);
   s = review(s, false, NOW);
   assert.deepEqual([s.box, s.due], [0, NOW]);
+});
+
+test('one correct grade counts as known, so the home count moves at once', () => {
+  assert.equal(isKnown(undefined), false);
+  assert.equal(isKnown({ box: 0, due: NOW }), false);
+  // Grading a fresh card "Got it" once moves box 0 -> 1 — and that is known.
+  assert.equal(isKnown(review(undefined, true, NOW)), true);
+  const progress = { 'linux-0': review(undefined, true, NOW) };
+  assert.equal(readiness(TOPICS, { level: 'senior' }, progress).known, 1);
 });
 
 test('due cards respect level tiers and put missed cards first', () => {
@@ -97,7 +106,7 @@ test('knowledge map classifies each topic: strong, ok, weak, unseen', () => {
   // TOPICS have 3 cards each (tiers 1, 2, 3). Senior sees all three.
   const progress = {
     'linux-0': { box: 2, due: NOW }, 'linux-1': { box: 3, due: NOW }, 'linux-2': { box: 2, due: NOW }, // 3/3 known
-    'k8s-0': { box: 2, due: NOW }, 'k8s-1': { box: 1, due: NOW }, // 1/3 known, 2 attempted
+    'k8s-0': { box: 2, due: NOW }, 'k8s-1': { box: 0, due: NOW }, // 1/3 known, 2 attempted (box 0 = tried, missed, not known)
     // windows: nothing attempted
   };
   const map = knowledgeMap(TOPICS, { role: 'infra', level: 'senior' }, progress);

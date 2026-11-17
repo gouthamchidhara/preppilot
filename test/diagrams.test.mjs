@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
-import { diagramFor, diagramHtml } from '../web/js/diagrams.js';
+import { diagramFor, diagramHtml, storyView, registerDiagramSpec, isValidDiagramSpec } from '../web/js/diagrams.js';
 
 // The packs on disk are the source of truth for which topics exist.
 function packTopicIds() {
@@ -103,4 +103,53 @@ test('each diagram names the concept it explains', () => {
   assert.match(diagramFor('js-core').svg, /Call stack/);
   assert.match(diagramFor('behavioral').svg, /Result/);
   assert.match(diagramFor('react').svg, /App/);
+});
+
+test('the story strip builds the diagram card by card', () => {
+  // Web Fundamentals over 9 cards: the first card shows only the first
+  // piece (the rest is a faint ghost), the last card shows the whole picture.
+  const first = storyView('web-fundamentals', 0, 9);
+  assert.ok(first, 'story strip exists for a diagram topic');
+  assert.equal(first.built, 1);
+  assert.equal(first.focus, 0);
+  assert.match(first.html, /dg-ghost/, 'later pieces are ghosts on card 1');
+  assert.match(first.html, /diagram compact/);
+  assert.doesNotMatch(first.html, /data-act="dgnext"/, 'the strip has no player controls — the lesson is the player');
+  assert.match(first.html, /Walk through the full diagram/);
+  const last = storyView('web-fundamentals', 8, 9);
+  assert.equal(last.built, last.pieces);
+  assert.equal(last.focus, last.steps - 1);
+  assert.doesNotMatch(last.html, /dg-ghost/, 'the full picture has no ghosts on the last card');
+  // The build never goes backwards mid-lesson.
+  const builds = Array.from({ length: 9 }, (_, ci) => storyView('web-fundamentals', ci, 9).built);
+  for (let i = 1; i < builds.length; i++) assert.ok(builds[i] >= builds[i - 1]);
+});
+
+test('storyView returns null where there is no diagram to build', () => {
+  assert.equal(storyView('not-a-topic', 0, 3), null);
+});
+
+test('custom subjects register their own diagram and get the same story strip', () => {
+  const spec = {
+    kind: 'flow', title: 'How Ansible runs', caption: 'Control node to hosts.',
+    nodes: [{ label: 'Write', sub: 'a playbook' }, { label: 'Run', sub: 'ansible-playbook' }, { label: 'Apply', sub: 'on each host' }],
+    steps: ['Write: a playbook', 'Run: ansible-playbook', 'Apply: on each host'],
+  };
+  assert.equal(isValidDiagramSpec(spec), true);
+  assert.equal(isValidDiagramSpec({ kind: 'flow', nodes: [{ label: 'Only one' }], steps: ['one'] }), false);
+  assert.equal(isValidDiagramSpec({ kind: 'cycle', nodes: [], steps: [] }), false);
+  assert.equal(isValidDiagramSpec(null), false);
+  registerDiagramSpec('c-ansible-test', spec);
+  assert.match(diagramFor('c-ansible-test').svg, /Write/);
+  assert.match(diagramFor('c-ansible-test').svg, /ansible-playbook/);
+  const strip = storyView('c-ansible-test', 0, 6);
+  assert.ok(strip, 'custom topic gets a story strip');
+  assert.equal(strip.built, 1);
+  assert.match(strip.html, /dg-ghost/);
+  const last = storyView('c-ansible-test', 5, 6);
+  assert.equal(last.built, last.pieces);
+  assert.doesNotMatch(last.html, /dg-ghost/);
+  // A refused spec never registers: the topic still works, just without a diagram.
+  registerDiagramSpec('c-bad-test', { kind: 'flow', nodes: [{ label: 'x' }], steps: [] });
+  assert.equal(storyView('c-bad-test', 0, 3), null);
 });

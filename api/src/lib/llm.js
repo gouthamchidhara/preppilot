@@ -40,6 +40,7 @@ function mock(messages, json) {
     return JSON.stringify({
       concepts: [{ t: 'Mock concept', what: 'AI is not configured, so this is sample content.', why: 'Lets you test the app offline.', ex: 'echo "configure AZURE_OPENAI_* to get real content"', tip: 'Set the env vars in api/.env or Azure app settings.' }],
       qa: [{ l: 1, q: 'Is the AI configured?', a: 'Not yet. This is mock output.' }],
+      diagram: { kind: 'flow', title: 'How a mock answer flows', caption: 'Sample picture, so the story strip works offline too.', nodes: [{ label: 'Ask', sub: 'the question' }, { label: 'Think', sub: 'work it out' }, { label: 'Answer', sub: 'say it plainly' }], steps: ['Ask: the question arrives', 'Think: work it out', 'Answer: say it plainly'] },
     });
   }
   return `(mock AI) You asked: "${last.slice(0, 200)}". Configure AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY and AZURE_OPENAI_DEPLOYMENT for real answers.`;

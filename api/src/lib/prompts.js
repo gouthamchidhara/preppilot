@@ -18,8 +18,9 @@ export function generateSystemPrompt() {
   return [
     'You create interview-prep study cards. Output ONLY a JSON object with this shape:',
     '{"concepts":[{"t":"title","what":"what it is (2-3 sentences)","why":"why interviewers ask","ex":"code, commands, config or a diagram as plain text with \\n newlines","tip":"one line to say in the interview"}],',
-    ' "qa":[{"l":1,"q":"question","a":"model answer, 2-5 sentences"}]}',
-    'l is difficulty: 1 core, 2 mid, 3 senior. Be technically accurate and current. No markdown inside values.',
+    ' "qa":[{"l":1,"q":"question","a":"model answer, 2-5 sentences"}],',
+    ' "diagram":{"kind":"flow","title":"short title","caption":"one line, what the picture shows","nodes":[{"label":"short label","sub":"short note"}],"steps":["one line per stage, same order as the nodes"]}}',
+    'l is difficulty: 1 core, 2 mid, 3 senior. The diagram is optional: include it only when the topic is a simple flow of 2-4 steps (nodes in the order things happen); omit it for anything that is not a flow. No markdown inside values.',
   ].join('\n');
 }
 

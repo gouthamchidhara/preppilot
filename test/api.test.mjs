@@ -234,6 +234,35 @@ test('sanitizer drops malformed model output', () => {
   assert.equal(sanitizeGenerated({ qa: [{ l: 9, q: 'q', a: 'a' }] }).qa[0].l, 2);
 });
 
+test('sanitizer keeps a well-formed story diagram and drops a bad one', () => {
+  const good = sanitizeGenerated({
+    concepts: [{ t: 'Ansible', what: 'Automation.' }],
+    qa: [{ l: 1, q: 'What is Ansible?', a: 'Automation.' }],
+    diagram: {
+      kind: 'flow', title: 'How Ansible runs', caption: 'Control node to hosts.',
+      nodes: [{ label: 'Write', sub: 'a playbook' }, { label: 'Run', sub: 'ansible-playbook' }, { label: 'Apply', sub: 'on each host' }],
+      steps: ['Write: a playbook', 'Run: ansible-playbook', 'Apply: on each host'],
+    },
+  });
+  assert.equal(good.diagram.kind, 'flow');
+  assert.equal(good.diagram.nodes.length, 3);
+  assert.equal(good.diagram.steps.length, 3);
+  // Wrong kind, too few nodes, or too few steps: the diagram is dropped,
+  // but the guide itself survives.
+  const bad = sanitizeGenerated({
+    concepts: [{ t: 'Ansible', what: 'Automation.' }],
+    diagram: { kind: 'cycle', nodes: [{ label: 'x' }], steps: ['x'] },
+  });
+  assert.equal(bad.diagram, undefined);
+  const thin = sanitizeGenerated({
+    concepts: [{ t: 'Ansible', what: 'Automation.' }],
+    diagram: { kind: 'flow', nodes: [{ label: 'Only one' }], steps: ['one'] },
+  });
+  assert.equal(thin.diagram, undefined);
+  const none = sanitizeGenerated({ concepts: [{ t: 'Ansible', what: 'Automation.' }] });
+  assert.equal(none.diagram, undefined);
+});
+
 test('listening mode never auto-replies; talking mode replies fast and allows barge-in', () => {
   process.env.AZURE_OPENAI_REALTIME_DEPLOYMENT = 'rt';
   process.env.AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT = 'tr';

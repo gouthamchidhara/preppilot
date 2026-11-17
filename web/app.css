@@ -247,9 +247,24 @@ details[open] summary::after { content: "–"; }
 /* The travelling dot: rides the main path on a loop so the eye follows the flow. */
 .dg-dot { fill: var(--accent); offset-rotate: 0deg; animation: dg-travel 4s linear infinite; }
 @keyframes dg-travel { from { offset-distance: 0%; } to { offset-distance: 100%; } }
-/* Stage focus: the active stage stands out, the rest dims. */
+/* Stage focus: the active stage stands out, the rest dims hard. */
 .dg-box, .dg-line, .dg-step { transition: opacity .3s ease; }
-.dg-dim { opacity: .25; }
+.dg-dim { opacity: .12; }
+/* Not-yet-built story pieces: a faint outline of the picture to come. */
+.dg-ghost { opacity: .13; }
+.dg-ghost rect { stroke-dasharray: 2 3; }
+/* The VS divider in a before/after split, and the muted side. */
+.dg-vs { font-size: 15px; font-weight: 700; fill: var(--muted); animation: dg-vs 2.4s ease-in-out infinite; }
+@keyframes dg-vs { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+.dg-note { font-size: 11px; font-style: italic; fill: var(--muted); }
+.dg-bad rect { stroke-dasharray: 2 2; }
+/* The compact story strip inside a lesson card. */
+.diagram.compact { padding: 12px 12px 10px; }
+.diagram.compact figcaption { margin-top: 6px; }
+/* The scene header above the story strip: where you are in the story. */
+.scene { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 6px 0 0; }
+.scene .label { font-size: 12px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: var(--ink); }
+.scene .muted { white-space: nowrap; }
 .dg-active rect { stroke: var(--accent); stroke-width: 2; }
 /* Growing bars. */
 .dg-track { fill: var(--sunk); }
@@ -258,10 +273,14 @@ details[open] summary::after { content: "–"; }
 /* The step-through player under each diagram. */
 .dg-controls { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
 .dg-stage { flex: 1; text-align: center; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
-/* The knowledge map lives: bars grow in, tiles that moved up flash once. */
-.knowmap .bar i, .rowi .bar i { animation: bar-grow .7s ease both; }
+/* The knowledge map lives: tiles fade in one after another, bars grow in,
+   tiles that moved up flash once. */
+.knowmap .tile { animation: tile-in .5s ease both; }
+@keyframes tile-in { from { opacity: 0; transform: translateY(6px); } }
+.knowmap .tile .bar { height: 6px; }
+.knowmap .bar i, .rowi .bar i { animation: bar-grow 1s ease both; }
 @keyframes bar-grow { from { width: 0; } }
-.tile-fresh { animation: tile-fresh 1.4s ease both; }
+.knowmap .tile.tile-fresh { animation: tile-in .5s ease both, tile-fresh 1.4s ease both; }
 @keyframes tile-fresh { 0% { box-shadow: 0 0 0 2px var(--accent); } 100% { box-shadow: 0 0 0 0 transparent; } }
 /* View changes fade in softly. */
 .view { animation: fade .2s ease both; }
@@ -280,7 +299,7 @@ pre code { background: none; border: 0; padding: 0; }
 .level { font-size: 13px; color: var(--muted); }
 /* The grading verdict: a ring draws itself, then a check or a cross, on the card. */
 .flash .verdict { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: color-mix(in srgb, var(--paper) 78%, transparent); border-radius: 10px; animation: fade .18s ease both; }
-.flash .verdict svg { width: 84px; height: 84px; }
+.flash .verdict svg { width: 104px; height: 104px; }
 .flash .verdict .v-ring, .flash .verdict .v-mark { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; }
 .flash .verdict.miss .v-ring, .flash .verdict.miss .v-mark { stroke: var(--muted); }
 .flash .verdict span { font-weight: 600; font-size: 15px; }
@@ -292,6 +311,24 @@ pre code { background: none; border: 0; padding: 0; }
 @keyframes ring-sweep { from { stroke-dashoffset: 100; } }
 .score-num { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
 .score-num .n { font: 500 2.2rem/1 var(--serif); font-variant-numeric: tabular-nums; }
+
+/* ---------- stats ---------- */
+/* The rings row: three small rings, same ink as the results ring. */
+.rings { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.score-ring.small { width: 96px; height: 96px; }
+.score-ring.small .score-num .n { font-size: 1.3rem; }
+.score-ring.small .score-num .muted { font-size: 11px; line-height: 1.2; padding: 0 6px; }
+.stat-ring { text-align: center; }
+/* Practice streak: one dot per day, last 14 days. */
+.streak-dots { display: flex; gap: 6px; margin: 12px 0 4px; }
+.streak-dots span { width: 12px; height: 12px; border-radius: 99px; border: 1px solid var(--line-strong); }
+.streak-dots span.on { background: var(--accent); border-color: var(--accent); }
+/* 14-day trend: bars grow up from the baseline. */
+.trend { display: flex; align-items: flex-end; gap: 5px; height: 84px; margin-top: 10px; }
+.trend .tb { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 100%; min-width: 0; }
+.trend .tb i { display: block; width: 100%; max-width: 22px; background: var(--accent); border-radius: 3px 3px 0 0; transform-origin: bottom; animation: bar-grow-v .8s cubic-bezier(.2, .7, .2, 1) both; }
+@keyframes bar-grow-v { from { transform: scaleY(0); } }
+.trend .tb em { font-style: normal; font-size: 10.5px; color: var(--muted); }
 @media (max-width: 760px) { .kbd-hint { display: none; } }
 .score { font: 500 3.2rem/1 var(--serif); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .score small { font-size: 1.4rem; color: var(--muted); }

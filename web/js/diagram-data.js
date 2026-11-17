@@ -391,6 +391,23 @@ Object.assign(SPECS, {
       'Update DOM: only the bindings that changed are written to the page.',
     ],
   },
+  'web-fundamentals': {
+    kind: 'flow', title: 'How a page loads',
+    caption: 'Four steps, every time: the name is resolved, a secure connection opens, the server finds the page, and the page comes back.',
+    nodes: [
+      { label: 'Browser', sub: 'you type the URL' },
+      { label: 'DNS', sub: 'name → IP address' },
+      { label: 'TCP + TLS', sub: 'secure connection' },
+      { label: 'Server', sub: 'finds the page' },
+    ],
+    ret: 'the page comes back: HTML, CSS, JS',
+    steps: [
+      'The browser asks DNS where the site lives.',
+      'TCP + TLS open a secure connection to that address.',
+      'The server finds the page you asked for.',
+      'The page comes back: HTML, CSS, JS — and the browser renders it.',
+    ],
+  },
   'browser-performance': {
     kind: 'flow', title: 'The critical rendering path',
     caption: 'Five steps stand between your HTML and a pixel. Anything that blocks the first two — render-blocking CSS or JS — delays everything after it.',
@@ -571,6 +588,32 @@ Object.assign(SPECS, {
       'Container: the image, running, isolated. Same image, same behaviour — on your laptop or in prod.',
     ],
   },
+  k8s: {
+    kind: 'map', title: 'What runs where', h: 230,
+    caption: 'You talk to the Service, never to a pod directly. If a pod dies, the ReplicaSet starts another one and the Service keeps pointing at the healthy set.',
+    cluster: { x: 8, y: 8, w: 584, h: 214, label: 'Cluster', stage: 0 },
+    boxes: [
+      { x: 20, y: 30, w: 560, h: 40, label: 'Control plane — API server · scheduler · etcd', sub: '', stage: 0 },
+      { x: 20, y: 82, w: 560, h: 132, label: 'Node — kubelet', sub: '', stage: 0, topLabel: true },
+      { x: 252, y: 122, w: 96, h: 34, label: 'Service', sub: '', stage: 1 },
+      { x: 40, y: 172, w: 104, h: 30, label: 'Pod 1', sub: '', stage: 2 },
+      { x: 248, y: 172, w: 104, h: 30, label: 'Pod 2', sub: '', stage: 2 },
+      { x: 456, y: 172, w: 104, h: 30, label: 'Pod 3', sub: '', stage: 2 },
+    ],
+    links: [
+      { d: 'M300 156 V172', stage: 2, march: true },
+      { d: 'M300 156 L96 172', stage: 2, march: true },
+      { d: 'M300 156 L504 172', stage: 2, march: true },
+    ],
+    notes: [
+      { x: 300, y: 112, text: 'Deployment → ReplicaSet keeps 3 copies running', stage: 2 },
+    ],
+    steps: [
+      'The control plane decides what should run — API server, scheduler, etcd.',
+      'The Service is the stable address. You talk to it, never to a pod directly.',
+      'Pods come and go. The ReplicaSet keeps three running, and the Service keeps pointing at the healthy set.',
+    ],
+  },
   cicd: {
     kind: 'flow', title: 'A change, safely to production',
     caption: 'CI proves the change works. CD proves it works in production — by deploying in a way you can undo in seconds.',
@@ -704,6 +747,31 @@ Object.assign(SPECS, {
   },
 });
 Object.assign(SPECS, {
+  jvm: {
+    kind: 'map', title: 'Where objects live', h: 210,
+    caption: 'New objects land in Eden. The sweep is the collector: most die young, the survivors age into the old generation. Each thread also has its own stack for method calls and local variables.',
+    boxes: [
+      { x: 8, y: 8, w: 584, h: 30, label: 'Metaspace — class data, methods', sub: '', stage: 0 },
+      { x: 8, y: 52, w: 584, h: 104, label: '', sub: '', stage: 0, cls: 'dg-heap' },
+      { x: 16, y: 64, w: 200, h: 80, label: 'Eden', sub: 'new objects land here', stage: 1 },
+      { x: 224, y: 64, w: 64, h: 80, label: 'S0', sub: '', stage: 1 },
+      { x: 296, y: 64, w: 64, h: 80, label: 'S1', sub: '', stage: 1 },
+      { x: 376, y: 64, w: 208, h: 80, label: 'Old generation', sub: 'long-lived objects', stage: 2 },
+    ],
+    links: [
+      { d: 'M116 168 C 220 196, 380 196, 472 168', stage: 2, march: false },
+    ],
+    notes: [
+      { x: 188, y: 152, text: 'young generation', stage: 1 },
+      { x: 300, y: 204, text: 'survives a few collections → moves here', stage: 2 },
+    ],
+    sweep: { x: 16, y: 64, w: 36, h: 80, stage: 1 },
+    steps: [
+      'Metaspace holds class data and methods — not your objects.',
+      'New objects land in Eden. The sweep is the collector: most die young.',
+      'Survivors age through S0 and S1 into the old generation, where collections are rare and expensive.',
+    ],
+  },
   'java-core': {
     kind: 'flow', title: 'How HashMap finds your value',
     caption: 'A hash picks the bucket, equals picks the key. A bad hash function turns a map into a list — and your O(1) into O(n).',

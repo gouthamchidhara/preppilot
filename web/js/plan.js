@@ -122,8 +122,10 @@ export function isDue(state, now = Date.now()) {
   return !state || state.due <= now;
 }
 
+// A card counts as known after one correct grade — it has been learned
+// once, so the home count moves the first time the user gets it right.
 export function isKnown(state) {
-  return !!state && state.box >= 2;
+  return !!state && state.box >= 1;
 }
 
 // Cards the user should see now: due cards for their level, weakest topics first, capped.

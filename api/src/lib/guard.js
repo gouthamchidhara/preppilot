@@ -85,5 +85,33 @@ export function sanitizeGenerated(raw) {
     .slice(0, 20)
     .map(q => ({ l: [1, 2, 3].includes(q.l) ? q.l : 2, q: str(q.q, 400), a: str(q.a, 1500) }));
   if (!concepts.length && !qa.length) return null;
-  return { concepts, qa };
+  const out = { concepts, qa };
+  // The optional story diagram: only a simple flow of 2-4 nodes, everything
+  // bounded. Anything malformed is dropped — the guide still works without it.
+  const dg = sanitizeDiagram(data?.diagram);
+  if (dg) out.diagram = dg;
+  return out;
+}
+
+// A diagram the AI may attach to a generated guide: flow only, 2-4 nodes,
+// steps in the same order as the nodes. Returns the cleaned spec or null.
+export function sanitizeDiagram(d) {
+  if (!d || d.kind !== 'flow') return null;
+  const nodes = (Array.isArray(d.nodes) ? d.nodes : [])
+    .filter(n => n && typeof n.label === 'string' && n.label.trim())
+    .slice(0, 4)
+    .map(n => ({ label: str(n.label, 40), sub: str(n.sub, 40) }));
+  if (nodes.length < 2) return null;
+  const steps = (Array.isArray(d.steps) ? d.steps : [])
+    .filter(s => typeof s === 'string' && s.trim())
+    .slice(0, 4)
+    .map(s => str(s, 120));
+  if (steps.length < 2) return null;
+  return {
+    kind: 'flow',
+    title: str(d.title, 60) || 'How it works',
+    caption: str(d.caption, 200) || '',
+    nodes,
+    steps,
+  };
 }

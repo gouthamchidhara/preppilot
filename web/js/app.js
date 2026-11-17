@@ -5,14 +5,15 @@ import { voice } from './voice.js';
 import { VoiceSession, realtimeSupported } from './realtime.js';
 import { native, signedIn, signOut, renderGoogleButton, refreshAccount, onAccountChange, nativeSignIn, nativePurchase, nativeBuyLive, nativeRestore, listenNative, notifyBadge, notifyDaily, promptNotifications } from './auth.js';
 import { initContent, getCatalog, getManifest, roleById, topicMeta, ensureTopics, ensureForProfile, loadedTopics, reportUrl } from './content.js';
-import { diagramHtml, diagramFor } from './diagrams.js';
-import { ringOffset, nextStage, prevStage } from './animate.js';
+import { diagramHtml, diagramFor, storyView, registerDiagramSpec } from './diagrams.js';
+import { todayKey, recordActivity, streakDays, lastNDays } from './stats.js';
+import { ringOffset, nextStage, prevStage, storyReveal, sceneName, storyPieces } from './animate.js';
 
 const DAY = 86400000;
 const app = document.getElementById('app');
 const S = { view: 'home', topic: null, ci: 0, deck: null, di: 0, reveal: false, busy: false, listening: false, chatContext: '',
   rt: null, rtMode: null, rtStatus: '', rtStarting: false, voiceServer: false, live: null, pendingUser: false, muted: false,
-  googleClientId: '', plans: null, paywall: false, draft: null, roleSearch: '', showPlans: false, fullPlan: false, allTopics: false, buying: null, buyBusy: false, healthLoaded: false, lastView: '', liveHint: null, suggestPending: false, dgStage: null, prevMap: null };
+  googleClientId: '', plans: null, paywall: false, draft: null, roleSearch: '', showPlans: false, fullPlan: false, allTopics: false, buying: null, buyBusy: false, healthLoaded: false, lastView: '', liveHint: null, suggestPending: false, dgStages: {}, prevMap: null };
 
 /* ---------- helpers ---------- */
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -283,12 +284,12 @@ function homeView() {
     ${livePromo()}
     <section class="knowmap" aria-label="What you know">
       <div class="nums"><span><b>What you know</b></span><span><b data-countup="${knownTotal}">${knownTotal}</b> of ${cardsTotal} cards known</span></div>
-      <div class="tiles">${map.topics.map(t => {
+      <div class="tiles">${map.topics.map((t, i) => {
         // A tile that moved up a state since the last render gets a brief highlight.
         const order = { unseen: 0, weak: 1, ok: 2, strong: 3 };
         const fresh = prevMap && prevMap[t.id] !== undefined && order[t.state] > order[prevMap[t.id]];
-        return `<button class="tile ${t.state}${fresh ? ' tile-fresh' : ''}" data-act="learn" data-id="${t.id}" aria-label="${esc(t.name)}: ${t.state === 'strong' ? 'solid' : t.state === 'ok' ? 'getting there' : t.state === 'weak' ? 'shaky' : 'not started'}, ${t.known} of ${t.total} cards known">
-        <span class="t">${esc(t.name)}</span><span class="bar"><i style="width:${t.pct}%"></i></span>
+        return `<button class="tile ${t.state}${fresh ? ' tile-fresh' : ''}" data-act="learn" data-id="${t.id}" style="animation-delay:${i * 60}ms" aria-label="${esc(t.name)}: ${t.state === 'strong' ? 'solid' : t.state === 'ok' ? 'getting there' : t.state === 'weak' ? 'shaky' : 'not started'}, ${t.known} of ${t.total} cards known">
+        <span class="t">${esc(t.name)}</span><span class="bar"><i style="width:${t.pct}%;animation-delay:${i * 60 + 150}ms"></i></span>
         <span class="m">${t.state === 'strong' ? 'Solid' : t.state === 'ok' ? 'Getting there' : t.state === 'weak' ? 'Shaky' : 'Not started'} · ${t.total ? `${t.known}/${t.total}` : 'no cards here'}</span></button>`; }).join('')}</div>
       <p class="muted small">${map.counts.strong} solid · ${map.counts.ok} getting there · ${map.counts.weak} shaky · ${map.counts.unseen} not started</p>
     </section>
@@ -317,10 +318,16 @@ function learnView() {
   const c = t.concepts[S.ci];
   if (!c) return `<div class="stack"><h2>${esc(t.name)}</h2><p class="muted">This topic has questions only.</p><div class="row"><button class="btn primary" data-act="deck" data-id="${t.id}">Practice flashcards</button></div></div>`;
   const last = S.ci >= t.concepts.length - 1;
+  // The lesson is a story and the diagram is its visual thread: it builds
+  // piece by piece as the cards go on, so finishing the lesson means
+  // finishing the picture. Every card shows the scene it is in; cards with
+  // a diagram show the building picture with the current scene highlighted.
+  const story = storyView(t.id, S.ci, t.concepts.length);
+  const scene = `<div class="scene"><span class="label">Scene ${S.ci + 1} of ${t.concepts.length} · ${esc(sceneName(S.ci, t.concepts.length))}</span>${story ? `<span class="muted small">Step ${story.focus + 1} of ${story.steps} · the picture builds as you read</span>` : ''}</div>`;
   return `<div class="stack">
     <div class="row between"><button class="back" data-act="home">${ic('left')}Plan</button><span class="muted small">${esc(t.name)}, ${S.ci + 1} of ${t.concepts.length}</span></div>
     <div class="segs">${t.concepts.map((_, i) => `<i class="${i <= S.ci ? 'on' : ''}"></i>`).join('')}</div>
-    ${S.ci === 0 ? diagramHtml(t.id, S.dgStage) : (diagramFor(t.id) ? `<button class="link quiet small" data-act="dgshow">How it works — see the diagram</button>` : '')}
+    ${story ? `${scene}${story.html}` : scene}
     <article class="lesson" style="padding:14px 0 6px">
       <h1>${esc(c.t)}</h1>
       <div class="part body" style="margin-top:16px"><p class="lede" style="max-width:none">${fmt(c.what)}</p></div>
@@ -334,6 +341,7 @@ function learnView() {
       <button class="btn" data-act="askcard">Ask the coach</button>
       ${last ? `<button class="btn primary grow" data-act="deck" data-id="${t.id}">Test yourself</button>` : '<button class="btn primary grow" data-act="cnext">Next lesson</button>'}
     </div>
+    ${last ? `<p class="muted small" style="margin-top:2px">That's the whole story — the picture is finished. Test yourself while it's fresh.</p>` : ''}
   </div>`;
 }
 
@@ -696,6 +704,96 @@ function settingsView() {
   </div>`;
 }
 
+function customView() {
+  const custom = store.customTopics();
+  const p = profile();
+  const prog = store.progress();
+  const reason = customLimitReason();
+  const atCap = custom.length >= CUSTOM_LIMIT;
+  const rows = custom.map(t => {
+    const tr = readiness([t], p, prog);
+    return `<div class="rowi static"><span class="main"><span class="t">${esc(t.name)}</span><span class="d">${t.concepts.length} lessons · ${t.qa.length} questions${tr.total ? ` · ${tr.pct}% known` : ''}</span></span>
+      <span class="row"><button class="link quiet small" data-act="learn" data-id="${t.id}">Open</button><button class="link quiet small" data-act="deck" data-id="${t.id}">Practice</button><button class="link quiet small" data-act="delcustom" data-id="${t.id}">Delete</button></span></div>`;
+  }).join('');
+  return `<div class="stack loose">
+    <div class="head"><h1>Your subjects</h1>
+      <p class="lede">Anything your interview covers that the 72 built-in topics don't — Ansible, Puppet, a tool only your team uses. The coach writes the full guide: lessons told like a story, plus flashcards.</p></div>
+    <section class="card stacked">
+      <div class="card-head"><span>Custom subjects</span><span>${custom.length} of ${CUSTOM_LIMIT}</span></div>
+      ${reason === 'pro'
+        ? `<p class="muted">Custom subjects are part of Pro. The subjects you already have stay usable either way.</p><div class="row"><button class="btn primary" data-act="plans">See Pro, ${esc(offer().proPrice)}</button></div>`
+        : reason === 'signin'
+          ? `<p class="muted">Sign in to write a custom subject.</p>`
+          : `<form id="customForm" class="row"><input id="customTopic" maxlength="120" placeholder="e.g. Ansible" required aria-label="Subject"><button class="btn primary" ${S.busy || atCap ? 'disabled' : ''}>${S.busy ? 'Writing your guide…' : 'Generate my guide'}</button></form>
+          <p class="muted small">Uses 5 AI messages. ${atCap ? `You have all ${CUSTOM_LIMIT} subjects — delete one to make room.` : `You can keep up to ${CUSTOM_LIMIT} subjects.`}</p>`}
+      ${custom.length ? `<div class="rows" style="margin-top:14px">${rows}</div>` : `<p class="muted" style="margin-top:14px">No custom subjects yet.</p>`}
+    </section>
+    <p class="muted small">Custom subjects sit alongside the built-in topics everywhere — your plan, your stats, and the story diagram the coach draws for them.</p>
+  </div>`;
+}
+
+// A health-app-style picture of where the user stands: rings for readiness,
+// voice and today, a practice streak, a 14-day trend, per-topic readiness,
+// the weakest spots, and what to do next. Everything comes from progress
+// already on this device — nothing is invented.
+function statRing(pct, big, small) {
+  return `<div class="stat-ring"><div class="score-ring small"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="52"/><circle class="ring-prog" cx="60" cy="60" r="52" pathLength="100" style="stroke-dashoffset:${ringOffset(pct)}"/></svg><div class="score-num"><span class="n">${big}</span><span class="muted small">${small}</span></div></div></div>`;
+}
+
+function statsView() {
+  const p = profile();
+  const relevant = rankTopics(topics(), p);
+  const prog = store.progress();
+  const map = knowledgeMap(relevant, p, prog);
+  const overall = readiness(relevant, p, prog);
+  const a = store.account();
+  const voiceLim = a?.limits?.voiceSec;
+  const voiceLeft = a?.voiceSecLeft ?? 0;
+  const voiceUsed = voiceLim ? Math.max(0, voiceLim - voiceLeft) : 0;
+  const voicePct = voiceLim ? Math.round((voiceUsed * 100) / voiceLim) : 0;
+  const voiceBig = voiceLim ? String(Math.round(voiceUsed / 60)) : '–';
+  const voiceSmall = voiceLim ? `of ${Math.round(voiceLim / 60)} min voice` : 'sign in';
+  const activity = store.activity();
+  const tk = todayKey();
+  const todayGraded = activity[tk]?.graded || 0;
+  const dueToday = dueCards(topics(), p, prog, Date.now(), 999).length;
+  const todayPct = dueToday ? Math.min(100, Math.round((todayGraded * 100) / dueToday)) : (todayGraded ? 100 : 0);
+  const streak = streakDays(activity, tk);
+  const days = lastNDays(activity, 14, tk);
+  const maxDay = Math.max(1, ...days.map(d => d.graded));
+  const weakest = map.topics.filter(t => t.total > 0 && t.pct < 100).sort((x, y) => x.pct - y.pct).slice(0, 3);
+  const next = weakest[0];
+  const anyActivity = days.some(d => d.graded > 0);
+  return `<div class="stack loose">
+    <div class="head"><h1>Where you stand</h1>
+      <p class="lede">Readiness, practice and voice — the way a health app shows fitness. All of it from your own progress on this device.</p></div>
+    <section class="rings" aria-label="Rings">
+      ${statRing(overall.pct, `${overall.pct}%`, 'ready')}
+      ${statRing(voicePct, voiceBig, voiceSmall)}
+      ${statRing(todayPct, `${todayGraded}`, dueToday ? `of ${dueToday} due today` : 'practiced today')}
+    </section>
+    <section class="card stacked">
+      <div class="card-head"><span>Practice streak</span><span>${streak} day${streak === 1 ? '' : 's'}</span></div>
+      <p class="muted">${streak ? `You have practiced ${streak} day${streak === 1 ? '' : 's'} in a row. Keep it alive with one card today.` : 'No streak yet — grade one card and the streak starts.'}</p>
+      <div class="streak-dots">${days.map(d => `<span class="${d.graded ? 'on' : ''}" title="${d.label} ${d.key}: ${d.graded} card${d.graded === 1 ? '' : 's'}"></span>`).join('')}</div>
+      <div class="trend" aria-label="Cards practiced, last 14 days">${days.map(d => `<span class="tb"><i style="height:${Math.max(0, Math.round((d.graded / maxDay) * 100))}%"></i><em>${d.label.slice(0, 1)}</em></span>`).join('')}</div>
+      ${anyActivity ? `<p class="muted small">Cards practiced per day, last 14 days.</p>` : `<p class="muted small">Nothing logged yet — your history starts the first day you grade a card.</p>`}
+    </section>
+    <section class="card stacked">
+      <div class="card-head"><span>What to do next</span></div>
+      ${next
+        ? `<p class="muted">Your weakest spot right now is <b>${esc(next.name)}</b> — ${next.known} of ${next.total} cards known.</p><div class="row"><button class="btn primary" data-act="learn" data-id="${next.id}">Open the ${esc(next.name)} lesson</button><button class="btn" data-act="deck" data-id="${next.id}">Practice its cards</button></div>`
+        : `<p class="muted">Everything you have started is solid. Pick any topic below, or practice what is due.</p><div class="row"><button class="btn primary" data-act="deck" data-id="">Practice what's due</button></div>`}
+    </section>
+    <section>
+      <div class="sec-head"><h3>Per-topic readiness</h3></div>
+      <div class="rows">${map.topics.map(t => `<button class="rowi" data-act="learn" data-id="${t.id}">
+        <span class="main"><span class="t">${esc(t.name)}</span><span class="d">${t.state === 'strong' ? 'Solid' : t.state === 'ok' ? 'Getting there' : t.state === 'weak' ? 'Shaky' : 'Not started'} · ${t.known}/${t.total} cards</span></span>
+        <span class="pct"><span>${t.pct}%</span><span class="bar"><i style="width:${t.pct}%"></i></span></span></button>`).join('')}</div>
+    </section>
+  </div>`;
+}
+
 function plansView() {
   const a = store.account();
   const o = offer();
@@ -724,7 +822,7 @@ function plansView() {
     <section class="card">
       <div class="card-head"><span>Every lesson opens with a moving picture</span></div>
       <p class="muted small" style="margin:-6px 0 4px">Diagrams draw themselves, step by step, so the idea lands before the words do. This is a real one, from the Web Fundamentals lesson — tap through it:</p>
-      ${diagramHtml('web-fundamentals', S.dgStage)}
+      ${diagramHtml('web-fundamentals', S.dgStages['web-fundamentals'] ?? null, { autoplay: true })}
     </section>
     <section class="stack">
       <div class="row between"><div><h3>Free</h3><p class="muted">Your day-by-day plan, every lesson and flashcard, and ${o.freeMsgs} messages plus ${o.freeVoice} voice minutes to try the coach.</p></div></div>
@@ -732,6 +830,7 @@ function plansView() {
     </section>
     <div class="faq">
       <details><summary>What counts as a message?</summary><p>Each question you send the coach is one message. Writing a custom card set uses five. Voice is counted in minutes, only while a session is live.</p></details>
+      <details><summary>How many custom subjects can I keep?</summary><p>Up to 5 on Pro — Ansible, Puppet, anything your interview covers. Each one the coach writes uses 5 messages. Delete one to make room for another.</p></details>
       <details><summary>Do I need Pro for a Live coach session?</summary><p>No. A Live coach session is a separate one-time purchase and works on the free plan. It does not use your monthly voice minutes.</p></details>
       <details><summary>How do I cancel?</summary><p>In your ${manage} subscription settings, at any time. You keep Pro until the end of the period you paid for.</p></details>
       <details><summary>What happens to my progress on Free?</summary><p>Nothing changes. Your plan, cards and progress stay on this device and stay yours.</p></details>
@@ -752,6 +851,30 @@ function topRight() {
 
 function scrollEnd() { window.scrollTo(0, document.documentElement.scrollHeight); }
 
+// The plans-screen diagram plays itself: it steps through the stages on its
+// own so the "draws themselves, step by step" claim is visibly true, then
+// rests on the full diagram. Any tap on the player stops it.
+let dgTimer = null;
+function stopDgAutoplay() { if (dgTimer) { clearTimeout(dgTimer); dgTimer = null; } }
+function startDgAutoplay() {
+  stopDgAutoplay();
+  const fig = document.querySelector('[data-autoplay]');
+  if (!fig) return;
+  const id = fig.dataset.dg;
+  const n = diagramFor(id)?.steps.length || 0;
+  if (!n) return;
+  S.dgStages[id] = null;
+  let step = -1;
+  const tick = () => {
+    step++;
+    if (step >= n) { S.dgStages[id] = null; render(); return; }
+    S.dgStages[id] = step;
+    render();
+    dgTimer = setTimeout(tick, 1500);
+  };
+  dgTimer = setTimeout(tick, 1200);
+}
+
 // After a render, count the [data-countup] numbers up to their final value
 // (they are rendered at the final value, so nothing breaks if this never runs).
 function animateIn() {
@@ -759,7 +882,7 @@ function animateIn() {
   document.querySelectorAll('[data-countup]').forEach(el => {
     const target = Number(el.dataset.countup);
     if (!target) return;
-    const t0 = performance.now(), dur = 700;
+    const t0 = performance.now(), dur = 1200;
     const tick = now => {
       const k = Math.min(1, (now - t0) / dur);
       el.textContent = Math.round(target * (1 - Math.pow(1 - k, 2)));
@@ -785,6 +908,8 @@ function render() {
     : key === 'learn' ? learnView()
     : key === 'deck' ? deckView()
     : key === 'chat' ? chatView()
+    : key === 'custom' ? customView()
+    : key === 'stats' ? statsView()
     : key === 'settings' ? settingsView()
     : homeView();
   app.innerHTML = `<div class="${changed ? 'view' : ''}">${html}</div>`;
@@ -802,6 +927,10 @@ function render() {
   }
   // Native app: keep the icon badge and the daily reminder in step with the plan.
   if (native() && key === 'home' && profile()) syncNativeHome();
+  // The plans-screen diagram plays itself when the screen opens; anywhere
+  // else the player stops so timers never outlive their screen.
+  if (key === 'plans' && changed) startDgAutoplay();
+  else if (key !== 'plans') stopDgAutoplay();
   animateIn();
 }
 
@@ -866,7 +995,7 @@ function startRoleDeck(id) {
 }
 
 async function openTopic(id) {
-  S.topic = id; S.ci = 0; S.dgStage = null; S.view = 'learn'; render();
+  S.topic = id; S.ci = 0; S.view = 'learn'; render();
   if (!topicById(id)) {
     try { await ensureTopics([id]); } catch { oops('Could not download this topic. Check your connection.'); }
     render();
@@ -879,22 +1008,25 @@ function gradeCard(ok) {
   if (S.grading || !S.deck || S.di >= S.deck.cards.length) return;
   const q = S.deck.cards[S.di], prog = store.progress();
   prog[q.id] = review(prog[q.id], ok); store.setProgress(prog);
+  // Practice history for the stats view: one count per day, starting today.
+  store.setActivity(recordActivity(store.activity(), todayKey(), ok));
   S.grading = true;
   const flash = document.getElementById('flash');
   if (flash) {
     flash.insertAdjacentHTML('beforeend', `<div class="verdict ${ok ? 'ok' : 'miss'}" aria-hidden="true">
-      <svg viewBox="0 0 64 64"><circle class="v-ring dg-draw" cx="32" cy="32" r="28" pathLength="100" style="animation-duration:.45s"/>
-      ${ok ? '<path class="v-mark dg-draw" d="M20 33 L28 41 L44 25" style="animation-delay:.35s;animation-duration:.3s"/>' : '<path class="v-mark dg-draw" d="M23 23 L41 41 M41 23 L23 41" style="animation-delay:.35s;animation-duration:.3s"/>'}</svg>
+      <svg viewBox="0 0 64 64"><circle class="v-ring dg-draw" cx="32" cy="32" r="28" pathLength="100" style="animation-duration:.6s"/>
+      ${ok ? '<path class="v-mark dg-draw" d="M20 33 L28 41 L44 25" style="animation-delay:.5s;animation-duration:.35s"/>' : '<path class="v-mark dg-draw" d="M23 23 L41 41 M41 23 L23 41" style="animation-delay:.5s;animation-duration:.35s"/>'}</svg>
       <span>${ok ? 'Got it' : 'Missed it — back soon'}</span></div>`);
-    // Let the stamp draw, then the card leaves to the side it was graded on.
-    setTimeout(() => flash.classList.add(ok ? 'out-r' : 'out-l'), 450);
+    // Let the stamp draw and sit for a beat, then the card leaves to the
+    // side it was graded on. The verdict is the celebration — give it time.
+    setTimeout(() => flash.classList.add(ok ? 'out-r' : 'out-l'), 850);
   }
   setTimeout(() => {
     S.grading = false; S.deck.results.push(ok); S.di++; S.reveal = false;
     // First finished round: a sensible moment to ask about daily reminders.
     if (S.di >= S.deck.cards.length && native() && !store.notifAsked()) { store.setNotifAsked(true); promptNotifications(); }
     render();
-  }, 650);
+  }, 1100);
 }
 
 function aiFailed(err) {
@@ -906,14 +1038,57 @@ function aiFailed(err) {
 async function buildRoleGuide() {
   const p = profile();
   if (!signedIn()) { S.view = 'chat'; return render(); }
+  // The role guide is written during onboarding, so it is not Pro-gated —
+  // but it still takes one of the 5 custom-subject slots.
+  if (store.customTopics().length >= CUSTOM_LIMIT) return toast(`You already have ${CUSTOM_LIMIT} custom subjects. Delete one to make room.`);
   S.busy = true; render();
   try {
     const r = await ai.generate(`${p.otherRole}: interview essentials`, summary(), 12);
     const id = 'c-role-' + Date.now().toString(36);
-    store.setCustomTopics([...store.customTopics(), { id, name: `${p.otherRole} essentials`, blurb: 'Written for your role', tag: 'ai', concepts: r.concepts, qa: r.qa, custom: true, beta: true }]);
+    const topic = { id, name: `${p.otherRole} essentials`, blurb: 'Written for your role', tag: 'ai', concepts: r.concepts, qa: r.qa, custom: true, beta: true };
+    if (r.diagram) topic.diagram = r.diagram;
+    saveCustomTopic(topic);
     toast('Your role guide is in your topics.');
   } catch (err) { aiFailed(err); }
   S.busy = false; render();
+}
+
+// ---------- custom subjects (Pro) ----------
+// A Pro user keeps up to 5 custom subjects. Each one the coach writes costs
+// 5 AI messages (the same cost as before — the cap is about subjects kept,
+// the messages are about AI spend). Free users keep the subjects they
+// already have, but cannot write new ones.
+const CUSTOM_LIMIT = 5;
+const isProUser = () => { const a = store.account(); return !!a && (a.plan === 'pro' || a.unlimited); };
+function customLimitReason() {
+  if (!signedIn()) return 'signin';
+  if (!isProUser()) return 'pro';
+  if (store.customTopics().length >= CUSTOM_LIMIT) return 'cap';
+  return null;
+}
+function saveCustomTopic(topic) {
+  if (topic.diagram) registerDiagramSpec(topic.id, topic.diagram);
+  store.setCustomTopics([...store.customTopics(), topic]);
+  return topic;
+}
+async function buildCustomSubject(name) {
+  name = (name || '').trim();
+  if (!name) return;
+  const reason = customLimitReason();
+  if (reason === 'signin') { S.view = 'chat'; render(); return; }
+  if (reason === 'pro') { S.view = 'custom'; render(); return toast('Custom subjects are a Pro feature.'); }
+  if (reason === 'cap') return toast(`You already have ${CUSTOM_LIMIT} custom subjects. Delete one to make room.`);
+  S.busy = true; render();
+  try {
+    const r = await ai.generate(name, summary(), 8);
+    const id = 'c-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40) + '-' + Date.now().toString(36);
+    const topic = { id, name, blurb: 'Custom subject', tag: 'ai', concepts: r.concepts, qa: r.qa, custom: true, beta: true };
+    if (r.diagram) topic.diagram = r.diagram;
+    saveCustomTopic(topic);
+    toast(`"${name}" is ready — starting the first lesson.`);
+    S.busy = false;
+    openTopic(id);
+  } catch (err) { S.busy = false; aiFailed(err); render(); }
 }
 
 async function sendChat(text, { fromVoice = false } = {}) {
@@ -962,16 +1137,12 @@ document.addEventListener('submit', async e => {
     return startVoice('live');
   }
   if (e.target.id === 'genForm') {
-    if (!signedIn()) { S.view = 'chat'; return render(); }
     const topic = document.getElementById('genTopic').value.trim();
-    S.busy = true; render();
-    try {
-      const r = await ai.generate(topic, summary(), 8);
-      const id = 'c-' + topic.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40) + '-' + Date.now().toString(36);
-      store.setCustomTopics([...store.customTopics(), { id, name: topic, blurb: 'Custom topic', tag: 'ai', concepts: r.concepts, qa: r.qa, custom: true, beta: true }]);
-      toast(`"${topic}" added to your topics.`);
-    } catch (err) { aiFailed(err); }
-    S.busy = false; render();
+    return buildCustomSubject(topic);
+  }
+  if (e.target.id === 'customForm') {
+    const topic = document.getElementById('customTopic').value.trim();
+    return buildCustomSubject(topic);
   }
 });
 
@@ -1063,11 +1234,10 @@ document.addEventListener('click', async e => {
   else if (a === 'roledeck') startRoleDeck(id);
   else if (a === 'reveal') { S.reveal = true; render(); }
   else if (a === 'grade') gradeCard(b.dataset.ok === '1');
-  else if (a === 'dgprev') { S.dgStage = prevStage(S.dgStage); render(); }
-  else if (a === 'dgnext') { S.dgStage = nextStage(S.dgStage, (diagramFor(id)?.steps.length || 1)); render(); }
-  else if (a === 'dgreplay') { S.dgStage = null; render(); }
-  else if (a === 'dgshow') { S.ci = 0; S.dgStage = null; render(); }
-  else if (a === 'dgsheet') { sheet(`<div class="stack"><h2>${esc(topicName(id))}</h2>${diagramHtml(id, S.dgStage)}<button class="btn block" data-act="closesheet">Back to the cards</button></div>`); }
+  else if (a === 'dgprev') { stopDgAutoplay(); S.dgStages[id] = prevStage(S.dgStages[id] ?? null); render(); }
+  else if (a === 'dgnext') { stopDgAutoplay(); S.dgStages[id] = nextStage(S.dgStages[id] ?? null, (diagramFor(id)?.steps.length || 1)); render(); }
+  else if (a === 'dgreplay') { stopDgAutoplay(); S.dgStages[id] = null; render(); }
+  else if (a === 'dgsheet') { sheet(`<div class="stack"><h2>${esc(topicName(id))}</h2>${diagramHtml(id, S.dgStages[id] ?? null)}<button class="btn block" data-act="closesheet">Back to the cards</button></div>`); }
   else if (a === 'askcard') {
     const t = topicById(S.topic), c = t.concepts[S.ci];
     S.chatContext = cardContext(t, c); S.view = 'chat'; render();
@@ -1149,6 +1319,9 @@ document.addEventListener('click', async e => {
     app.innerHTML = '<p class="note warn">Could not load study content. Check your connection and reload.</p>';
     return;
   }
+  // Custom subjects carry their diagram with them; register the stored ones
+  // so their story strips work from the first render.
+  store.customTopics().forEach(t => { if (t.diagram) registerDiagramSpec(t.id, t.diagram); });
   render();
   // Account changes (sign-in, usage updates, purchases) re-render unless a voice reply is streaming.
   // Start from the stored account so the plans screen opens on a fresh sign-in, not on every launch.

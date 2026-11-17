@@ -5,6 +5,7 @@ const K = {
   session: 'pp.session', account: 'pp.account', liveSettings: 'pp.liveSettings',
   suggestAsked: 'pp.suggestAsked', lastProvider: 'pp.lastProvider',
   nudgeIndex: 'pp.nudgeIndex', nudgeDay: 'pp.nudgeDay', notifAsked: 'pp.notifAsked',
+  activity: 'pp.activity',
 };
 
 const read = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
@@ -41,6 +42,8 @@ export const store = {
   setNudgeDay: d => write(K.nudgeDay, d),
   notifAsked: () => read(K.notifAsked, false),
   setNotifAsked: v => write(K.notifAsked, v),
+  activity: () => read(K.activity, {}),
+  setActivity: a => write(K.activity, a),
   clientId() {
     let id = read(K.clientId, null);
     if (!id) { id = crypto.randomUUID(); write(K.clientId, id); }
