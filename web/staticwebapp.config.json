@@ -1,7 +1,7 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/api/*", "/content/*", "/icons/*", "*.{js,css,json,webmanifest,png,svg}"]
+    "exclude": ["/api/*", "/content/*", "/icons/*", "/fonts/*", "*.{js,css,json,webmanifest,png,svg,woff2}"]
   },
   "platform": { "apiRuntime": "node:20" },
   "routes": [
@@ -15,5 +15,5 @@
     "referrer-policy": "no-referrer",
     "permissions-policy": "microphone=(self), camera=(), geolocation=()"
   },
-  "mimeTypes": { ".webmanifest": "application/manifest+json" }
+  "mimeTypes": { ".webmanifest": "application/manifest+json", ".woff2": "font/woff2" }
 }

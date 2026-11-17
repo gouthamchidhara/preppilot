@@ -1,10 +1,9 @@
 // RevenueCat: one entitlement ("pro") across Apple, Google and (later) web purchases.
 // The app logs in to RevenueCat with our user key, so app_user_id === our user key.
 import { timingSafeEqual } from 'node:crypto';
-import { setProUntil, addSessionCredits } from './account.js';
+import { setProUntil } from './account.js';
 
 const ENTITLEMENT = () => process.env.REVENUECAT_ENTITLEMENT || 'pro';
-const MOCK_PRODUCT = () => process.env.REVENUECAT_MOCK_PRODUCT || 'mock_session_60min';
 const GRANT = new Set(['INITIAL_PURCHASE', 'RENEWAL', 'PRODUCT_CHANGE', 'UNCANCELLATION', 'NON_RENEWING_PURCHASE', 'SUBSCRIPTION_EXTENDED', 'TEMPORARY_ENTITLEMENT_GRANT']);
 
 export function webhookAuthorized(header) {
@@ -17,16 +16,9 @@ export function webhookAuthorized(header) {
 export async function applyWebhook(body, now = Date.now()) {
   const e = body?.event;
   if (!e || e.type === 'TEST') return { ignored: true };
-  const productIds = Array.isArray(e.product_ids) ? e.product_ids : [];
-  const isMock = productIds.includes(MOCK_PRODUCT());
-  if (!isMock && Array.isArray(e.entitlement_ids) && !e.entitlement_ids.includes(ENTITLEMENT())) return { ignored: true };
+  if (Array.isArray(e.entitlement_ids) && !e.entitlement_ids.includes(ENTITLEMENT())) return { ignored: true };
   const keys = [...new Set([e.app_user_id, e.original_app_user_id, ...(e.aliases || [])].filter(k => typeof k === 'string' && k.includes(':')))];
   if (!keys.length) return { ignored: true };
-  // Consumable: mock interview session credit
-  if (isMock && GRANT.has(e.type)) {
-    for (const k of keys) await addSessionCredits(k, 1, now);
-    return { mockSession: keys };
-  }
   const until = Number(e.expiration_at_ms) || 0;
   if (GRANT.has(e.type) && until > now) {
     for (const k of keys) await setProUntil(k, until, now);

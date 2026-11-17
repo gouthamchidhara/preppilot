@@ -18,7 +18,7 @@ const { ROUTES } = await import('../api/src/lib/routes.js');
 const { handleHealth } = await import('../api/src/lib/handlers.js');
 
 const webRoot = resolve(root, 'web');
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.woff2': 'font/woff2' };
 const PORT = Number(process.env.PORT || 5173);
 
 const readBody = req => new Promise(res => {

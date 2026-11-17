@@ -4,11 +4,11 @@ Personalized interview prep for software developers (Java, Python, .NET, Node, G
 infrastructure/cloud/SRE/DevOps, QA and security roles: 23 roles, 72 topics.
 Users set a short profile (one or more target roles, level, background, self-rated strengths/weaknesses, interview date) and get:
 
-- **A day-by-day plan** ordered by role relevance and their weak spots, ending with mock-interview days.
+- **A day-by-day plan** ordered by role relevance and their weak spots, ending with review days.
 - **Learn cards** (what / why / example / what to say) and **flashcards** with spaced repetition, filtered to their level.
 - **Multi-role prep** combines selected roles into one plan; role-specific flashcards allow focused practice. Shared topics
   and their card progress are not duplicated. Select one role in Profile for a single-role plan.
-- **An AI coach** for instant answers, "go deeper" on any card, answer grading and mock interviews:
+- **An AI coach** for instant answers, "go deeper" on any card, answer grading and quizzes:
   - **Talking mode**: hands-free speech-to-speech (Azure OpenAI Realtime over WebRTC). Replies start ~0.35 s after you
     stop speaking; talk over it to interrupt. Measured: first reply token ~250 ms after the turn ends.
   - **Listening mode**: mic stays open, the coach transcribes and does **not** interrupt while you practice a long answer;
@@ -23,7 +23,7 @@ the server then stores just the account ID, email, plan and usage counters. Chat
 current card are sent to the API only when the user asks the AI something.
 
 **Plans and launch:** the guide is free without an account. AI needs sign-in (Google, or Apple in the iOS app): free trial,
-then Pro at $4.99/month through in-app purchase. Usage is enforced on the server. See
+then Pro at $11.99/month through in-app purchase. Usage is enforced on the server. See
 [docs/MONETIZATION-AND-LAUNCH.md](docs/MONETIZATION-AND-LAUNCH.md) for pricing math, enforcement design and the setup steps.
 
 ## Architecture

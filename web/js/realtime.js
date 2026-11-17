@@ -5,7 +5,6 @@ import { apiBase } from './config.js';
 import { authHeaders, setAccount } from './auth.js';
 import { ApiError } from './ai.js';
 
-const MAX_SESSION_MS = 15 * 60 * 1000; // cost guard
 const IDLE_MS = 3 * 60 * 1000;
 
 export const realtimeSupported = !!(window.RTCPeerConnection && navigator.mediaDevices?.getUserMedia);
@@ -52,8 +51,11 @@ export class VoiceSession {
     this.degraded = data.degraded;
     this.allowedSec = data.allowedSec;
     this.bump();
-    const capMs = Math.min(MAX_SESSION_MS, (data.allowedSec || 900) * 1000);
-    this.timers.push(setTimeout(() => this.stop(capMs < MAX_SESSION_MS ? 'Voice minutes for this session are used up.' : 'Session limit reached (15 min). Start again to continue.'), capMs));
+    if (data.account) setAccount(data.account);
+    // The server decides how long the call may run and hangs up at that point.
+    const capMs = (data.allowedSec || 900) * 1000;
+    this.endsAt = Date.now() + capMs;
+    this.timers.push(setTimeout(() => this.stop('Voice time for this session is used up.'), capMs));
   }
 
   bump() {

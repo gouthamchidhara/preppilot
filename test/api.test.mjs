@@ -123,6 +123,14 @@ test('voice: other users cannot end your call; sweeper hangs up overdue calls', 
   assert.equal(await sweepCalls(async () => {}), 0);
 });
 
+test('quota messages quote the configured price and limits', async () => {
+  const h = await signIn('q@gmail.com', 'q');
+  for (let i = 0; i < 15; i++) await ask(h);
+  const r = await ask(h);
+  assert.equal(r.status, 402);
+  assert.match(r.body.error, /\$11\.99\/month/);
+});
+
 test('voice is refused once free minutes are gone', async () => {
   await signIn('w@gmail.com', 'w');
   const ident = { key: 'google:w' };
