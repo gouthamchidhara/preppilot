@@ -91,18 +91,19 @@ export async function refundMsgs(ident, n, plan, now = Date.now()) {
   if (plan === 'free') await pool('msgs', -n, now);
 }
 
-export async function reserveVoice(ident, now = Date.now()) {
+export async function reserveVoice(ident, now = Date.now(), maxSec = null) {
   const user = await loadUser(ident);
   if (!user) return err(401, 'signin', 'Sign in to use voice mode.');
   const L = limits();
   const plan = planOf(user, now);
-  if (plan === 'admin') return { ok: true, plan, allowedSec: L.maxCallSec };
+  const cap = maxSec || L.maxCallSec;
+  if (plan === 'admin') return { ok: true, plan, allowedSec: cap };
   let allowed = 0;
   let result = null;
   await (await getDb()).update('users', user.key, u => {
     rollPeriod(u, now);
     const bucket = plan === 'pro' ? u.pro : u.free;
-    allowed = Math.min(L[plan].voiceSec - bucket.voiceSec, L.maxCallSec);
+    allowed = Math.min(L[plan].voiceSec - bucket.voiceSec, cap);
     if (allowed < L.minCallSec) { result = err(402, 'quota', plan === 'free' ? `Your free voice minutes are used up. Upgrade to Pro for ${Math.floor(L.pro.voiceSec / 60)} voice minutes a month.` : quotaMsg('pro')); return undefined; }
     bucket.voiceSec += allowed;
     return u;

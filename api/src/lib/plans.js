@@ -13,6 +13,8 @@ export function limits() {
     freePoolPerDay: { msgs: num('FREE_DAILY_MSGS', 200), voiceSec: num('FREE_DAILY_VOICE_SEC', 600) },
     maxCallSec: num('MAX_CALL_SEC', 10 * 60),
     liveCallSec: num('LIVE_CALL_SEC', 60 * 60),
+    // Pro can run Live AI from its monthly voice minutes, up to this long in one go.
+    proLiveSec: num('PRO_LIVE_SEC', 30 * 60),
     minCallSec: 20,
   };
 }

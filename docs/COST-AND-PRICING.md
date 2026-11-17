@@ -117,3 +117,28 @@ Global free pool: 200 msgs + 10 voice min/day → max $0.65/day across all free 
 - Even at 30% Apple commission ($5.59 net), the worst case is 56% margin.
 - Enroll in Apple's Small Business Program for 15% commission to boost margins further.
 - Free tier (15 msgs + 2 min voice) is enough to demonstrate value, not enough to abuse.
+
+
+## Live AI and Pro, November 2026 (plain-language estimate)
+
+Estimates from Azure list prices for `gpt-realtime-mini`; check the real bill after the first 20 to 30 sessions (Cost Management, filter on the AI resource).
+
+**Why long calls cost more per minute than short ones:** in a voice call the AI re-reads the conversation so far before each reply. Early in a call that is cheap; after 40 minutes it is re-reading a lot. Cached re-reads are billed at a small fraction of the normal price, which keeps it in check.
+
+| What | Our Azure cost |
+| --- | --- |
+| One AI text message | about 0.1 to 0.2 cents |
+| 30-minute voice call | about $0.80 to $1.80 |
+| 60-minute voice call | about $2 to $4 |
+| 60 minutes, "during your interview" mode (AI writes, does not speak) | about $1 to $2 |
+
+Apple keeps 15% under the Small Business Program (under $1M a year), 30% otherwise. Figures below use 15%.
+
+| Product | User pays | We receive | Our AI cost | We keep |
+| --- | --- | --- | --- | --- |
+| Live AI, 60 minutes | $10.99 | $9.34 | $2 to $4 | $5.30 to $7.30 |
+| Pro, light user (100 messages, 10 voice min) | $7.99 | $6.79 | about $0.50 | about $6.30 |
+| Pro, heavy user (500 messages, all 45 voice min incl. a 30-min Live AI) | $7.99 | $6.79 | $2 to $3.40 | $3.40 to $4.80 |
+| Free user, maximum | $0 | $0 | about $0.10 | -$0.10 |
+
+Recommendation: raise Live AI to $14.99 (we keep about $9 to $11) and Pro to $9.99 once there are reviews (we keep about $5 to $8 even for heavy users). Grandfather existing subscribers. Prices are set in App Store Connect and RevenueCat; the app shows `PRO_PRICE_LABEL` and `LIVE_PRICE_LABEL`.

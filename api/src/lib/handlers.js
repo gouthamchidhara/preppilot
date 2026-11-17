@@ -114,8 +114,25 @@ export async function handleRealtime(req, log) {
 
   // Live AI: one credit buys a 60-minute window. Beta-code sessions have no account, so no credits.
   if (v.mode === 'live') {
-    const m = w.ident.viaCode ? { ok: true, allowedSec: L.liveCallSec, resumed: true } : await startLiveSession(w.ident.key, now);
-    if (!m.ok) return json(402, { error: 'No Live AI session on this account yet. Buy a session to start.', code: 'no_credit' });
+    let m = w.ident.viaCode ? { ok: true, allowedSec: L.liveCallSec, resumed: true } : await startLiveSession(w.ident.key, now);
+    if (!m.ok) {
+      // No paid hour: Pro (and admin) can run Live AI from the monthly voice minutes, up to proLiveSec in one go.
+      const s0 = await status(w.ident, now);
+      if (s0?.plan === 'pro' || s0?.plan === 'admin') {
+        const cap = Math.min(L.proLiveSec, (v.live?.lengthMin || 30) * 60);
+        const r0 = await reserveVoice(w.ident, now, cap);
+        if (!r0.ok) return denied(r0);
+        try {
+          const out = await startRealtime(v, log);
+          if (out.callId) await recordCall({ id: out.callId, key: w.ident.key, start: Date.now(), allowedSec: r0.allowedSec, plan: r0.plan, day: today(now) });
+          return json(200, { sdp: out.sdp, callId: out.callId, allowedSec: r0.allowedSec, degraded: out.degraded, live: true, fromPlan: true, account: await status(w.ident) });
+        } catch (e) {
+          await refundVoice(w.ident.key, r0.allowedSec, r0.plan, today(now), now);
+          return fail(e, log);
+        }
+      }
+      return json(402, { error: 'No Live AI session on this account yet. Buy a session to start.', code: 'no_credit' });
+    }
     // The user can pick a shorter session; the window stays open for rejoining either way.
     const allowedSec = v.live?.lengthMin ? Math.min(m.allowedSec, v.live.lengthMin * 60) : m.allowedSec;
     try {
@@ -264,7 +281,7 @@ export function handleHealth() {
     payments: !!process.env.REVENUECAT_WEBHOOK_AUTH,
     plans: {
       free: { msgs: L.free.msgs, voiceMin: Math.floor(L.free.voiceSec / 60) },
-      pro: { msgs: L.pro.msgs, voiceMin: Math.floor(L.pro.voiceSec / 60), price: proPriceLabel() },
+      pro: { msgs: L.pro.msgs, voiceMin: Math.floor(L.pro.voiceSec / 60), liveMin: Math.floor(L.proLiveSec / 60), price: proPriceLabel() },
       live: { minutes: Math.floor(L.liveCallSec / 60), price: livePriceLabel() },
     },
   });

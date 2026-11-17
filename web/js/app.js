@@ -151,7 +151,7 @@ function offer() {
   const n = parseFloat(amount.replace(/[^\d.]/g, ''));
   return {
     freeMsgs: P?.free.msgs ?? 15, freeVoice: P?.free.voiceMin ?? 2,
-    proMsgs: P?.pro.msgs ?? 500, proVoice: P?.pro.voiceMin ?? 45, proPrice: `${amount}/${per}`, proAmount: amount, proPer: per,
+    proMsgs: P?.pro.msgs ?? 500, proVoice: P?.pro.voiceMin ?? 45, proLive: P?.pro.liveMin ?? 30, proPrice: `${amount}/${per}`, proAmount: amount, proPer: per,
     perDay: amount.trim().startsWith('$') && n > 0 && per === 'month' ? `About ${Math.round((n / 30) * 100)}¢ a day` : '',
     livePrice: P?.live?.price || '$10.99', liveMin: P?.live?.minutes ?? 60,
   };
@@ -356,7 +356,7 @@ function onboardingView(existing) {
       </div>
       ${S.pickMode === 'paste' ? `<div class="stack tight">
         <textarea id="expSummary" rows="5" maxlength="1500" placeholder="Paste your résumé summary or a few lines about your experience: years, main languages, cloud, tools. Leave out project details and anything private.">${esc(S.expSummary || '')}</textarea>
-        <div class="row"><button type="button" class="btn" data-act="suggestroles" ${S.busy ? 'disabled' : ''}>${S.busy ? 'Reading it…' : 'Suggest my roles'}</button><span class="muted small">Picks your roles and level. Uses 1 coach message.</span></div>
+        <div class="row"><button type="button" class="btn" data-act="suggestroles" ${S.busy ? 'disabled' : ''}>${S.busy ? 'Reading it…' : 'Suggest my roles'}</button><span class="muted small">Picks your roles and level. Uses 1 AI message.</span></div>
       </div>` : `<input id="roleSearch" value="${esc(S.roleSearch)}" placeholder="Type a role or a tech: java, react, kubernetes, spark" autocomplete="off" aria-label="Search roles">
       <details class="allroles" ${S.roleSearch ? 'open' : ''}><summary class="muted" style="font-weight:500">${S.roleSearch ? 'Matching roles' : 'Or browse all roles'}</summary>
       <div class="stack" style="margin-top:12px">
@@ -432,6 +432,7 @@ function livePromo() {
     ? ['Session in progress', 'Your practice test is still open', `${Math.ceil(left / 60)} minutes left. Rejoin and pick up where you stopped.`, '<button class="btn invert lg" data-act="livesetup">Rejoin the session</button>']
     : credits
       ? [`${credits} session${credits > 1 ? 's' : ''} ready`, 'Live AI is ready when you are', 'Use it for a spoken practice test, or keep it listening during your real interview for talking points on screen.', '<button class="btn invert lg" data-act="livesetup">Start the practice test</button>']
+      : (store.account()?.plan === 'pro') ? ['Included in Pro', `Live AI, up to ${o.proLive} minutes`, 'A spoken practice test, an open conversation, or talking points during your interview, without a break. For a full hour, add a one-time session.', '<button class="btn invert lg" data-act="livesetup">Start Live AI</button>']
       : [`${o.liveMin} minutes, one-time`, 'Live AI for 60 minutes', 'Run a spoken practice test the day before. Then, in the interview itself, leave it listening: a few talking points appear on screen as each question is asked.', '<button class="btn invert lg" data-act="plans">See pricing</button>'];
   return `<section class="card stacked live-hero" aria-label="Live AI">
     <div class="card-head"><span>Live AI, 60 minutes</span><span>${esc(head)}</span></div>
@@ -524,7 +525,7 @@ function homeView() {
     </section>
     ${roleIds.length > 1 ? `<section><div class="sec-head"><h3>Practice one role</h3></div><div class="chips">${roleIds.map(id => `<button class="chip" data-act="roledeck" data-id="${esc(id)}">${esc(label(id))}</button>`).join('')}</div></section>` : ''}
     ${roleIds.includes('other') ? `<section class="panel stack"><h3>Make it specific to ${esc(p.otherRole)}</h3>
-      <p class="muted">Your plan starts from the closest listed role. The coach can write topics for your exact role. This uses 5 AI messages.</p>
+      <p class="muted">Your plan starts from the closest listed role. AI can write topics for your exact role. This uses 5 AI messages.</p>
       <div class="row"><button class="btn" data-act="buildrole" ${S.busy ? 'disabled' : ''}>${S.busy ? 'Writing your guide…' : 'Write my role guide'}</button></div></section>` : ''}
     ${lockedCount ? `<section class="unlock-strip">
       <div><b>${relevant.length - lockedCount} of ${relevant.length} topics open on Free</b><span class="muted small">${lockedCount} more topics, ${lockedCards} interview questions and every animated diagram are waiting in Pro.</span></div>
@@ -555,7 +556,7 @@ function lockedTopicView(t) {
       <div class="rows">${t.concepts.map((c, i) => `<div class="rowi static ${i > 1 ? 'dim' : ''}"><span class="main"><span class="t">${esc(c.t)}</span></span>${i > 1 ? ic('lock') : ''}</div>`).join('')}</div></section>
     <section class="card live-hero stack">
       <h2>Unlock all ${all.length} of your topics</h2>
-      <p>Free opens ${open.length ? open.map(x => esc(x.name)).join(', ') : `your first ${FREE_TOPICS} topics`}. Pro opens every lesson, every flashcard and every animated diagram for your role, plus the coach.</p>
+      <p>Free opens ${open.length ? open.map(x => esc(x.name)).join(', ') : `your first ${FREE_TOPICS} topics`}. Pro opens every lesson, every flashcard and every animated diagram for your role, plus AI to practise with.</p>
       <div class="row"><button class="btn invert lg" data-act="plans">See pricing</button>${t.qa.length ? `<button class="btn quiet invert-quiet" data-act="deck" data-id="">Try your free cards</button>` : ''}</div>
     </section>
   </div>`;
@@ -589,7 +590,7 @@ function learnView() {
     </article>
     <div class="row">
       <button class="btn" data-act="cprev" ${S.ci === 0 ? 'disabled' : ''} aria-label="Previous lesson">${ic('left')}</button>
-      <button class="btn" data-act="askcard">Ask the coach</button>
+      <button class="btn" data-act="askcard">Ask AI</button>
       ${last ? `<button class="btn primary grow" data-act="deck" data-id="${t.id}">Test yourself</button>` : '<button class="btn primary grow" data-act="cnext">Next lesson</button>'}
     </div>
     ${!last && c.hook ? `<button class="hook" data-act="cnext"><span class="label">Next</span><span>${esc(c.hook)}</span>${ic('right')}</button>` : ''}
@@ -631,7 +632,7 @@ function deckView() {
       ${S.reveal ? `<div class="ans">${fmt(q.a)}</div>` : ''}
       <div class="foot">${S.reveal ? `
         <div class="row"><button class="btn miss lg" data-act="grade" data-ok="0">Missed it</button><button class="btn got lg" data-act="grade" data-ok="1">Got it</button></div>
-        <div class="row between small"><button class="link quiet" data-act="askq">Go deeper with the coach</button>${betaNote(t, `question: ${q.q}`)}</div>`
+        <div class="row between small"><button class="link quiet" data-act="askq">Go deeper with AI</button>${betaNote(t, `question: ${q.q}`)}</div>`
       : '<button class="btn primary lg block" data-act="reveal">Show the answer</button><p class="muted small" style="text-align:center">Say your answer out loud first.</p>'}
       <p class="muted small kbd-hint" style="text-align:center">Space to reveal · ← missed · → got it</p></div>
     </article>
@@ -678,7 +679,7 @@ function usageMeters(a) {
   </div>`;
 }
 
-function signInCard(headline = 'Practice with a coach that knows your plan') {
+function signInCard(headline = 'Practise with AI that knows your plan') {
   const o = offer();
   const buttons = native()
     ? `<div class="stack tight" style="max-width:300px">${window.PP_PLATFORM === 'ios' ? '<button class="btn primary block" data-act="nsignin" data-p="apple"> Sign in with Apple</button>' : ''}<button class="btn ${window.PP_PLATFORM === 'ios' ? '' : 'primary'} block" data-act="nsignin" data-p="google">Continue with Google</button></div>`
@@ -736,6 +737,17 @@ function mountGoogleButton() {
   if (el && !el.childElementCount) renderGoogleButton(el, S.googleClientId, msg => oops(msg)).catch(e => { el.textContent = e.message; });
 }
 
+// What this account gets from AI, said plainly before anyone has to ask.
+function allowanceCard(a) {
+  const o = offer();
+  if (a?.unlimited) return '';
+  if (a?.plan === 'pro') return `<section class="panel stack tight"><div class="row between"><b>Your Pro AI this month</b><span class="tag pro">Pro</span></div>
+    ${usageMeters(a)}<p class="muted small">Any voice session can run up to ${o.proLive} minutes without a break as Live AI. Need a full hour? A Live AI session is ${esc(o.livePrice)}.</p></section>`;
+  return `<section class="panel stack tight"><b>Free to try</b>
+    ${usageMeters(a)}
+    <p class="muted small">Pro (${esc(o.proPrice)}): ${o.proMsgs} AI messages and ${o.proVoice} voice minutes a month, with up to ${o.proLive} minutes of uninterrupted Live AI in one go. <button class="link" data-act="plans">See pricing</button></p></section>`;
+}
+
 function chatView() {
   const msgs = store.chat();
   const quick = ['Quiz me on my weakest topic', 'Grade my answer to the last question', 'Explain the hardest topic in my plan simply', 'What would a senior panel ask about my background?'];
@@ -747,9 +759,10 @@ function chatView() {
   const lowFree = a?.plan === 'free' && !S.paywall && (a.msgsLeft <= 5 || a.voiceSecLeft < 30);
   const started = msgs.length || live;
   return `<div class="stack chat" style="gap:18px">
-    <div class="row between"><h1>Coach</h1>
+    <div class="row between"><h1>Talk to AI</h1>
       <div class="row" style="gap:16px">${S.rt ? '' : `<label class="switch"><input type="checkbox" id="speakToggle" ${store.speak() ? 'checked' : ''}>Read replies aloud</label>`}
       ${msgs.length ? '<button class="link quiet small" data-act="clearchat">Clear chat</button>' : ''}</div></div>
+    ${S.rt || started ? '' : allowanceCard(a)}
     ${S.paywall ? paywallCard() : voicePanel()}
     ${S.rtMode === 'live' && S.liveHint ? liveHintCard() : ''}
     ${lowFree && !S.rt ? `<p class="note row between"><span>${a.msgsLeft} message${a.msgsLeft === 1 ? '' : 's'} and ${mins(a.voiceSecLeft)} voice minutes left in your free trial.</span><button class="link" data-act="plans">See Pro</button></p>` : ''}
@@ -758,7 +771,7 @@ function chatView() {
       <div class="rows">${quick.map(q => `<button class="rowi" data-act="quick" data-q="${esc(q)}"><span class="main"><span class="t" style="font-weight:400">${esc(q)}</span></span></button>`).join('')}</div></div>`}
     ${live}${S.busy ? '<div class="msg assistant"><span class="dots"><i></i><i></i><i></i></span></div>' : ''}</div>
     <form id="chatForm" class="composer">
-      <textarea id="chatInput" rows="1" maxlength="2000" placeholder="${S.rt ? 'Or type your reply' : 'Ask your coach'}" aria-label="Message"></textarea>
+      <textarea id="chatInput" rows="1" maxlength="2000" placeholder="${S.rt ? 'Or type your reply' : 'Ask AI anything about your prep'}" aria-label="Message"></textarea>
       ${S.rt ? '' : `<button type="button" class="iconbtn ${S.listening ? 'on' : 'plain'}" data-act="mic" ${voice.canListen ? '' : 'disabled'} aria-label="${S.listening ? 'Stop dictation' : 'Dictate'}" title="${voice.canListen ? 'Dictate' : 'Dictation is not supported here'}">${ic(S.listening ? 'stop' : 'mic')}</button>`}
       <button class="iconbtn primary" type="submit" ${S.busy ? 'disabled' : ''} aria-label="Send">${ic('send')}</button>
     </form>
@@ -784,25 +797,27 @@ function liveSetupSheet() {
   const p = profile();
   const relevant = rankTopics(topics(), p);
   const { credits, left } = liveState();
-  const state = left >= 20 ? `Your session is still open with ${Math.ceil(left / 60)} minutes left.` : credits ? `You have ${credits} session${credits > 1 ? 's' : ''} ready.` : 'You need a Live AI session to start. See pricing for the options.';
+  const pro = store.account()?.plan === 'pro' || store.account()?.unlimited;
+  const fromPlan = left < 20 && !credits && pro;
+  const state = left >= 20 ? `Your session is still open with ${Math.ceil(left / 60)} minutes left.` : credits ? `You have ${credits} session${credits > 1 ? 's' : ''} ready.` : fromPlan ? `Included in Pro: up to ${offer().proLive} minutes in one go, from your monthly voice minutes (${mins(store.account()?.voiceSecLeft || 0)} left). For a full hour, buy a Live AI session.` : 'You need a Live AI session to start. See pricing for the options.';
   const opt = (v, t, d) => `<label class="use-opt"><input type="radio" name="use" value="${v}" ${s.use === v ? 'checked' : ''}><span><b>${t}</b><span class="muted small">${d}</span></span></label>`;
   sheet(`<form id="liveSetupForm" class="stack">
     <h2>Live AI, 60 minutes</h2>
     <p class="muted">${esc(state)}</p>
     <fieldset class="stack tight"><legend class="small" style="font:600 14px var(--sans);margin-bottom:6px">How will you use it?</legend>
-      ${opt('practice', 'Practice test', 'The coach asks the questions out loud. Hints as each question lands, feedback after every answer.')}
-      ${opt('talk', 'Open conversation', 'Talk with the coach for the whole session. It listens and answers back and forth, with no time-outs.')}
+      ${opt('practice', 'Practice test', 'AI asks the questions out loud. Hints as each question lands, feedback after every answer.')}
+      ${opt('talk', 'Open conversation', 'Talk with AI for the whole session. It listens and answers back and forth, with no time-outs.')}
       ${opt('interview', 'During your interview', 'It listens to your interviewer and shows talking points on your screen within seconds. Silent: it never speaks.')}
     </fieldset>
-    <label>Session length<select name="lengthMin">${[20, 30, 45, 60].map(n => `<option value="${n}" ${s.lengthMin === n ? 'selected' : ''}>${n} minutes</option>`).join('')}</select></label>
+    <label>Session length<select name="lengthMin">${(fromPlan ? [20, 30] : [20, 30, 45, 60]).map(n => `<option value="${n}" ${s.lengthMin === n || (fromPlan && n === 30 && s.lengthMin > 30) ? 'selected' : ''}>${n} minutes</option>`).join('')}</select></label>
     <label>Topic focus<select name="topic"><option value="">All my topics</option>${relevant.map(t => `<option value="${esc(t.name)}" ${s.topic === t.name ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
     <div class="practice-only stack" ${s.use === 'interview' ? 'hidden' : ''}>
-      <label>Coach style<select name="style">${[['friendly', 'Friendly and encouraging'], ['direct', 'Direct, no small talk'], ['tough', 'Tough, probes every gap']].map(([v, n]) => `<option value="${v}" ${s.style === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+      <label>AI style<select name="style">${[['friendly', 'Friendly and encouraging'], ['direct', 'Direct, no small talk'], ['tough', 'Tough, probes every gap']].map(([v, n]) => `<option value="${v}" ${s.style === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
       <label>Difficulty<select name="difficulty">${LEVELS.map(l => `<option value="${l.id}" ${s.difficulty === l.id ? 'selected' : ''}>${esc(l.name)}</option>`).join('')}</select></label>
-      <label class="switch"><input type="checkbox" name="voice" ${s.voice ? 'checked' : ''}>Coach speaks out loud</label>
+      <label class="switch"><input type="checkbox" name="voice" ${s.voice ? 'checked' : ''}>AI speaks out loud</label>
     </div>
     <p class="note small interview-only" ${s.use === 'interview' ? '' : 'hidden'}>Put this device where its microphone can hear your interviewer. Check that transcribing the call is allowed by the company and where you live; some places require everyone on a call to agree.</p>
-    <button class="btn primary block lg" type="submit">${left >= 20 ? 'Rejoin the session' : credits ? 'Start' : 'See pricing'}</button>
+    <button class="btn primary block lg" type="submit">${left >= 20 ? 'Rejoin the session' : credits || fromPlan ? 'Start' : 'See pricing'}</button>
     <button class="btn block" type="button" data-act="closesheet">Not now</button>
   </form>`);
 }
@@ -813,7 +828,7 @@ function liveHintCard() {
   return `<section class="panel stack"><div class="label">Hint for this question</div>
     <p style="font:400 1.05rem/1.6 var(--serif)">${h.loading ? 'Thinking of a hint…' : esc(h.hint)}</p>
     ${h.showStrong && h.strong ? `<div><div class="label">A strong answer would add</div><p class="muted" style="font:400 1.05rem/1.6 var(--serif)">${esc(h.strong)}</p></div>` : ''}
-    <p class="muted small">Hints are for practice. The coach is here to prepare you, not to sit the interview for you.</p>
+    <p class="muted small">Hints are for practice. AI is here to help you prepare.</p>
   </section>`;
 }
 
@@ -956,7 +971,7 @@ function settingsView() {
     ${statsSection()}
     ${onboardingView(profile())}
     <section class="stack"><div class="head"><h2>Cards for any topic</h2>
-      <p class="muted">Something your interview covers that isn't here? Name it and the coach writes a set. Uses 5 AI messages.</p></div>
+      <p class="muted">Something your interview covers that isn't here? Name it and AI writes a set. Uses 5 AI messages.</p></div>
       <form id="genForm" class="row"><input id="genTopic" maxlength="120" placeholder="e.g. Kafka exactly-once delivery" required aria-label="Topic"><button class="btn" ${S.busy ? 'disabled' : ''}>${S.busy ? 'Writing cards…' : 'Write cards'}</button></form>
       ${custom.length ? `<div class="rows">${custom.map(t => `<div class="rowi static"><span class="main"><span class="t">${esc(t.name)}</span><span class="d">${t.concepts.length} lessons, ${t.qa.length} questions</span></span><button class="link quiet small" data-act="delcustom" data-id="${t.id}">Delete</button></div>`).join('')}</div>` : ''}
     </section>
@@ -989,7 +1004,7 @@ function customView() {
   }).join('');
   return `<div class="stack loose">
     <div class="head"><h1>Your subjects</h1>
-      <p class="lede">Anything your interview covers that the 72 built-in topics don't — Ansible, Puppet, a tool only your team uses. The coach writes the full guide: lessons told like a story, plus flashcards.</p></div>
+      <p class="lede">Anything your interview covers that the 72 built-in topics don't — Ansible, Puppet, a tool only your team uses. AI writes the full guide: lessons told like a story, plus flashcards.</p></div>
     <section class="card stacked">
       <div class="card-head"><span>Custom subjects</span><span>${custom.length} of ${CUSTOM_LIMIT}</span></div>
       ${reason === 'pro'
@@ -1000,7 +1015,7 @@ function customView() {
           <p class="muted small">Uses 5 AI messages. ${atCap ? `You have all ${CUSTOM_LIMIT} subjects — delete one to make room.` : `You can keep up to ${CUSTOM_LIMIT} subjects.`}</p>`}
       ${custom.length ? `<div class="rows" style="margin-top:14px">${rows}</div>` : `<p class="muted" style="margin-top:14px">No custom subjects yet.</p>`}
     </section>
-    <p class="muted small">Custom subjects sit alongside the built-in topics everywhere — your plan, your stats, and the story diagram the coach draws for them.</p>
+    <p class="muted small">Custom subjects sit alongside the built-in topics everywhere — your plan, your stats, and the story diagram AI draws for them.</p>
   </div>`;
 }
 
@@ -1081,9 +1096,9 @@ function plansView() {
     ['Flashcards', `${FREE_CARDS} per technology, shuffled`, 'All, in workflow order', '–'],
     ['Terminology, troubleshooting, real scenarios', no, yes, '–'],
     ['Animated diagrams for every topic', no, yes, '–'],
-    ['Coach messages', `${o.freeMsgs} to try`, `${o.proMsgs} a month`, '–'],
+    ['AI messages', `${o.freeMsgs} to try`, `${o.proMsgs} a month`, '–'],
     ['Voice practice', `${o.freeVoice} min to try`, `${o.proVoice} min a month`, `${o.liveMin} min, continuous`],
-    ['Longest single voice call', `${o.freeVoice} min`, '10 min', `${o.liveMin} min`],
+    ['Uninterrupted Live AI in one go', no, `Up to ${o.proLive} min`, `${o.liveMin} min`],
     ['Spoken practice test with a verdict', no, no, yes],
     ['Talking points during your real interview', no, no, yes],
     ['Custom subjects', no, 'Up to 5', '–'],
@@ -1095,20 +1110,20 @@ function plansView() {
     <div class="row between" style="margin-bottom:-14px"><span></span><button class="iconbtn plain" data-act="pickfree" aria-label="Close">${ic('x')}</button></div>
     <div class="head">
       <h1>Pricing</h1>
-      <p class="lede" style="margin-top:10px">Study for free. Pay monthly for a coach to practise with, or by the hour for the day it counts.</p>
+      <p class="lede" style="margin-top:10px">Study for free. Pay monthly for AI to practise with, or by the hour for the day it counts.</p>
     </div>
 
     <div class="tiers">
       <section class="tier">
         <div class="tier-name">Free</div>
         <div class="price">$0</div>
-        <p class="muted small">Your plan, your first ${FREE_TOPICS} topics, and a taste of the coach.</p>
+        <p class="muted small">Your plan, your first ${FREE_TOPICS} topics, and a taste of AI.</p>
         <button class="btn block" data-act="pickfree" ${isPro ? 'hidden' : ''}>Continue on Free</button>
       </section>
       <section class="tier">
         <div class="tier-name">Pro</div>
         <div class="price">${esc(o.proAmount)}<span>/ ${esc(o.proPer)}</span></div>
-        <p class="muted small">Every topic, every flashcard, every animated diagram, and a coach to practise with.${o.perDay ? ` ${esc(o.perDay)}.` : ''}</p>
+        <p class="muted small">Every topic, every card and diagram, and up to ${o.proLive} minutes of uninterrupted Live AI at a time.${o.perDay ? ` ${esc(o.perDay)}.` : ''}</p>
         ${isPro ? '<button class="btn block" disabled>Your plan</button>' : `<button class="btn primary block" data-act="buysub" ${dis}>${S.buyBusy === 'pro' ? `Opening the ${storeName()}…` : 'Start Pro'}</button>`}
       </section>
       <section class="tier card live-hero">
@@ -1135,7 +1150,7 @@ function plansView() {
     </section>
 
     <div class="faq">
-      <details><summary>What counts as a message?</summary><p>Each question you send the coach is one message. Writing a custom card set uses five. Voice is counted in minutes, only while a session is open.</p></details>
+      <details><summary>What counts as a message?</summary><p>Each question you send AI is one message. Writing a custom card set uses five. Voice is counted in minutes, only while a session is open.</p></details>
       <details><summary>What if my connection drops during a Live AI session?</summary><p>Rejoin within the hour and you pick up the same session with the time that is left. You are not charged again.</p></details>
       <details><summary>Can I use Live AI for a practice test first and the interview later?</summary><p>Each session is one block of time. Buy two if you want one for practice and one for the day.</p></details>
       <details><summary>How do I cancel Pro?</summary><p>In your ${manage} subscription settings, at any time. You keep Pro until the end of the period you paid for.</p></details>
@@ -1280,7 +1295,7 @@ function pollPurchase(before, tries = [3000, 8000, 20000]) {
   setTimeout(async () => {
     try { await ai.post('/api/billing/refresh', {}); } catch { /* try again below */ }
     const a = store.account();
-    if ((a?.sessionCredits || 0) > before.credits) { S.showPlans = false; render(); return toast('Live AI session added. Start it from the Coach tab.'); }
+    if ((a?.sessionCredits || 0) > before.credits) { S.showPlans = false; render(); return toast('Live AI session added. Start it from the AI tab.'); }
     if (before.kind === 'pro' && a?.plan === 'pro') { S.showPlans = false; render(); return toast('You\'re on Pro. Thank you!'); }
     pollPurchase(before, tries.slice(1));
   }, tries[0]);
@@ -1406,7 +1421,7 @@ async function buildRoleGuide() {
 }
 
 // ---------- custom subjects (Pro) ----------
-// A Pro user keeps up to 5 custom subjects. Each one the coach writes costs
+// A Pro user keeps up to 5 custom subjects. Each one AI writes costs
 // 5 AI messages (the same cost as before — the cap is about subjects kept,
 // the messages are about AI spend). Free users keep the subjects they
 // already have, but cannot write new ones.
@@ -1485,7 +1500,8 @@ document.addEventListener('submit', async e => {
     store.setLiveSettings(settings);
     closeSheet();
     const { credits, left } = liveState();
-    if (left < 20 && !credits) { S.showPlans = true; return render(); }
+    const isPro = store.account()?.plan === 'pro' || store.account()?.unlimited;
+    if (left < 20 && !credits && !isPro) { S.showPlans = true; return render(); }
     S.view = 'chat'; render();
     return startVoice('live');
   }

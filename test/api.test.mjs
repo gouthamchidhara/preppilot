@@ -365,3 +365,16 @@ test('profile suggest: signed-in only, maps experience to known roles', async ()
   // The mock AI returns no roles, so the call is refunded and reported as unmatched.
   assert.ok([200, 422].includes(r.status));
 });
+
+test('Pro runs Live AI from monthly minutes, up to 30 minutes in one go', async () => {
+  const { reserveVoice: rv, status: st } = await import('../api/src/lib/account.js');
+  const h = await signIn('prolive@gmail.com', 'prolive');
+  const key = 'google:prolive';
+  await call('POST billing/revenuecat', { event: { type: 'INITIAL_PURCHASE', app_user_id: key, entitlement_ids: ['pro'], expiration_at_ms: Date.now() + 30 * 86400000 } }, { authorization: 'Bearer hook-secret' });
+  const r = await rv({ key }, Date.now(), 30 * 60);
+  assert.equal(r.ok, true);
+  assert.equal(r.allowedSec, 30 * 60);
+  assert.equal((await st({ key })).voiceSecLeft, 15 * 60);
+  assert.equal((await call('GET health')).body.plans.pro.liveMin, 30);
+  void h;
+});
