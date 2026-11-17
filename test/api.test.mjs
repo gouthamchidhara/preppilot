@@ -61,6 +61,21 @@ test('health reports payments ready only when both RevenueCat server credentials
   }
 });
 
+test('health reports the Live AI interview mode flag, off by default', async () => {
+  const prev = process.env.LIVE_INTERVIEW_IOS;
+  try {
+    delete process.env.LIVE_INTERVIEW_IOS;
+    assert.equal((await call('GET health')).body.liveInterviewIos, false);
+    process.env.LIVE_INTERVIEW_IOS = 'on';
+    assert.equal((await call('GET health')).body.liveInterviewIos, true);
+    process.env.LIVE_INTERVIEW_IOS = 'off';
+    assert.equal((await call('GET health')).body.liveInterviewIos, false);
+  } finally {
+    if (prev === undefined) delete process.env.LIVE_INTERVIEW_IOS;
+    else process.env.LIVE_INTERVIEW_IOS = prev;
+  }
+});
+
 test('AI requires sign-in; the study guide (static) does not touch the API', async () => {
   assert.equal((await ask({})).status, 401);
   assert.equal((await ask({ 'x-session-token': 'forged.token.here' })).status, 401);

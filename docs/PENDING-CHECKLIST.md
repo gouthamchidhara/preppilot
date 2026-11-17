@@ -7,9 +7,9 @@ Status in one line: the site and app work; **paid purchases do not unlock anythi
 
 ## 1. Before anyone can pay
 
-- [ ] **Merge `claude/eloquent-pasteur-wdc9yd` into `main`.** `main` is 4 commits behind, including the Google sign-in fix (`ffb3865`). Azure is serving the branch; a push to `main` before the merge breaks sign-in again.
-- [ ] **RevenueCat: entitlement `pro`** exists and contains `pro_monthly`.
-- [ ] **RevenueCat: Current offering** has a Monthly package for `pro_monthly` and a package for `mock_session_60min`.
+- [x] **Merge `claude/eloquent-pasteur-wdc9yd` into `main`.** Done 17 November 2026 (fast-forward to `a31efcf`); Azure now serves `main`. (The Google sign-in fix `ffb3865` is in.)
+- [x] **RevenueCat: entitlement `pro`** exists and contains `pro_monthly`. Done 17 November 2026.
+- [x] **RevenueCat: Current offering** has a Monthly package for `pro_monthly` and a package for `mock_session_60min`. Done 17 November 2026 (offering `default`, 4 packages).
 - [ ] **RevenueCat: webhook** URL `https://preppilot.us/api/billing/revenuecat`, Authorization header equal to the Azure setting `REVENUECAT_WEBHOOK_AUTH`. Send RevenueCat's test event; the API should answer 200.
 - [ ] **Azure: `REVENUECAT_SECRET_KEY`** set to RevenueCat's secret API key (currently empty). Used right after a purchase to unlock Pro or the session.
 - [ ] **App Store Connect: `pro_monthly`** at $10.99/month (current amount not confirmed).
@@ -31,8 +31,8 @@ Status in one line: the site and app work; **paid purchases do not unlock anythi
 
 ## 3. Owner focus items
 
-- [ ] **Hide "During your interview" on iPhone** with a server setting (for example `LIVE_INTERVIEW_IOS=off` returned by `/api/health`), default off for App Review. Code change; Claude can build it. Locations: `liveSetupSheet()`, `livePromo()`, landing page, and the Pricing table and "Live AI in your interview" section in `plansView()` in `web/js/app.js`.
-- [ ] **Support page** `web/support.html` (does not exist yet; `/support.html` currently shows the home page). Contact `support@preppilot.us`, how to cancel Pro, restore purchases, delete the account, what Live AI includes, refunds through Apple. Then set it as the Support URL in App Store Connect and link it from Profile and Pricing. Code change; Claude can build it.
+- [x] **Hide "During your interview" on iPhone** with a server setting (for example `LIVE_INTERVIEW_IOS=off` returned by `/api/health`), default off for App Review. Done 17 November 2026: `/api/health` returns `liveInterviewIos` (on only when `LIVE_INTERVIEW_IOS=on`); the option is hidden in `liveSetupSheet()`, `livePromo()` and the Pricing table / "Live AI in your interview" section in `plansView()` when off. Landing page needed no change (it never mentions the mode).
+- [x] **Support page** `web/support.html` (does not exist yet; `/support.html` currently shows the home page). Contact `support@preppilot.us`, how to cancel Pro, restore purchases, delete the account, what Live AI includes, refunds through Apple. Done 17 November 2026; linked from Profile and Pricing. Setting it as the Support URL in App Store Connect still needs an Apple sign-in (blocked from Muse's browser).
 - [ ] **Costs:** after the first 20 to 30 Live AI sessions, compare Azure Cost Management (Azure OpenAI resource) with `docs/COST-AND-PRICING.md`.
 - [ ] **Budget alert** email reaches you.
 - [ ] **`ADMIN_EMAILS`** contains only your own addresses (they get unlimited access).

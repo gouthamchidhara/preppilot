@@ -280,6 +280,9 @@ export function handleHealth() {
     voice: realtimeConfigured(),
     googleClientId: process.env.GOOGLE_WEB_CLIENT_ID || '',
     payments: !!(process.env.REVENUECAT_WEBHOOK_AUTH && process.env.REVENUECAT_SECRET_KEY),
+    // "During your interview" Live AI mode. Off by default (App Review); flip
+    // on with LIVE_INTERVIEW_IOS=on — no rebuild needed.
+    liveInterviewIos: process.env.LIVE_INTERVIEW_IOS === 'on',
     plans: {
       free: { msgs: L.free.msgs, voiceMin: Math.floor(L.free.voiceSec / 60) },
       pro: { msgs: L.pro.msgs, msgsUnlimited: true, voiceMin: Math.floor(L.pro.voiceSec / 60), liveMin: Math.floor(L.proLiveSec / 60), liveSessions: L.proLiveSessions, price: proPriceLabel() },
