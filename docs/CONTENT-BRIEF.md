@@ -6,6 +6,9 @@ You are writing two data files per content pack. Do not edit any other file. Do 
 - `web/content/packs/<pack>.json`: `topics[]`, each with `id`, `name`, `concepts[]` (`t` title, `what`, `why`, `ex`, `tip`) and `qa[]`.
 - `web/js/diagram-data.js`: `SPECS[topicId]` is the animated diagram for a topic: `title`, `caption`, node/box labels, and `steps` (one caption per animation stage, shown one at a time as the picture builds).
 
+## Purpose (owner rule)
+This is not a course. Users already know the material; each card puts it back on the tip of their tongue in one or two lines, so they remember it on the interview call. Cards follow the workflow an engineer in that technology already uses (Java: write the code, build, test, package, deploy, run and debug), so the next card is the one they would expect.
+
 ## Output 1: `web/content/flow/<pack>.json`
 ```json
 { "<topicId>": { "order": [3, 0, 1, 2], "hooks": ["...", "...", "..."], "upNext": "...", "basics": [0] } }

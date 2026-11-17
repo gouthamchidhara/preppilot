@@ -86,6 +86,9 @@ function betaNote(t, where) {
 // Pro (or admin / beta code): everything. Topics the user wrote or imported are always open.
 // This is a client-side gate on public study content; the AI itself is enforced on the server.
 const FREE_TOPICS = 3;
+// Free flashcards: the first FREE_CARDS questions of every topic in the user's roles, locked topics included.
+const FREE_CARDS = 10;
+const cardIndex = id => Number(String(id).slice(String(id).lastIndexOf('-') + 1));
 const hasPro = () => { const a = store.account(); return !!(a?.unlimited || a?.plan === 'pro' || store.accessCode()); };
 function freeTopicIds() {
   const p = profile();
@@ -214,13 +217,45 @@ function captureDraft() {
   if (extras.length) S.draft.extras = extras.filter(b => b.classList.contains('on')).map(b => b.dataset.id);
 }
 
+// The landing animation: one phone, three scenes on a loop (a card turns over, a diagram draws
+// itself, Live AI listens and puts talking points on screen). Pure SVG + CSS, no video to load.
+function heroAnim() {
+  return `<div class="hero-anim" aria-hidden="true"><svg viewBox="0 0 360 300">
+    <rect class="ha-phone" x="95" y="8" width="170" height="284" rx="22"/>
+    <rect class="ha-notch" x="155" y="16" width="50" height="6" rx="3"/>
+    <g class="ha-s1">
+      <text class="ha-lbl" x="112" y="48">Java · Fundamentals</text>
+      <rect class="ha-card" x="110" y="58" width="140" height="150" rx="10"/>
+      <text class="ha-q" x="122" y="88">How does a HashMap</text><text class="ha-q" x="122" y="106">find your value?</text>
+      <g class="ha-ans"><line class="ha-rule" x1="122" y1="122" x2="238" y2="122"/>
+        <text class="ha-a" x="122" y="142">hash(key) picks a bucket,</text><text class="ha-a" x="122" y="158">equals() picks the entry.</text>
+        <text class="ha-a" x="122" y="174">Bad hashCode = slow map.</text></g>
+      <rect class="ha-btn ha-got" x="110" y="222" width="66" height="26" rx="7"/><text class="ha-bt" x="143" y="239">Missed</text>
+      <rect class="ha-btn ha-got2" x="184" y="222" width="66" height="26" rx="7"/><text class="ha-bt" x="217" y="239">Got it</text>
+    </g>
+    <g class="ha-s2">
+      <text class="ha-lbl" x="112" y="48">A request, step by step</text>
+      ${[['Client', 70], ['Gateway', 112], ['Service', 154], ['Database', 196]].map(([n, y], i) => `<g class="ha-node" style="--i:${i}"><rect x="130" y="${y}" width="100" height="28" rx="7"/><text x="180" y="${y + 18}">${n}</text></g>${i < 3 ? `<line class="ha-arrow" style="--i:${i}" x1="180" y1="${y + 28}" x2="180" y2="${y + 42}"/>` : ''}`).join('')}
+      <circle class="ha-dot" r="4" cx="180" cy="84"/>
+    </g>
+    <g class="ha-s3">
+      <text class="ha-lbl" x="112" y="48">Live AI · listening</text>
+      ${Array.from({ length: 13 }, (_, i) => `<rect class="ha-wave" style="--i:${i}" x="${118 + i * 10}" y="64" width="5" height="34" rx="2.5"/>`).join('')}
+      <text class="ha-q" x="112" y="128">“Tell me about a time</text><text class="ha-q" x="112" y="144">prod went down.”</text>
+      ${['Situation: 2 a.m. page, 5xx', 'Rolled back in 4 min', 'Fixed the alert, wrote RCA'].map((t, i) => `<g class="ha-pt" style="--i:${i}"><circle cx="117" cy="${170 + i * 22}" r="2.5"/><text class="ha-a" x="126" y="${174 + i * 22}">${t}</text></g>`).join('')}
+    </g>
+  </svg>
+  <div class="ha-caption"><span class="c1">Cards that come back when you miss them</span><span class="c2">Pictures that draw themselves</span><span class="c3">Live AI for 60 minutes</span></div></div>`;
+}
+
 function landingView() {
   const demo = S.demo;
   const q = demo?.q;
   return `<div class="stack loose landing">
-    <section class="head" style="padding-top:12px">
+    ${heroAnim()}
+    <section class="head">
       <h1>Flashcards, moving diagrams and a live AI for your next tech interview.</h1>
-      <p class="lede" style="margin-top:12px">Pick your role or paste your experience. PrepPilot puts the topics in the order interviewers care about, drills you on what you miss, and talks with you out loud for up to an hour.</p>
+      <p class="lede" style="margin-top:12px">Not a course. You already know this stuff; PrepPilot puts it back on the tip of your tongue, one or two lines at a time, in the same order you work: for a Java developer, write the code, build it, test it, ship it, keep it running. So the next card is the one you would expect.</p>
       <div class="row" style="margin-top:20px"><button class="btn primary lg" data-act="startonboard">Build my plan</button><span class="muted small">Free to start. No card needed.</span></div>
     </section>
     ${q ? `<section class="card stacked flash" id="flash">
@@ -234,7 +269,7 @@ function landingView() {
       <h3>How it works</h3>
       <div class="rows">
         <div class="rowi static"><span class="when">1</span><span class="main"><span class="t">Tell it what you are interviewing for</span><span class="d">Search ${getCatalog().roles.length} roles, or paste a few lines about your experience.</span></span></div>
-        <div class="rowi static"><span class="when">2</span><span class="main"><span class="t">Learn in the order that matters</span><span class="d">Short lessons that lead into each other, then flashcards that remember what you miss.</span></span></div>
+        <div class="rowi static"><span class="when">2</span><span class="main"><span class="t">Refresh it in your workflow's order</span><span class="d">One or two lines per card, following the way you already work, so it comes back to you on the call.</span></span></div>
         <div class="rowi static"><span class="when">3</span><span class="main"><span class="t">Say it out loud</span><span class="d">Practise answers with the AI coach, or book Live AI for 60 minutes.</span></span></div>
       </div>
     </section>
@@ -488,7 +523,7 @@ function lockedTopicView(t) {
     <section class="card live-hero stack">
       <h2>Unlock all ${all.length} of your topics</h2>
       <p>Free opens ${open.length ? open.map(x => esc(x.name)).join(', ') : `your first ${FREE_TOPICS} topics`}. Pro opens every lesson, every flashcard and every animated diagram for your role, plus the coach.</p>
-      <div class="row"><button class="btn invert lg" data-act="plans">See pricing</button><button class="btn quiet invert-quiet" data-act="home">Back to my free topics</button></div>
+      <div class="row"><button class="btn invert lg" data-act="plans">See pricing</button>${t.qa.length ? `<button class="btn quiet invert-quiet" data-act="deck" data-id="${t.id}">Try ${Math.min(FREE_CARDS, t.qa.length)} cards free</button>` : ''}</div>
     </section>
   </div>`;
 }
@@ -545,7 +580,8 @@ function deckView() {
       <h2>${pct >= 80 ? 'A strong round.' : pct >= 50 ? 'Getting there.' : 'Better to find out now.'}</h2>
       <p class="lede">${pct >= 80 ? 'These cards come back later, spaced further apart each time.' : 'The cards you missed come back first next time. Rereading the lessons for those topics will help.'}</p>
       ${worst && diagramFor(worst) ? `<section class="stack tight"><h3>The one to reread: ${esc(topicName(worst))}</h3>${diagramTeaser(worst, diagramHtml(worst))}<div class="row"><button class="btn" data-act="learn" data-id="${worst}">Reread the ${esc(topicName(worst))} lesson</button></div></section>` : ''}
-      <div class="row"><button class="btn primary" data-act="deck" data-id="">Practice another round</button><button class="btn" data-act="home">Back to plan</button></div></div>`;
+      ${d.free ? `<section class="card live-hero stack"><h2>That was ${d.cards.length} cards.</h2><p>Free shows the first ${FREE_CARDS} cards of each topic. Pro opens all ${d.total} in this set, every lesson and every diagram.</p><div class="row"><button class="btn invert" data-act="plans">Unlock every card</button></div></section>` : ''}
+      <div class="row"><button class="btn ${d.free ? '' : 'primary'}" data-act="deck" data-id="">Practice another round</button><button class="btn" data-act="home">Back to plan</button></div></div>`;
   }
   const q = d.cards[S.di];
   const t = topicById(q.topic);
@@ -1006,7 +1042,8 @@ function plansView() {
   const no = '<span class="no" aria-label="Not included">–</span>';
   const rows = [
     ['Topics in the order that matters for your role', yes, yes, '–'],
-    ['Lessons and flashcards', `First ${FREE_TOPICS} topics`, 'Every topic', '–'],
+    ['Lessons', `First ${FREE_TOPICS} topics`, 'Every topic', '–'],
+    ['Flashcards', `First ${FREE_CARDS} of each topic`, 'All of them', '–'],
     ['Animated diagrams for every topic', no, yes, '–'],
     ['Coach messages', `${o.freeMsgs} to try`, `${o.proMsgs} a month`, '–'],
     ['Voice practice', `${o.freeVoice} min to try`, `${o.proVoice} min a month`, `${o.liveMin} min, continuous`],
@@ -1225,9 +1262,12 @@ function onPurchased(acc) {
 /* ---------- actions ---------- */
 // ids = topics the user explicitly chose (may be outside their role); null = everything relevant.
 function startDeck(ids) {
-  if (ids?.length && ids.every(isLocked)) return openTopic(ids[0]);
-  const list = (ids ? topics().filter(t => ids.includes(t.id)) : topics()).filter(t => !isLocked(t.id));
-  S.deck = { cards: dueCards(list, profile(), store.progress(), Date.now(), 20, { relevantOnly: !ids }), results: [] };
+  const list = ids ? topics().filter(t => ids.includes(t.id)) : topics();
+  const pro = hasPro();
+  // Free: up to 10 cards in a row, drawn from the first 10 of each topic. Pro: everything, 20 a round.
+  let cards = dueCards(list, profile(), store.progress(), Date.now(), 999, { relevantOnly: !ids });
+  if (!pro) cards = cards.filter(c => topicById(c.topic)?.custom || topicById(c.topic)?.private || cardIndex(c.id) < FREE_CARDS);
+  S.deck = { cards: cards.slice(0, pro ? 20 : FREE_CARDS), results: [], free: !pro, total: list.reduce((n, t) => n + t.qa.length, 0) };
   S.di = 0; S.reveal = false; S.view = 'deck'; render();
 }
 

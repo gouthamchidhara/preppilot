@@ -507,3 +507,43 @@ pre code { background: none; border: 0; padding: 0; }
 .chips.picked .chip { display: inline-flex; align-items: center; gap: 6px; }
 .chips.picked .chip svg { width: 13px; height: 13px; }
 .allroles summary { font-size: 14px; }
+
+/* ---------- landing animation: 12s loop, three scenes ---------- */
+.hero-anim { margin: 4px auto 0; max-width: 420px; }
+.hero-anim svg { width: 100%; height: auto; display: block; }
+.ha-phone { fill: var(--paper); stroke: var(--line-strong); stroke-width: 1.5; }
+.ha-notch { fill: var(--line); }
+.ha-lbl { font: 600 9px var(--sans); fill: var(--muted); }
+.ha-card { fill: var(--desk); stroke: var(--line); }
+.ha-q { font: 500 11.5px var(--serif); fill: var(--ink); }
+.ha-a { font: 400 9.5px var(--sans); fill: var(--ink-soft); }
+.ha-rule { stroke: var(--line-strong); stroke-dasharray: 3 3; }
+.ha-btn { fill: var(--paper); stroke: var(--line-strong); }
+.ha-bt { font: 600 9px var(--sans); fill: var(--ink); text-anchor: middle; }
+.ha-node rect { fill: var(--desk); stroke: var(--ink-soft); }
+.ha-node text { font: 600 9.5px var(--sans); fill: var(--ink); text-anchor: middle; }
+.ha-arrow { stroke: var(--muted); stroke-width: 1.4; }
+.ha-dot { fill: var(--accent); }
+.ha-wave { fill: var(--accent); transform-box: fill-box; transform-origin: center; }
+.ha-pt circle { fill: var(--accent); }
+.ha-s1, .ha-s2, .ha-s3 { opacity: 0; animation: ha-scene 12s infinite; }
+.ha-s2 { animation-delay: 4s; } .ha-s3 { animation-delay: 8s; }
+@keyframes ha-scene { 0% { opacity: 0; } 4%, 30% { opacity: 1; } 34%, 100% { opacity: 0; } }
+.ha-ans { opacity: 0; animation: ha-ans 12s infinite; }
+@keyframes ha-ans { 0%, 12% { opacity: 0; } 16%, 30% { opacity: 1; } 34%, 100% { opacity: 0; } }
+.ha-got2 { animation: ha-tap 12s infinite; }
+@keyframes ha-tap { 0%, 22% { fill: var(--paper); } 24%, 30% { fill: var(--accent-soft); stroke: var(--accent); } 34%, 100% { fill: var(--paper); } }
+.ha-node, .ha-arrow { opacity: 0; animation: ha-build 12s infinite; animation-delay: calc(4s + var(--i) * .45s); }
+@keyframes ha-build { 0% { opacity: 0; transform: translateY(4px); } 4%, 26% { opacity: 1; transform: none; } 30%, 100% { opacity: 0; } }
+.ha-dot { opacity: 0; animation: ha-dot 12s infinite 4s; }
+@keyframes ha-dot { 0%, 14% { opacity: 0; transform: translateY(0); } 15% { opacity: 1; } 27% { opacity: 1; transform: translateY(126px); } 29%, 100% { opacity: 0; transform: translateY(126px); } }
+.ha-wave { animation: ha-wave .9s ease-in-out infinite; animation-delay: calc(var(--i) * -.13s); }
+@keyframes ha-wave { 0%, 100% { transform: scaleY(.25); } 50% { transform: scaleY(1); } }
+.ha-pt { opacity: 0; animation: ha-build 12s infinite; animation-delay: calc(9.2s + var(--i) * .6s); }
+.ha-caption { position: relative; height: 22px; text-align: center; font-size: 13.5px; color: var(--muted); margin-top: 6px; }
+.ha-caption span { position: absolute; inset: 0; opacity: 0; animation: ha-scene 12s infinite; }
+.ha-caption .c2 { animation-delay: 4s; } .ha-caption .c3 { animation-delay: 8s; }
+@media (prefers-reduced-motion: reduce) {
+  .ha-s1, .ha-ans, .ha-caption .c1 { opacity: 1 !important; animation: none !important; }
+  .ha-s2, .ha-s3, .ha-caption .c2, .ha-caption .c3 { display: none; }
+}
