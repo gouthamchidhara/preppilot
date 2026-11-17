@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Constants from 'expo-constants';
@@ -26,6 +26,10 @@ type FromWeb = { type: 'signin'; provider: 'google' | 'apple' } | { type: 'purch
 export default function App() {
   const web = useRef<WebView>(null);
   const [failed, setFailed] = useState(false);
+  // Match the web app's desk colour so the status-bar area blends in, in light and dark.
+  const dark = useColorScheme() === 'dark';
+  const bg = dark ? '#151a1b' : '#eceeed';
+  const fg = dark ? '#e4e9e7' : '#1c2426';
 
   // Native -> web: the page listens for `pp-native` events (web/js/auth.js).
   const toWeb = useCallback((detail: object) => {
@@ -89,13 +93,13 @@ export default function App() {
   }
 
   return (
-    <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
-      <StatusBar style="light" />
+    <SafeAreaView style={[styles.root, { backgroundColor: bg }]} edges={['top', 'left', 'right']}>
+      <StatusBar style={dark ? 'light' : 'dark'} />
       {failed ? (
-        <View style={styles.center}>
-          <Text style={styles.text}>Can't reach PrepPilot. Check your connection.</Text>
-          <TouchableOpacity style={styles.btn} onPress={() => { setFailed(false); web.current?.reload(); }}>
-            <Text style={styles.btnText}>Try again</Text>
+        <View style={[styles.center, { backgroundColor: bg }]}>
+          <Text style={[styles.text, { color: fg }]}>Can't reach PrepPilot. Check your connection.</Text>
+          <TouchableOpacity style={[styles.btn, { backgroundColor: fg }]} onPress={() => { setFailed(false); web.current?.reload(); }}>
+            <Text style={[styles.btnText, { color: bg }]}>Try again</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -113,7 +117,7 @@ export default function App() {
           allowsBackForwardNavigationGestures
           pullToRefreshEnabled
           startInLoadingState
-          renderLoading={() => <View style={styles.center}><ActivityIndicator color="#c9f73a" /></View>}
+          renderLoading={() => <View style={[styles.center, { backgroundColor: bg }]}><ActivityIndicator color={fg} /></View>}
           onError={() => setFailed(true)}
           setSupportMultipleWindows={false}
         />

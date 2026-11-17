@@ -16,8 +16,8 @@ module.exports = {
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'automatic',
-    backgroundColor: '#0a0c0f',
-    splash: { image: './assets/splash-icon.png', resizeMode: 'contain', backgroundColor: '#0a0c0f' },
+    backgroundColor: '#eceeed',
+    splash: { image: './assets/splash-icon.png', resizeMode: 'contain', backgroundColor: '#1c2426' },
     ios: {
       bundleIdentifier: s.bundleId,
       buildNumber: '1',
@@ -33,7 +33,7 @@ module.exports = {
       versionCode: 1,
       permissions: ['android.permission.RECORD_AUDIO', 'android.permission.MODIFY_AUDIO_SETTINGS'],
       adaptiveIcon: {
-        backgroundColor: '#0a0c0f',
+        backgroundColor: '#1c2426',
         foregroundImage: './assets/android-icon-foreground.png',
         monochromeImage: './assets/android-icon-monochrome.png',
       },

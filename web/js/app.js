@@ -10,7 +10,7 @@ const DAY = 86400000;
 const app = document.getElementById('app');
 const S = { view: 'home', topic: null, ci: 0, deck: null, di: 0, reveal: false, busy: false, listening: false, chatContext: '',
   rt: null, rtMode: null, rtStatus: '', rtStarting: false, voiceServer: false, live: null, pendingUser: false, muted: false,
-  googleClientId: '', plans: null, paywall: false, draft: null, roleSearch: '', showPlans: false, buying: null, buyBusy: false, healthLoaded: false, lastView: '' };
+  googleClientId: '', plans: null, paywall: false, draft: null, roleSearch: '', showPlans: false, fullPlan: false, allTopics: false, buying: null, buyBusy: false, healthLoaded: false, lastView: '' };
 
 /* ---------- helpers ---------- */
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -41,11 +41,6 @@ const ICONS = {
 };
 const ic = n => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
 const ticks = (items, cls = '') => `<ul class="ticks ${cls}">${items.filter(Boolean).map(t => `<li>${ic('check')}<span>${t}</span></li>`).join('')}</ul>`;
-function ring(pct, label = `${pct}<small>%</small>`) {
-  const c = 2 * Math.PI * 52;
-  return `<div class="ring" role="img" aria-label="${pct} percent"><svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="52"/><circle class="val" cx="60" cy="60" r="52" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c * (1 - Math.min(100, pct) / 100)).toFixed(1)}"/></svg><div class="num"><span>${label}</span></div></div>`;
-}
-
 function toast(msg, kind = '') {
   const t = Object.assign(document.createElement('div'), { className: `toast ${kind}`, innerHTML: `${ic(kind === 'bad' ? 'alert' : 'check')}<span>${esc(msg)}</span>` });
   document.getElementById('toasts').appendChild(t);
@@ -70,7 +65,7 @@ function planFor(p) { return buildPlan(topics(), p, p.planStart || Date.now()); 
 function todayIndex(p) { return Math.max(0, Math.floor((Date.now() - (p.planStart || Date.now())) / DAY)); }
 
 function betaNote(t, where) {
-  return t?.beta ? `<div class="small muted"><span class="pill beta">AI-written</span> <a class="link quiet small" href="${esc(reportUrl(t, where))}" target="_blank" rel="noopener">Report a problem</a></div>` : '';
+  return t?.beta ? `<div class="small muted"><span class="tag">AI-written</span> <a class="link quiet small" href="${esc(reportUrl(t, where))}" target="_blank" rel="noopener">Report a problem</a></div>` : '';
 }
 
 /* ---------- pricing facts (server-provided, with offline fallbacks) ---------- */
@@ -104,16 +99,9 @@ function captureDraft() {
 }
 
 function welcome() {
-  const cat = getCatalog();
-  const nTopics = getManifest().packs.reduce((n, p) => n + p.topics.length, 0);
-  return `<section class="welcome">
-    <h1>Walk into your interview <em>ready.</em></h1>
-    <p>A day-by-day plan for your exact role, flashcards that remember what you miss, and an AI coach you can talk to out loud.</p>
-    <div class="proof">
-      <div><b>${cat.roles.length}</b><span>tech roles, mix and match</span></div>
-      <div><b>${nTopics}</b><span>interview topics, by level</span></div>
-      <div><b>Voice</b><span>AI coach you can talk to</span></div>
-    </div>
+  return `<section class="head" style="padding:18px 0 26px">
+    <h1>Prepare for the interview you actually have.</h1>
+    <p class="lede" style="margin-top:12px">Tell PrepPilot the role and the date. It lays out what to study each day, drills you on what you miss, and listens while you practice your answers out loud.</p>
   </section>`;
 }
 
@@ -129,31 +117,30 @@ function onboardingView(existing) {
   const roleBtn = r => `<button type="button" class="chip ${d.roleIds.includes(r.id) ? 'on' : ''}" aria-pressed="${d.roleIds.includes(r.id)}" data-act="pickrole" data-id="${r.id}" data-search="${esc((r.name + ' ' + (r.keywords || '')).toLowerCase())}">${esc(r.name)}</button>`;
   const step = (n, body) => `<div class="step"><div class="n">${n}</div><div class="stack">${body}</div></div>`;
   return `${existing ? '' : welcome()}
-  <form class="card stack" id="profileForm" style="gap:22px">
-    <div><h2>${existing ? 'Your prep profile' : 'Build your plan'}</h2>
-    <p class="muted small" style="margin-top:6px">${existing ? 'Changes rebuild your plan. ' : 'Takes about a minute. '}Stays on this device.</p></div>
+  <form class="stack" id="profileForm" style="gap:26px">
+    ${existing ? '<div class="head"><h2>Your prep profile</h2><p class="muted">Saving rebuilds your plan. This stays on your device.</p></div>' : ''}
     ${step(1, `<fieldset class="stack"><legend>Which roles are you interviewing for?</legend>
-      <input id="roleSearch" value="${esc(S.roleSearch)}" placeholder="Search: java, spark, react, kubernetes…" autocomplete="off" aria-label="Search roles">
-      ${cat.families.map(f => `<div class="rolefam"><div class="eyebrow">${esc(f.name)}</div><div class="chips">${cat.roles.filter(r => r.family === f.id).map(roleBtn).join('')}</div></div>`).join('')}
+      <input id="roleSearch" value="${esc(S.roleSearch)}" placeholder="Search roles: java, react, kubernetes" autocomplete="off" aria-label="Search roles">
+      ${cat.families.map(f => `<div class="rolefam"><div class="label">${esc(f.name)}</div><div class="chips">${cat.roles.filter(r => r.family === f.id).map(roleBtn).join('')}</div></div>`).join('')}
       <div class="chips"><button type="button" class="chip ${d.roleIds.includes('other') ? 'on' : ''}" aria-pressed="${d.roleIds.includes('other')}" data-act="pickrole" data-id="other" data-search="other not listed">Other / not listed</button></div>
-      ${d.roleIds.length > 1 ? '<p class="note" role="status">Your plan will combine these roles. You can still drill one role at a time from the plan page.</p>' : ''}
+      ${d.roleIds.length > 1 ? '<p class="note" role="status">Your plan will combine these roles. You can still practice one role at a time from the plan.</p>' : ''}
       ${d.roleIds.includes('other') ? `<label>Your role<input name="otherRole" maxlength="60" value="${esc(d.otherRole || '')}" placeholder="e.g. Salesforce developer" required></label>
         <label>Closest role above (picks your starter topics)<select name="baseRoleId" data-act="baserole" required><option value="">Choose…</option>${cat.roles.map(r => `<option value="${r.id}" ${d.baseRoleId === r.id ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}</select></label>` : ''}
     </fieldset>`)}
     ${chosen ? `
     ${step(2, `<fieldset class="stack"><legend>About you</legend>
       <label>Experience<select name="level">${LEVELS.map(l => `<option value="${l.id}" ${d.level === l.id ? 'selected' : ''}>${esc(l.name)}</option>`).join('')}</select></label>
-      <label>Interview date (optional)<input type="date" name="interviewDate" value="${esc(d.interviewDate || '')}"></label>
-      <label>Your background, in a line or two<textarea name="background" rows="3" maxlength="600" placeholder="e.g. 4 yrs Java microservices, some AWS, want a senior backend role">${esc(d.background || '')}</textarea></label>
-      <label>What you're aiming for<input name="goal" maxlength="200" value="${esc(d.goal || '')}" placeholder="e.g. Senior backend interviews at product companies"></label>
-      ${extras.length ? `<div class="stack tight"><span class="small" style="font-weight:600">Extra tech you use (optional)</span>
+      <label>Interview date, if you have one<input type="date" name="interviewDate" value="${esc(d.interviewDate || '')}"></label>
+      <label>Your background, in a line or two<textarea name="background" rows="3" maxlength="600" placeholder="e.g. 4 years of Java microservices, some AWS">${esc(d.background || '')}</textarea></label>
+      <label>What you're aiming for<input name="goal" maxlength="200" value="${esc(d.goal || '')}" placeholder="e.g. Senior backend roles at product companies"></label>
+      ${extras.length ? `<div class="stack tight"><span style="font-weight:600;font-size:14px">Other tech you use</span>
         <div class="chips">${extras.map(id => `<button type="button" class="chip extra ${d.extras?.includes(id) ? 'on' : ''}" data-act="extra" data-id="${id}">${esc(topicName(id))}</button>`).join('')}</div></div>` : ''}
     </fieldset>`)}
-    ${step(3, `<fieldset class="stack"><legend>How do you feel about the core topics?</legend>
-      <div class="legend"><i>Tap to cycle:</i><i>neutral</i><i class="s">▲ strong</i><i class="w">▼ weak (studied first)</i></div>
+    ${step(3, `<fieldset class="stack"><legend>Where do you stand on the core topics?</legend>
+      <p class="muted small" style="margin-top:-6px">Tap a topic once for strong, twice for weak. Weak topics are studied first.</p>
       <div class="chips">${core.map(id => `<button type="button" class="chip rate ${rate(id)}" data-act="rate" data-id="${id}">${esc(topicName(id))}</button>`).join('')}</div>
     </fieldset>`)}
-    <button class="btn primary lg block" type="submit">${existing ? 'Save changes' : 'Build my plan'} ${ic('right')}</button>` : ''}
+    <button class="btn primary lg block" type="submit">${existing ? 'Save profile' : 'Build my plan'}</button>` : ''}
   </form>`;
 }
 
@@ -171,7 +158,7 @@ async function saveProfile() {
   store.setProfile(p);
   S.draft = null;
   if (p.roleIds.includes('other') && p.otherRole !== prev?.otherRole) ai.reportRole(p.otherRole).catch(() => {});
-  app.innerHTML = '<div class="card muted">Building your plan…</div>';
+  app.innerHTML = '<p class="muted">Building your plan…</p>';
   try { await ensureForProfile(p); } catch { oops('Could not download your topics. Check your connection.'); }
   if (prev) toast('Profile saved. Your plan is updated.');
   S.view = 'home'; render();
@@ -181,7 +168,7 @@ async function saveProfile() {
 function homeView() {
   const p = profile();
   const relevant = rankTopics(topics(), p);
-  if (!relevant.length) return '<div class="card muted">Loading your topics…</div>';
+  if (!relevant.length) return '<p class="muted">Loading your topics…</p>';
   const plan = planFor(p);
   const ti = Math.min(todayIndex(p), plan.length - 1);
   const today = plan[ti];
@@ -189,105 +176,113 @@ function homeView() {
   const r = readiness(relevant, p, prog);
   const due = dueCards(topics(), p, prog, Date.now(), 999).length;
   const left = daysUntil(p.interviewDate);
-  const dayLabel = d => d.kind === 'review' ? 'Mixed review' : d.topics.map(topicName).join(' + ');
-  const todayTitle = today.kind === 'review' ? 'Review what is due' : dayLabel(today);
-  const todayHint = today.kind === 'review' ? `${due} card${due === 1 ? '' : 's'} due. Missed ones come first.` : 'Read the learn cards, then lock it in with flashcards.';
+  const dayLabel = d => d.kind === 'review' ? 'Mixed review' : d.topics.map(topicName).join(', ');
   const mine = new Set(relevant.map(t => t.id));
   const others = getManifest().packs.map(pk => ({ ...pk, topics: pk.topics.filter(t => !mine.has(t.id)) })).filter(pk => pk.topics.length);
   const roleIds = migrateProfile(p).roleIds;
   const label = id => id === 'other' ? p.otherRole : roleName(id);
-  const short = iso => new Date(iso + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  const topicRow = (t, i) => {
+  const short = iso => new Date(iso + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' });
+  const todayTopics = today.kind === 'learn' ? today.topics.map(topicById).filter(Boolean) : [];
+  const nLearn = todayTopics.reduce((n, t) => n + t.concepts.length, 0);
+  const nQs = todayTopics.reduce((n, t) => n + t.qa.length, 0);
+  const todayHint = today.kind === 'review'
+    ? (due ? `${due} card${due === 1 ? '' : 's'} due. The ones you missed come first.` : 'Nothing is due. Pick any topic below to get ahead.')
+    : `${nLearn} short lesson${nLearn === 1 ? '' : 's'}, then ${nQs} question${nQs === 1 ? '' : 's'} to check it stuck.`;
+  const countdown = left === null ? `Day ${ti + 1} of ${plan.length}` : left === 0 ? 'Your interview is today' : `${left} day${left === 1 ? '' : 's'} until your interview`;
+  const upcoming = S.fullPlan ? plan.map((d, i) => [d, i]) : plan.map((d, i) => [d, i]).slice(ti, ti + 5);
+  const topicRow = t => {
     const tr = readiness([t], p, prog);
-    return `<button class="item" data-act="learn" data-id="${t.id}"><span class="rank">${i + 1}</span>
-      <span class="body"><b>${esc(t.name)}${t.beta ? ' <span class="pill beta">AI-written</span>' : ''}</b><span class="muted small">${esc(t.blurb || '')}</span></span>
-      <span class="mini ${tr.pct >= 80 ? 'done' : ''}">${tr.total ? tr.pct + '%' : ''}</span>${ic('right')}</button>`;
+    return `<button class="rowi" data-act="learn" data-id="${t.id}">
+      <span class="main"><span class="t">${esc(t.name)}${t.beta ? ' <span class="tag">AI-written</span>' : ''}</span><span class="d">${esc(t.blurb || '')}</span></span>
+      ${tr.total ? `<span class="pct"><span>${tr.pct}%</span><span class="bar"><i style="width:${tr.pct}%"></i></span></span>` : ''}</button>`;
   };
-  return `<div class="stack">
-    <section class="card hero-card">
-      ${ring(r.pct)}
-      <div class="grow"><div class="eyebrow">Interview readiness</div>
-        <div class="muted small" style="margin-top:2px">${esc(roleIds.map(label).join(' · '))}</div>
-        <div class="stats">
-          <div class="stat"><b>${r.known}<span style="font-size:.8rem"> / ${r.total}</span></b><span>cards known</span></div>
-          <div class="stat"><b>${due}</b><span>due now</span></div>
-          <div class="stat"><b>${left ?? plan.length - ti}</b><span>${left === null ? 'days in plan' : left === 1 ? 'day to go' : 'days to go'}</span></div>
-        </div>
+  return `<div class="stack loose">
+    <section class="greet">
+      <div class="label">${esc(new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }))}</div>
+      <h1>${esc(countdown)}</h1>
+    </section>
+    <section class="card stacked">
+      <div class="card-head"><span>Today, day ${ti + 1} of ${plan.length}</span>${due ? `<span>${due} due</span>` : ''}</div>
+      <h2>${esc(today.kind === 'review' ? 'Review what is due' : dayLabel(today))}</h2>
+      <p class="muted" style="margin-top:8px">${esc(todayHint)}</p>
+      <div class="row" style="margin-top:20px">
+        ${today.kind === 'learn' ? `<button class="btn primary" data-act="learn" data-id="${today.topics[0]}">Start today's lesson</button>` : ''}
+        <button class="btn ${today.kind === 'learn' ? '' : 'primary'}" data-act="deck" data-id="${today.kind === 'learn' ? today.topics.join(',') : ''}">Practice flashcards</button>
       </div>
     </section>
-    <section class="card glow stack today">
-      <div class="row between"><div class="eyebrow">Today · day ${ti + 1} of ${plan.length}</div>${due ? `<span class="pill accent">${due} due</span>` : ''}</div>
-      <div><h3>${esc(todayTitle)}</h3><p class="muted small" style="margin-top:6px">${esc(todayHint)}</p></div>
-      <div class="row">
-        ${today.kind === 'learn' ? `<button class="btn primary grow" data-act="learn" data-id="${today.topics[0]}">${ic('book')}Start learning</button>` : ''}
-        <button class="btn ${today.kind === 'learn' ? '' : 'primary'} grow" data-act="deck" data-id="${today.kind === 'learn' ? today.topics.join(',') : ''}">${ic('cards')}Flashcards</button>
-      </div>
+    <section class="readiness" aria-label="Readiness">
+      <div class="nums"><span><b>${r.pct}% ready</b> for ${esc(roleIds.map(label).join(' and '))}</span><span>${r.known} of ${r.total} cards known</span></div>
+      <div class="bar"><i style="width:${r.pct}%"></i></div>
     </section>
-    <div class="days" id="days">${plan.map((d, i) => `<button class="day ${i < ti ? 'past' : i === ti ? 'cur' : ''}"${d.kind === 'learn' ? ` data-act="learn" data-id="${d.topics[0]}"` : ' data-act="deck"'}>
-      <span class="d">${i === ti ? 'Today' : 'Day ' + (i + 1)} · ${esc(short(d.date))}</span><span class="t">${esc(dayLabel(d))}</span></button>`).join('')}</div>
-    ${roleIds.length > 1 ? `<section class="card stack"><h3>Drill one role</h3><p class="muted small">Focused flashcards from a single role's topics.</p><div class="chips">${roleIds.map(id => `<button class="chip" data-act="roledeck" data-id="${esc(id)}">${esc(label(id))}</button>`).join('')}</div></section>` : ''}
-    ${roleIds.includes('other') ? `<section class="card stack"><h3>Make it specific to ${esc(p.otherRole)}</h3>
-      <p class="muted small">Your plan starts from the closest listed role. Let the AI write topics for your exact role (uses 5 AI messages).</p>
-      <div class="row"><button class="btn primary" data-act="buildrole" ${S.busy ? 'disabled' : ''}>${ic('spark')}${S.busy ? 'Building…' : 'Build my role guide'}</button></div></section>` : ''}
-    <div class="sec-head"><h3>Your topics</h3><span class="muted small">most important first</span></div>
-    <div class="list">${relevant.map(topicRow).join('')}</div>
-    <details class="card"><summary>Browse everything else</summary>
-      <div class="stack" style="margin-top:14px">${others.map(pk => `<div class="rolefam"><div class="eyebrow">${esc(pk.name)}</div><div class="chips">${pk.topics.map(t => `<button class="chip" data-act="learn" data-id="${t.id}">${esc(t.name)}</button>`).join('')}</div></div>`).join('')}</div>
+    <section>
+      <div class="sec-head"><h3>${S.fullPlan ? 'Full plan' : 'Coming up'}</h3><button class="link quiet small" data-act="toggleplan">${S.fullPlan ? 'Show less' : `All ${plan.length} days`}</button></div>
+      <div class="rows">${upcoming.map(([d, i]) => `<button class="rowi ${i < ti ? 'past' : i === ti ? 'now' : ''}" ${d.kind === 'learn' ? `data-act="learn" data-id="${d.topics[0]}"` : 'data-act="deck"'}>
+        <span class="when">${i === ti ? 'Today' : esc(short(d.date))}</span><span class="main"><span class="t">${esc(dayLabel(d))}</span></span></button>`).join('')}</div>
+    </section>
+    ${roleIds.length > 1 ? `<section><div class="sec-head"><h3>Practice one role</h3></div><div class="chips">${roleIds.map(id => `<button class="chip" data-act="roledeck" data-id="${esc(id)}">${esc(label(id))}</button>`).join('')}</div></section>` : ''}
+    ${roleIds.includes('other') ? `<section class="panel stack"><h3>Make it specific to ${esc(p.otherRole)}</h3>
+      <p class="muted">Your plan starts from the closest listed role. The coach can write topics for your exact role. This uses 5 AI messages.</p>
+      <div class="row"><button class="btn" data-act="buildrole" ${S.busy ? 'disabled' : ''}>${S.busy ? 'Writing your guide…' : 'Write my role guide'}</button></div></section>` : ''}
+    <section>
+      <div class="sec-head"><h3>Your topics</h3>${relevant.length > 8 ? `<button class="link quiet small" data-act="toggletopics">${S.allTopics ? 'Show fewer' : `All ${relevant.length} topics`}</button>` : ''}</div>
+      <div class="rows">${(S.allTopics ? relevant : relevant.slice(0, 8)).map(topicRow).join('')}</div>
+    </section>
+    <details><summary>Browse other topics</summary>
+      <div class="stack" style="margin-top:16px">${others.map(pk => `<div class="rolefam"><div class="label">${esc(pk.name)}</div><div class="chips">${pk.topics.map(t => `<button class="chip" data-act="learn" data-id="${t.id}">${esc(t.name)}</button>`).join('')}</div></div>`).join('')}</div>
     </details>
   </div>`;
 }
 
 function learnView() {
   const t = topicById(S.topic);
-  if (!t) return '<div class="card muted">Loading…</div>';
+  if (!t) return '<p class="muted">Loading…</p>';
   const c = t.concepts[S.ci];
-  if (!c) return `<div class="card stack"><h2>${esc(t.name)}</h2><p class="muted">No learn cards in this topic.</p><button class="btn primary" data-act="deck" data-id="${t.id}">Flashcards</button></div>`;
+  if (!c) return `<div class="stack"><h2>${esc(t.name)}</h2><p class="muted">This topic has questions only.</p><div class="row"><button class="btn primary" data-act="deck" data-id="${t.id}">Practice flashcards</button></div></div>`;
   const last = S.ci >= t.concepts.length - 1;
   return `<div class="stack">
-    <div class="row between"><button class="back" data-act="home">${ic('left')}Plan</button><span class="muted small">${S.ci + 1} of ${t.concepts.length}</span></div>
+    <div class="row between"><button class="back" data-act="home">${ic('left')}Plan</button><span class="muted small">${esc(t.name)}, ${S.ci + 1} of ${t.concepts.length}</span></div>
     <div class="segs">${t.concepts.map((_, i) => `<i class="${i <= S.ci ? 'on' : ''}"></i>`).join('')}</div>
-    <article class="card stack lesson" style="gap:18px">
-      <div><div class="eyebrow">${esc(t.name)}</div><h3 style="margin-top:6px">${esc(c.t)}</h3></div>
-      <div><div class="lbl">What it is</div><p>${fmt(c.what)}</p></div>
-      ${c.why ? `<div><div class="lbl">Why it matters</div><p>${fmt(c.why)}</p></div>` : ''}
-      ${c.ex ? `<div><div class="lbl">Example</div><pre><code>${esc(c.ex)}</code></pre></div>` : ''}
-      ${c.tip ? `<div class="tip"><div class="lbl">Say this in the interview</div><p>${fmt(c.tip)}</p></div>` : ''}
-      ${betaNote(t, `card ${S.ci + 1}: ${c.t}`)}
+    <article class="lesson" style="padding:14px 0 6px">
+      <h1>${esc(c.t)}</h1>
+      <div class="part body" style="margin-top:16px"><p class="lede" style="max-width:none">${fmt(c.what)}</p></div>
+      ${c.why ? `<div class="part"><div class="label">Why interviewers ask</div><p style="font:400 1.05rem/1.6 var(--serif);color:var(--ink-soft)">${fmt(c.why)}</p></div>` : ''}
+      ${c.ex ? `<div class="part"><div class="label">Example</div><pre><code>${esc(c.ex)}</code></pre></div>` : ''}
+      ${c.tip ? `<div class="part say"><div class="label">Say it like this</div><p style="font:400 1.05rem/1.6 var(--serif)">${fmt(c.tip)}</p></div>` : ''}
+      ${t.beta ? `<div class="part">${betaNote(t, `card ${S.ci + 1}: ${c.t}`)}</div>` : ''}
     </article>
     <div class="row">
-      <button class="btn" data-act="cprev" ${S.ci === 0 ? 'disabled' : ''} aria-label="Previous card">${ic('left')}</button>
-      <button class="btn" data-act="askcard">${ic('spark')}Ask the coach</button>
-      ${last ? `<button class="btn primary grow" data-act="deck" data-id="${t.id}">Test yourself ${ic('right')}</button>` : `<button class="btn primary grow" data-act="cnext">Next ${ic('right')}</button>`}
+      <button class="btn" data-act="cprev" ${S.ci === 0 ? 'disabled' : ''} aria-label="Previous lesson">${ic('left')}</button>
+      <button class="btn" data-act="askcard">Ask the coach</button>
+      ${last ? `<button class="btn primary grow" data-act="deck" data-id="${t.id}">Test yourself</button>` : '<button class="btn primary grow" data-act="cnext">Next lesson</button>'}
     </div>
   </div>`;
 }
 
 function deckView() {
   const d = S.deck;
-  if (!d.cards.length) return `<div class="card stack center result">${ring(100, ic('check'))}<h2>All caught up</h2><p class="muted">Nothing is due for this selection. Learn a new topic or come back tomorrow.</p><button class="btn primary" data-act="home">Back to plan</button></div>`;
+  if (!d.cards.length) return `<div class="stack" style="padding-top:30px"><h1>Nothing is due.</h1><p class="lede">Every card in this set is scheduled for later. Start a new topic, or come back tomorrow.</p><div class="row"><button class="btn primary" data-act="home">Back to plan</button></div></div>`;
   if (S.di >= d.cards.length) {
     const got = d.results.filter(Boolean).length;
     const pct = Math.round((got * 100) / d.cards.length);
-    return `<div class="card stack center result">${ring(pct, `${got}<small>/${d.cards.length}</small>`)}
-      <h2>${pct >= 80 ? 'Strong round.' : pct >= 50 ? 'Getting there.' : 'Good to know now.'}</h2>
-      <p class="muted">${pct >= 80 ? 'These cards come back later, on schedule.' : 'Missed cards come back first next time. Re-read the learn cards for the weak spots.'}</p>
-      <div class="row"><button class="btn" data-act="home">Back to plan</button><button class="btn primary" data-act="deck" data-id="">Another round</button></div></div>`;
+    return `<div class="stack" style="padding-top:30px">
+      <div class="score">${got}<small> of ${d.cards.length}</small></div>
+      <h2>${pct >= 80 ? 'A strong round.' : pct >= 50 ? 'Getting there.' : 'Better to find out now.'}</h2>
+      <p class="lede">${pct >= 80 ? 'These cards come back later, spaced further apart each time.' : 'The cards you missed come back first next time. Rereading the lessons for those topics will help.'}</p>
+      <div class="row"><button class="btn primary" data-act="deck" data-id="">Practice another round</button><button class="btn" data-act="home">Back to plan</button></div></div>`;
   }
   const q = d.cards[S.di];
   const t = topicById(q.topic);
   return `<div class="stack">
-    <div class="row between"><button class="back" data-act="home">${ic('x')}Quit</button><span class="muted small">${S.di + 1} of ${d.cards.length}</span></div>
+    <div class="row between"><button class="back" data-act="home">${ic('left')}Stop</button><span class="muted small">Card ${S.di + 1} of ${d.cards.length}</span></div>
     <div class="bar"><i style="width:${(S.di * 100) / d.cards.length}%"></i></div>
-    <article class="card stack flash">
-      <div class="stack">
-        <div class="row between"><span class="pill">${esc(t?.name || q.topic)}</span><span class="tier" title="Difficulty ${q.l} of 3">${[1, 2, 3].map(n => `<i class="${n <= q.l ? 'on' : ''}"></i>`).join('')}</span></div>
-        <p class="q">${fmt(q.q)}</p>
-        ${S.reveal ? `<div class="ans">${fmt(q.a)}</div>` : ''}
-      </div>
-      ${S.reveal ? `<div class="stack">
-        <div class="row"><button class="btn again lg" data-act="grade" data-ok="0">${ic('x')}Missed it</button><button class="btn good lg" data-act="grade" data-ok="1">${ic('check')}Got it</button></div>
-        <div class="row between"><button class="link small" data-act="askq">Go deeper with the coach →</button>${betaNote(t, `question: ${q.q}`)}</div></div>`
-      : '<button class="reveal" data-act="reveal">Say your answer out loud, then tap to check</button>'}
+    <article class="card stacked flash" id="flash">
+      <div class="card-head"><span>${esc(t?.name || q.topic)}</span><span class="level">${['', 'Fundamentals', 'Applied', 'Advanced'][q.l] || ''}</span></div>
+      <p class="q">${fmt(q.q)}</p>
+      ${S.reveal ? `<div class="ans">${fmt(q.a)}</div>` : ''}
+      <div class="foot">${S.reveal ? `
+        <div class="row"><button class="btn miss lg" data-act="grade" data-ok="0">Missed it</button><button class="btn got lg" data-act="grade" data-ok="1">Got it</button></div>
+        <div class="row between small"><button class="link quiet" data-act="askq">Go deeper with the coach</button>${betaNote(t, `question: ${q.q}`)}</div>`
+      : '<button class="btn primary lg block" data-act="reveal">Show the answer</button><p class="muted small" style="text-align:center">Say your answer out loud first.</p>'}</div>
     </article>
   </div>`;
 }
@@ -298,25 +293,24 @@ const clock = sec => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).pad
 
 function voicePanel() {
   if (S.rt) {
-    return `<section class="card stage">
-      <div class="orb status-${S.rtStatus} ${S.muted ? 'muted' : ''}" id="rtOrb"></div>
+    return `<section class="panel stage">
+      <div class="pulse status-${S.rtStatus} ${S.muted ? 'muted' : ''}" id="rtOrb"></div>
       <div><div class="status" id="rtStatus">${esc(S.muted ? 'Muted' : STATUS[S.rtStatus] || S.rtStatus)}</div>
         <div class="timer" id="rtTimer">${esc(MODE_NAME[S.rtMode] || '')}</div></div>
       <div class="ctl">
-        ${S.rtMode === 'listen' ? `<div><button class="iconbtn primary" data-act="rtrespond" aria-label="Get feedback now">${ic('check')}</button>My turn's done</div>` : ''}
-        <div><button class="iconbtn" data-act="rtinterrupt" aria-label="Stop the coach talking">${ic('stop')}</button>Interrupt</div>
-        <div><button class="iconbtn ${S.muted ? 'on' : ''}" data-act="rtmute" aria-label="${S.muted ? 'Unmute' : 'Mute'} microphone">${ic(S.muted ? 'micoff' : 'mic')}</button>${S.muted ? 'Unmute' : 'Mute'}</div>
-        <div><button class="iconbtn danger" data-act="rtstop" aria-label="End session">${ic('x')}</button>End</div>
+        ${S.rtMode === 'listen' ? '<button class="btn primary" data-act="rtrespond">Get feedback</button>' : '<button class="btn" data-act="rtinterrupt">Interrupt</button>'}
+        <button class="btn" data-act="rtmute">${S.muted ? 'Unmute' : 'Mute'}</button>
+        <button class="btn danger" data-act="rtstop">End</button>
       </div>
     </section>`;
   }
   if (!(S.voiceServer && realtimeSupported)) {
-    return S.healthLoaded ? `<div class="note">Live voice isn't available ${S.voiceServer ? 'in this browser' : 'right now'}. You can still type, or use the mic button to dictate.</div>` : '';
+    return S.healthLoaded ? `<p class="note">Live voice isn't available ${S.voiceServer ? 'in this browser' : 'right now'}. You can still type, or dictate with the microphone button.</p>` : '';
   }
   const dis = S.rtStarting ? 'disabled' : '';
-  return `<div class="modes">
-    <button class="mode talk" data-act="rtstart" data-mode="talk" ${dis}><span class="ico">${ic('mic')}</span><span class="txt"><b>Talk</b><span>Hands-free conversation. Interrupt any time.</span></span></button>
-    <button class="mode listen" data-act="rtstart" data-mode="listen" ${dis}><span class="ico">${ic('ear')}</span><span class="txt"><b>Rehearse</b><span>Answer out loud without interruptions, then get graded.</span></span></button>
+  return `<div class="rows">
+    <button class="mode" data-act="rtstart" data-mode="talk" ${dis}><span class="ico">${ic('mic')}</span><span class="main"><b>Talk it through</b><span class="d">A spoken conversation. Interrupt whenever you like.</span></span>${ic('right')}</button>
+    <button class="mode" data-act="rtstart" data-mode="listen" ${dis}><span class="ico">${ic('ear')}</span><span class="main"><b>Rehearse an answer</b><span class="d">Speak without being interrupted, then get it graded.</span></span>${ic('right')}</button>
   </div>`;
 }
 
@@ -331,19 +325,18 @@ function usageMeters(a) {
   </div>`;
 }
 
-function signInCard(headline = 'Meet your AI interview coach') {
+function signInCard(headline = 'Practice with a coach that knows your plan') {
   const o = offer();
   const buttons = native()
-    ? `<div class="stack tight" style="width:100%;max-width:300px">${window.PP_PLATFORM === 'ios' ? '<button class="btn primary block" data-act="nsignin" data-p="apple"> Sign in with Apple</button>' : ''}<button class="btn ${window.PP_PLATFORM === 'ios' ? '' : 'primary'} block" data-act="nsignin" data-p="google">Continue with Google</button></div>`
+    ? `<div class="stack tight" style="max-width:300px">${window.PP_PLATFORM === 'ios' ? '<button class="btn primary block" data-act="nsignin" data-p="apple"> Sign in with Apple</button>' : ''}<button class="btn ${window.PP_PLATFORM === 'ios' ? '' : 'primary'} block" data-act="nsignin" data-p="google">Continue with Google</button></div>`
     : (S.googleClientId ? '<div id="gbtn"></div>' : `<p class="muted small">${S.healthLoaded ? 'Sign-in is being set up. Check back soon.' : 'Loading sign-in…'}</p>`);
-  return `<section class="card stack signin" id="accountCard">
-    <div class="ico">${ic('spark')}</div>
-    <h2>${esc(headline)}</h2>
-    <p class="muted">Ask anything, get your answers graded, or practice out loud. Your plan and flashcards stay free without an account.</p>
-    ${ticks([`<b>Free to try:</b> ${o.freeMsgs} AI messages and ${o.freeVoice} voice minutes`, 'No card needed. Sign in takes a few seconds.'])}
+  return `<section class="stack" id="accountCard" style="padding-top:8px">
+    <div class="head"><h2>${esc(headline)}</h2>
+    <p class="lede">Ask questions, have your answers graded, or rehearse out loud. It is free to try: ${o.freeMsgs} messages and ${o.freeVoice} voice minutes, no card needed.</p></div>
     ${buttons}
-    <details class="small"><summary class="muted" style="font-weight:500">Have a beta code?</summary>
-      <form id="codeForm" class="row" style="margin-top:10px"><input id="code" type="password" value="${esc(store.accessCode())}" autocomplete="off" aria-label="Beta code"><button class="btn">Save</button></form>
+    <p class="muted small">Your plan and flashcards work without an account.</p>
+    <details class="small"><summary class="muted" style="font-weight:400;justify-content:flex-start">Have a beta code?</summary>
+      <form id="codeForm" class="row" style="margin-top:10px"><input id="code" type="password" value="${esc(store.accessCode())}" autocomplete="off" aria-label="Beta code"><button class="btn">Save code</button></form>
     </details>
   </section>`;
 }
@@ -351,22 +344,22 @@ function signInCard(headline = 'Meet your AI interview coach') {
 function accountCard() {
   const a = store.account();
   if (!signedIn()) return signInCard();
-  if (!a) return `<section class="card row between small muted"><span>${store.accessCode() ? 'Using a beta access code.' : 'Loading account…'}</span><button class="link small" data-act="signout">Sign out</button></section>`;
+  if (!a) return `<section class="row between small muted"><span>${store.accessCode() ? 'Using a beta access code.' : 'Loading account…'}</span><button class="link quiet" data-act="signout">Sign out</button></section>`;
   const o = offer();
   const name = a.name || a.email || 'Signed in';
-  const planPill = a.unlimited ? '<span class="pill">ADMIN</span>' : a.plan === 'pro' ? '<span class="pill pro">PRO</span>' : '<span class="pill">FREE</span>';
-  const sub = a.unlimited ? 'Unlimited AI' : a.plan === 'pro' && a.periodEnds ? `Allowance resets ${new Date(a.periodEnds).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : `Free trial: ${o.freeMsgs} messages, ${o.freeVoice} voice minutes`;
-  return `<section class="card stack" id="accountCard">
+  const planTag = a.unlimited ? '<span class="tag">Admin</span>' : a.plan === 'pro' ? '<span class="tag pro">Pro</span>' : '<span class="tag">Free</span>';
+  const sub = a.unlimited ? 'Unlimited AI' : a.plan === 'pro' && a.periodEnds ? `Allowance refills ${new Date(a.periodEnds).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}` : 'Free trial';
+  return `<section class="panel stack" id="accountCard">
     <div class="row"><div class="avatar">${esc(name[0].toUpperCase())}</div>
-      <div class="grow"><div class="row" style="gap:8px"><b style="overflow:hidden;text-overflow:ellipsis">${esc(name)}</b>${planPill}</div><div class="small muted">${esc(sub)}</div></div></div>
+      <div class="grow"><div class="row" style="gap:8px"><b style="overflow:hidden;text-overflow:ellipsis">${esc(name)}</b>${planTag}</div><div class="small muted">${esc(sub)}</div></div></div>
     ${usageMeters(a)}
-    ${a.plan === 'free' ? `<button class="btn primary block" data-act="plans">${ic('bolt')}Upgrade to Pro · ${esc(o.proPrice)}</button>` : ''}
-    <div class="row small" style="gap:16px">
-      ${a.plan !== 'free' || a.unlimited ? '<button class="link quiet small" data-act="plans">Plans</button>' : ''}
-      ${native() && !a.unlimited ? '<button class="link quiet small" data-act="restore">Restore purchases</button>' : ''}
-      <a class="link quiet small" href="privacy.html" target="_blank" rel="noopener">Privacy</a>
-      <button class="link quiet small" data-act="signout">Sign out</button>
-      ${a.key === 'code:admin' ? '' : '<button class="link quiet small" data-act="delacct">Delete account</button>'}
+    ${a.plan === 'free' ? `<button class="btn primary block" data-act="plans">Upgrade to Pro, ${esc(o.proPrice)}</button>` : ''}
+    <div class="links">
+      ${a.plan !== 'free' || a.unlimited ? '<button class="link quiet" data-act="plans">Plans</button>' : ''}
+      ${native() && !a.unlimited ? '<button class="link quiet" data-act="restore">Restore purchases</button>' : ''}
+      <a class="link quiet" href="privacy.html" target="_blank" rel="noopener">Privacy</a>
+      <button class="link quiet" data-act="signout">Sign out</button>
+      ${a.key === 'code:admin' ? '' : '<button class="link quiet" data-act="delacct">Delete account</button>'}
     </div>
   </section>`;
 }
@@ -375,14 +368,13 @@ function paywallCard() {
   const a = store.account();
   const o = offer();
   if (a?.plan === 'pro') {
-    return `<section class="card paywall stack"><div class="eyebrow">Monthly allowance used</div><h3>You've used this month's Pro allowance</h3>
-      <p class="muted small">It refills ${a.periodEnds ? 'on ' + new Date(a.periodEnds).toLocaleDateString(undefined, { month: 'long', day: 'numeric' }) : 'at your next billing period'}. Your plan and flashcards keep working in the meantime.</p>
-      ${usageMeters(a)}<div class="row"><button class="btn" data-act="unpaywall">Got it</button></div></section>`;
+    return `<section class="panel stack"><h3>This month's Pro allowance is used up</h3>
+      <p class="muted">It refills ${a.periodEnds ? 'on ' + new Date(a.periodEnds).toLocaleDateString(undefined, { month: 'long', day: 'numeric' }) : 'at your next billing period'}. Your plan and flashcards keep working in the meantime.</p>
+      ${usageMeters(a)}<div class="row"><button class="btn" data-act="unpaywall">Close</button></div></section>`;
   }
-  return `<section class="card paywall stack"><div class="eyebrow">Free trial used up</div><h3>Keep your coach for the whole prep</h3>
-    <p class="muted small">Pro gives you ${o.proMsgs} AI messages and ${o.proVoice} voice minutes every month. Your plan and flashcards stay free either way.</p>
-    ${usageMeters(a)}
-    <div class="row"><button class="btn primary grow" data-act="plans">${ic('bolt')}See plans · from ${esc(o.proPrice)}</button><button class="btn ghost" data-act="unpaywall">Not now</button></div></section>`;
+  return `<section class="panel stack"><h3>Your free trial is used up</h3>
+    <p class="muted">Pro gives you ${o.proMsgs} messages and ${o.proVoice} voice minutes every month. Your plan and flashcards stay free either way.</p>
+    <div class="row"><button class="btn primary" data-act="plans">See Pro, ${esc(o.proPrice)}</button><button class="btn quiet" data-act="unpaywall">Not now</button></div></section>`;
 }
 
 function mountGoogleButton() {
@@ -397,21 +389,22 @@ function chatView() {
   const canUse = signedIn();
   const a = store.account();
   const bubble = m => isNotice(m) ? `<div class="msg sys">${fmt(m.content.replace(/^(ℹ️|⚠️)\s*/, ''))}</div>` : `<div class="msg ${m.role}">${m.role === 'assistant' ? md(m.content) : fmt(m.content)}</div>`;
-  if (!canUse) return `<div class="stack">${signInCard()}</div>`;
+  if (!canUse) return signInCard();
   const lowFree = a?.plan === 'free' && !S.paywall && (a.msgsLeft <= 5 || a.voiceSecLeft < 30);
-  return `<div class="stack chat">
-    <div class="row between"><h2>Coach</h2>
-      <div class="row" style="gap:14px">${S.rt ? '' : `<label class="switch"><input type="checkbox" id="speakToggle" ${store.speak() ? 'checked' : ''}>Read replies aloud</label>`}
-      ${msgs.length ? '<button class="link quiet small" data-act="clearchat">Clear</button>' : ''}</div></div>
+  const started = msgs.length || live;
+  return `<div class="stack chat" style="gap:18px">
+    <div class="row between"><h1>Coach</h1>
+      <div class="row" style="gap:16px">${S.rt ? '' : `<label class="switch"><input type="checkbox" id="speakToggle" ${store.speak() ? 'checked' : ''}>Read replies aloud</label>`}
+      ${msgs.length ? '<button class="link quiet small" data-act="clearchat">Clear chat</button>' : ''}</div></div>
     ${S.paywall ? paywallCard() : voicePanel()}
-    ${lowFree && !S.rt ? `<div class="note row between"><span>${a.msgsLeft} message${a.msgsLeft === 1 ? '' : 's'} and ${mins(a.voiceSecLeft)} voice min left in your free trial.</span><button class="link small" data-act="plans">Upgrade →</button></div>` : ''}
-    ${S.chatContext ? `<div class="note row between"><span>About: <b style="color:var(--ink)">${esc(S.chatContext.split('\n')[0])}</b></span><button class="link quiet small" data-act="dropctx">Remove</button></div>` : ''}
-    <div class="msgs" id="msgs">${msgs.length || live ? msgs.map(bubble).join('') : `<div class="empty"><h3>What do you want to work on?</h3><p class="muted">Ask about a concept, paste an answer to get it graded, or ask to be quizzed.</p>
-      <div class="chips">${quick.map(q => `<button class="chip" data-act="quick" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div></div>`}
+    ${lowFree && !S.rt ? `<p class="note row between"><span>${a.msgsLeft} message${a.msgsLeft === 1 ? '' : 's'} and ${mins(a.voiceSecLeft)} voice minutes left in your free trial.</span><button class="link" data-act="plans">See Pro</button></p>` : ''}
+    ${S.chatContext ? `<p class="note row between"><span>Talking about <b>${esc(S.chatContext.split('\n')[0])}</b></span><button class="link quiet" data-act="dropctx">Remove</button></p>` : ''}
+    <div class="msgs" id="msgs">${started ? msgs.map(bubble).join('') : `<div class="stack" style="padding-top:10px"><p class="muted">Or type a question. A few to start with:</p>
+      <div class="rows">${quick.map(q => `<button class="rowi" data-act="quick" data-q="${esc(q)}"><span class="main"><span class="t" style="font-weight:400">${esc(q)}</span></span></button>`).join('')}</div></div>`}
     ${live}${S.busy ? '<div class="msg assistant"><span class="dots"><i></i><i></i><i></i></span></div>' : ''}</div>
     <form id="chatForm" class="composer">
-      <textarea id="chatInput" rows="1" maxlength="2000" placeholder="${S.rt ? 'Or type. Answers stream in.' : 'Message your coach…'}" aria-label="Message"></textarea>
-      ${S.rt ? '' : `<button type="button" class="iconbtn ${S.listening ? 'on' : ''}" data-act="mic" ${voice.canListen ? '' : 'disabled'} aria-label="${S.listening ? 'Stop dictation' : 'Dictate'}" title="${voice.canListen ? 'Dictate' : 'Dictation is not supported here'}">${ic(S.listening ? 'stop' : 'mic')}</button>`}
+      <textarea id="chatInput" rows="1" maxlength="2000" placeholder="${S.rt ? 'Or type your reply' : 'Ask your coach'}" aria-label="Message"></textarea>
+      ${S.rt ? '' : `<button type="button" class="iconbtn ${S.listening ? 'on' : 'plain'}" data-act="mic" ${voice.canListen ? '' : 'disabled'} aria-label="${S.listening ? 'Stop dictation' : 'Dictate'}" title="${voice.canListen ? 'Dictate' : 'Dictation is not supported here'}">${ic(S.listening ? 'stop' : 'mic')}</button>`}
       <button class="iconbtn primary" type="submit" ${S.busy ? 'disabled' : ''} aria-label="Send">${ic('send')}</button>
     </form>
   </div>`;
@@ -421,10 +414,10 @@ function chatView() {
 function paintVoice() {
   const st = document.getElementById('rtStatus'), orb = document.getElementById('rtOrb'), tm = document.getElementById('rtTimer');
   if (st) st.textContent = S.muted ? 'Muted' : STATUS[S.rtStatus] || S.rtStatus;
-  if (orb) orb.className = `orb status-${S.rtStatus} ${S.muted ? 'muted' : ''}`;
+  if (orb) orb.className = `pulse status-${S.rtStatus} ${S.muted ? 'muted' : ''}`;
   if (tm && S.rt) {
     const left = S.rt.endsAt ? Math.max(0, (S.rt.endsAt - Date.now()) / 1000) : null;
-    tm.textContent = `${MODE_NAME[S.rtMode] || ''}${left === null ? '' : ` · ${clock(left)} left`}`;
+    tm.textContent = `${MODE_NAME[S.rtMode] || ''}${left === null ? '' : `, ${clock(left)} left`}`;
     tm.classList.toggle('low', left !== null && left < 60);
   }
 }
@@ -485,22 +478,22 @@ async function startVoice(mode) {
 
 function settingsView() {
   const custom = store.customTopics(), priv = store.privatePacks();
-  return `<div class="stack">
+  return `<div class="stack loose">
     ${accountCard()}
     ${onboardingView(profile())}
-    <section class="card stack"><div><h3>Cards for any topic</h3>
-      <p class="muted small" style="margin-top:4px">Not covered? The AI writes a set: "Kafka exactly-once", "Terraform state", "GraphQL federation". Uses 5 AI messages.</p></div>
-      <form id="genForm" class="row"><input id="genTopic" maxlength="120" placeholder="Topic" required aria-label="Topic"><button class="btn primary" ${S.busy ? 'disabled' : ''}>${ic('spark')}${S.busy ? 'Writing…' : 'Generate'}</button></form>
-      ${custom.length ? `<div class="list">${custom.map(t => `<div class="item" style="cursor:default"><span class="body"><b>${esc(t.name)}</b><span class="muted small">${t.concepts.length} cards · ${t.qa.length} questions</span></span><button class="link quiet small" data-act="delcustom" data-id="${t.id}">Delete</button></div>`).join('')}</div>` : ''}
+    <section class="stack"><div class="head"><h2>Cards for any topic</h2>
+      <p class="muted">Something your interview covers that isn't here? Name it and the coach writes a set. Uses 5 AI messages.</p></div>
+      <form id="genForm" class="row"><input id="genTopic" maxlength="120" placeholder="e.g. Kafka exactly-once delivery" required aria-label="Topic"><button class="btn" ${S.busy ? 'disabled' : ''}>${S.busy ? 'Writing cards…' : 'Write cards'}</button></form>
+      ${custom.length ? `<div class="rows">${custom.map(t => `<div class="rowi static"><span class="main"><span class="t">${esc(t.name)}</span><span class="d">${t.concepts.length} lessons, ${t.qa.length} questions</span></span><button class="link quiet small" data-act="delcustom" data-id="${t.id}">Delete</button></div>`).join('')}</div>` : ''}
     </section>
-    <section class="card stack"><div><h3>Private packs</h3>
-      <p class="muted small" style="margin-top:4px">Import your own JSON pack (projects, STAR stories). It never leaves this device.</p></div>
+    <section class="stack"><div class="head"><h2>Private packs</h2>
+      <p class="muted">Import your own pack as a JSON file: your projects, your stories. It never leaves this device.</p></div>
       <input type="file" id="importPack" accept="application/json,.json" aria-label="Import pack">
-      ${priv.map(p => `<div class="item" style="cursor:default"><span class="body"><b>${esc(p.name)}</b><span class="muted small">${p.topics.length} topics</span></span><button class="link quiet small" data-act="delpack" data-id="${esc(p.id)}">Remove</button></div>`).join('')}
+      ${priv.length ? `<div class="rows">${priv.map(p => `<div class="rowi static"><span class="main"><span class="t">${esc(p.name)}</span><span class="d">${p.topics.length} topics</span></span><button class="link quiet small" data-act="delpack" data-id="${esc(p.id)}">Remove</button></div>`).join('')}</div>` : ''}
     </section>
-    <section class="card stack"><h3>Your data</h3>
-      <p class="muted small">Profile, progress and chats are stored only on this device.</p>
-      <div class="row"><button class="btn" data-act="export">Export my data</button><button class="btn again" style="flex:none" data-act="reset">Erase everything</button></div>
+    <section class="stack"><div class="head"><h2>Your data</h2>
+      <p class="muted">Your profile, progress and chats are stored only on this device.</p></div>
+      <div class="row"><button class="btn" data-act="export">Export my data</button><button class="btn danger" data-act="reset">Erase everything</button></div>
     </section>
   </div>`;
 }
@@ -510,45 +503,40 @@ function plansView() {
   const o = offer();
   const isPro = a?.plan === 'pro';
   const dis = S.buyBusy ? 'disabled' : '';
-  return `<div class="stack" style="gap:20px">
-    <div class="plans-top"><button class="iconbtn" data-act="pickfree" aria-label="Close">${ic('x')}</button></div>
-    <div class="plans-hero">
-      <h1>Practice out loud.<br><em>Walk in ready.</em></h1>
-      <p>The plan and flashcards are free. Add the AI coach for the part that decides interviews: saying your answers and getting honest feedback.</p>
+  const manage = window.PP_PLATFORM === 'android' ? 'Google Play' : 'Apple ID';
+  return `<div class="stack loose">
+    <div class="row between" style="margin-bottom:-14px"><span></span><button class="iconbtn plain" data-act="pickfree" aria-label="Close">${ic('x')}</button></div>
+    <div class="head">
+      <h1>Say your answers out loud before the day they count.</h1>
+      <p class="lede" style="margin-top:12px">Reading about an answer and giving one are different skills. Pro is the coach that listens, pushes back and tells you what an interviewer would have wanted to hear.</p>
     </div>
-    <div class="plans-grid">
-      <div class="plan-card pro">
-        <div class="plan-flag">Best for daily practice</div>
-        <div><div class="eyebrow">Pro</div><div class="name">Your coach, all month</div></div>
-        <div class="price">${esc(o.proAmount)}<span>/ ${esc(o.proPer)}</span></div>
-        ${o.perDay ? `<div class="sub">${esc(o.perDay)}. Cancel any time.</div>` : ''}
-        ${ticks([`<b>${o.proMsgs} AI messages</b> every month`, `<b>${o.proVoice} voice minutes</b> every month: talk it through or rehearse out loud`, 'Answers graded, with the follow-ups a panel would ask', 'Quizzes on your weakest topics, one question at a time', 'Custom card sets for any technology'])}
-        ${isPro ? `<button class="btn block lg" disabled>${ic('check')}Your current plan</button>` : `<button class="btn primary block lg" data-act="buysub" ${dis}>${S.buyBusy === 'pro' ? `Opening the ${storeName()}…` : 'Start Pro'}</button>`}
-      </div>
-      <div class="plan-card free">
-        <div class="row between"><div><div class="eyebrow" style="color:var(--muted)">Free</div><div class="name">Study guide</div></div><div class="price" style="font-size:1.8rem">$0</div></div>
-        ${ticks(['Personal day-by-day plan', 'Every learn card and flashcard, with spaced repetition', `${o.freeMsgs} AI messages and ${o.freeVoice} voice minutes to try the coach`], 'dim')}
-        <button class="btn ghost block" data-act="pickfree">${isPro ? 'Back to the app' : 'Continue free'}</button>
-      </div>
-    </div>
-    <div class="assure"><span>${ic('shield')}Billed by ${native() ? storeName() : 'Apple or Google'}</span><span>${ic('refresh')}Cancel any time</span><span>${ic('lock')}Study data stays on your device</span></div>
+    <section class="card">
+      <div class="card-head"><span>PrepPilot Pro</span>${o.perDay ? `<span>${esc(o.perDay.toLowerCase())}</span>` : ''}</div>
+      <div class="price">${esc(o.proAmount)}<span>per ${esc(o.proPer)}, cancel any time</span></div>
+      <div style="margin:20px 0 22px">${ticks([`<b>${o.proVoice} minutes of voice practice</b> a month, spoken back to you`, `<b>${o.proMsgs} coach messages</b> a month`, 'Answers graded against what a panel listens for', 'Follow-up questions on your weak topics', 'Card sets written for any technology you name'])}</div>
+      ${isPro ? '<button class="btn block lg" disabled>You are on Pro</button>' : `<button class="btn primary block lg" data-act="buysub" ${dis}>${S.buyBusy === 'pro' ? `Opening the ${storeName()}…` : `Start Pro for ${esc(o.proPrice)}`}</button>`}
+    </section>
+    <section class="stack">
+      <div class="row between"><div><h3>Free</h3><p class="muted">Your day-by-day plan, every lesson and flashcard, and ${o.freeMsgs} messages plus ${o.freeVoice} voice minutes to try the coach.</p></div></div>
+      <div class="row"><button class="btn" data-act="pickfree">${isPro ? 'Back to the app' : 'Continue on Free'}</button></div>
+    </section>
     <div class="faq">
-      <details><summary>What counts as an AI message?</summary><p>Each question you send the coach is one message. Generating a custom card set uses five. Voice is counted in minutes, only while a session is live.</p></details>
-      <details><summary>How do I cancel Pro?</summary><p>In your ${window.PP_PLATFORM === 'android' ? 'Google Play' : 'Apple ID'} subscription settings, any time. You keep Pro until the end of the period you paid for.</p></details>
-      <details><summary>What happens to my progress if I stay free?</summary><p>Nothing changes. Your plan, cards and progress are yours and stay on this device.</p></details>
+      <details><summary>What counts as a message?</summary><p>Each question you send the coach is one message. Writing a custom card set uses five. Voice is counted in minutes, only while a session is live.</p></details>
+      <details><summary>How do I cancel?</summary><p>In your ${manage} subscription settings, at any time. You keep Pro until the end of the period you paid for.</p></details>
+      <details><summary>What happens to my progress on Free?</summary><p>Nothing changes. Your plan, cards and progress stay on this device and stay yours.</p></details>
     </div>
-    <p class="legal">Pro is ${esc(o.proPrice)} and renews automatically until cancelled in your ${window.PP_PLATFORM === 'android' ? 'Google Play' : 'Apple ID'} subscription settings at least 24 hours before the renewal date. Payment is charged to your ${storeName()} account at confirmation of purchase.<br>
-      <a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener">Terms of Use</a> · <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>${native() ? ' · <button class="link" data-act="restore">Restore purchases</button>' : ''}</p>
+    <p class="legal">Pro costs ${esc(o.proPrice)} and renews automatically until you cancel in your ${manage} subscription settings, at least 24 hours before the renewal date. Payment is charged to your ${storeName()} account when you confirm the purchase.
+      <a class="link quiet" href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener">Terms of Use</a>, <a class="link quiet" href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>${native() ? ', <button class="link quiet" data-act="restore">Restore purchases</button>' : ''}</p>
   </div>`;
 }
 
 function topRight() {
   const a = store.account();
   if (!profile() || S.showPlans) return '';
-  if (a?.unlimited) return '<span class="pill">ADMIN</span>';
-  if (a?.plan === 'pro') return '<button class="pill pro" style="border:0;cursor:pointer" data-act="plans">PRO</button>';
+  if (a?.unlimited) return '<span class="tag">Admin</span>';
+  if (a?.plan === 'pro') return '<button class="tag pro" style="border:0;cursor:pointer" data-act="plans">Pro</button>';
   if (signedIn() && !a) return '';
-  return `<button class="upsell" data-act="plans">${ic('bolt')}Go Pro</button>`;
+  return '<button class="link quiet small" data-act="plans">Upgrade</button>';
 }
 
 function scrollEnd() { window.scrollTo(0, document.documentElement.scrollHeight); }
@@ -576,7 +564,6 @@ function render() {
   filterRoles();
   if (key === 'chat') { paintVoice(); if (!changed || store.chat().length) scrollEnd(); else window.scrollTo({ top: 0 }); }
   else if (changed || key === 'learn' || key === 'deck') window.scrollTo({ top: 0 });
-  if (key === 'home') { const d = document.getElementById('days'), c = d?.querySelector('.cur'); if (c) d.scrollLeft = c.offsetLeft - d.offsetLeft - 16; }
 }
 
 /* ---------- purchases ---------- */
@@ -770,6 +757,8 @@ document.addEventListener('click', async e => {
     return;
   }
   if (a === 'closesheet') closeSheet();
+  else if (a === 'toggletopics') { S.allTopics = !S.allTopics; const y = window.scrollY; render(); window.scrollTo({ top: y }); }
+  else if (a === 'toggleplan') { S.fullPlan = !S.fullPlan; const y = window.scrollY; render(); window.scrollTo({ top: y }); }
   else if (a === 'home') { S.view = 'home'; render(); }
   else if (a === 'learn') openTopic(id);
   else if (a === 'buildrole') buildRoleGuide();
@@ -779,9 +768,13 @@ document.addEventListener('click', async e => {
   else if (a === 'roledeck') startRoleDeck(id);
   else if (a === 'reveal') { S.reveal = true; render(); }
   else if (a === 'grade') {
+    if (S.grading) return;
     const q = S.deck.cards[S.di], ok = b.dataset.ok === '1', prog = store.progress();
     prog[q.id] = review(prog[q.id], ok); store.setProgress(prog);
-    S.deck.results.push(ok); S.di++; S.reveal = false; render();
+    // The card leaves the stack to the side it was graded on, then the next one is dealt.
+    S.grading = true;
+    document.getElementById('flash')?.classList.add(ok ? 'out-r' : 'out-l');
+    setTimeout(() => { S.grading = false; S.deck.results.push(ok); S.di++; S.reveal = false; render(); }, 170);
   }
   else if (a === 'askcard') {
     const t = topicById(S.topic), c = t.concepts[S.ci];
@@ -809,7 +802,7 @@ document.addEventListener('click', async e => {
   else if (a === 'delacct') {
     sheet(`<h2>Delete your account?</h2>
       <p class="muted">This removes your email, plan and AI usage from our servers right away. It does not cancel a Pro subscription: do that in your ${window.PP_PLATFORM === 'android' ? 'Google Play' : 'Apple ID'} subscription settings.</p>
-      <div class="row"><button class="btn grow" data-act="closesheet">Keep my account</button><button class="btn again" data-act="delacct-yes">Delete permanently</button></div>`);
+      <div class="row"><button class="btn grow" data-act="closesheet">Keep my account</button><button class="btn danger" data-act="delacct-yes">Delete permanently</button></div>`);
   }
   else if (a === 'delacct-yes') {
     closeSheet();
@@ -842,7 +835,7 @@ document.addEventListener('click', async e => {
   else if (a === 'reset') {
     sheet(`<h2>Erase everything on this device?</h2>
       <p class="muted">Your profile, card progress, chats and custom topics will be removed, and you will be signed out. Purchases stay with your account.</p>
-      <div class="row"><button class="btn grow" data-act="closesheet">Cancel</button><button class="btn again" data-act="reset-yes">Erase</button></div>`);
+      <div class="row"><button class="btn grow" data-act="closesheet">Cancel</button><button class="btn danger" data-act="reset-yes">Erase</button></div>`);
   }
   else if (a === 'reset-yes') { closeSheet(); S.rt?.stop(); store.resetAll(); signOut(); S.view = 'home'; S.deck = null; S.draft = null; render(); }
 });
@@ -858,7 +851,7 @@ document.addEventListener('click', async e => {
       await ensureForProfile(migrated);
     }
   } catch {
-    app.innerHTML = '<div class="card">Could not load study content. Check your connection and reload.</div>';
+    app.innerHTML = '<p class="note warn">Could not load study content. Check your connection and reload.</p>';
     return;
   }
   render();

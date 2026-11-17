@@ -1,7 +1,7 @@
 // App-shell cache for offline study. AI calls (/api) always go to the network.
-const VERSION = 'pp-v6';
+const VERSION = 'pp-v7';
 // Packs are fetched on demand (content/packs/<id>.json?v=...) and cached by the fetch handler below.
-const SHELL = ['./', 'index.html', 'app.css', 'manifest.webmanifest', 'js/app.js', 'js/plan.js', 'js/content.js', 'js/store.js', 'js/ai.js', 'js/auth.js', 'js/voice.js', 'js/realtime.js', 'js/config.js', 'content/roles.json', 'content/packs/index.json', 'fonts/bricolage.woff2', 'icons/icon.svg', 'icons/icon-192.png'];
+const SHELL = ['./', 'index.html', 'app.css', 'manifest.webmanifest', 'js/app.js', 'js/plan.js', 'js/content.js', 'js/store.js', 'js/ai.js', 'js/auth.js', 'js/voice.js', 'js/realtime.js', 'js/config.js', 'content/roles.json', 'content/packs/index.json', 'fonts/newsreader.woff2', 'fonts/instrument-sans.woff2', 'icons/icon.svg', 'icons/icon-192.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

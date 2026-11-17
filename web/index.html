@@ -3,24 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0a0c0f">
+  <meta name="theme-color" content="#eceeed" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#151a1b" media="(prefers-color-scheme: dark)">
   <meta name="description" content="Interview prep built around your role and your date: a day-by-day plan, flashcards, and an AI coach you can talk to.">
   <title>PrepPilot · Interview prep with an AI coach</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="preload" href="fonts/bricolage.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/newsreader.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/instrument-sans.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
   <header class="top">
     <button class="brand" data-nav="home" aria-label="PrepPilot home">
-      <svg viewBox="0 0 512 512" aria-hidden="true"><path d="M72 300 440 76 332 444l-90-144z" fill="#c9f73a"/><path d="M242 300 440 76 72 300z" fill="#e6ff8f"/></svg>
+      <svg viewBox="0 0 512 512" aria-hidden="true"><path d="M72 300 440 76 332 444l-90-144z" fill="currentColor"/><path d="M242 300 440 76 72 300z" fill="currentColor" opacity=".55"/></svg>
       PrepPilot
     </button>
     <div id="topRight"></div>
   </header>
-  <main id="app" class="wrap"><div class="card muted">Loading…</div></main>
+  <main id="app" class="wrap"><p class="muted">Loading…</p></main>
   <nav class="tabs" hidden aria-label="Main">
     <button data-nav="home"><svg class="ic" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Plan</button>
     <button data-nav="deck"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="7" width="14" height="13" rx="2.5"/><path d="M7 4h11a3 3 0 0 1 3 3v10"/></svg>Cards</button>
