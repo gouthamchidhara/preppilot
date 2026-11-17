@@ -445,3 +445,26 @@ pre code { background: none; border: 0; padding: 0; }
 .btn.invert-quiet { color: color-mix(in srgb, var(--desk) 75%, transparent); }
 .btn.invert-quiet:hover { background: color-mix(in srgb, var(--desk) 10%, transparent); }
 .chat .card.live-hero { margin-bottom: 18px; }
+
+/* ---------- pricing ---------- */
+.tiers { display: grid; gap: 12px; grid-template-columns: 1fr; }
+@media (min-width: 620px) { .tiers { grid-template-columns: 1fr 1fr 1.15fr; align-items: stretch; } }
+.tier { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.tier .btn { margin-top: auto; }
+.tier .price { font-size: 2.2rem; }
+.tier-name { font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tier-flag { font-size: 12px; font-weight: 500; opacity: .7; }
+.tier.card.live-hero { padding: 18px; box-shadow: var(--shadow); }
+.tier.live-hero .price { color: var(--desk); }
+.compare { border-top: 1px solid var(--line); font-size: 13.5px; }
+.crow { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 8px; padding: 10px 2px; border-bottom: 1px solid var(--line); align-items: center; }
+.crow > span:not(:first-child) { text-align: center; color: var(--ink-soft); }
+.crow.chead { font-weight: 600; color: var(--muted); font-size: 12.5px; }
+.crow.chead > span:last-child { color: var(--ink); }
+.crow .yes svg { color: var(--accent); width: 16px; height: 16px; vertical-align: -3px; }
+.crow .no { color: var(--line-strong); }
+@media (max-width: 400px) { .crow { grid-template-columns: 1.3fr .8fr .9fr 1fr; font-size: 12.5px; } }
+.use-opt { flex-direction: row; align-items: flex-start; gap: 10px; font-weight: 400; padding: 12px; border: 1px solid var(--line-strong); border-radius: 10px; cursor: pointer; }
+.use-opt:has(input:checked) { border-color: var(--ink); background: var(--sunk); }
+.use-opt input { width: auto; margin-top: 3px; accent-color: var(--ink); }
+.use-opt > span { display: flex; flex-direction: column; gap: 2px; }

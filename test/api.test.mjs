@@ -161,15 +161,27 @@ test('live coach mode runs a structured practice test with the chosen settings',
   process.env.AZURE_OPENAI_REALTIME_DEPLOYMENT = 'rt';
   const v = validateRealtime({ sdp: 'v=0', mode: 'live', speak: true, live: { lengthMin: 30, style: 'tough', topic: 'Kubernetes', difficulty: 'senior' } });
   assert.equal(v.mode, 'live');
-  assert.deepEqual(v.live, { lengthMin: 30, style: 'tough', topic: 'Kubernetes', difficulty: 'senior' });
+  assert.deepEqual(v.live, { lengthMin: 30, style: 'tough', topic: 'Kubernetes', difficulty: 'senior', use: 'practice' });
   const cfg = sessionConfigs(v)[0].session;
   assert.equal(cfg.audio.input.turn_detection.create_response, true);
   assert.match(voiceInstructions(v), /LIVE COACH MODE/);
   assert.match(voiceInstructions(v), /Kubernetes/);
   assert.match(voiceInstructions(v), /senior level/);
   // Bad settings fall back to the defaults instead of failing.
-  assert.deepEqual(validateRealtime({ sdp: 'v=0', mode: 'live', live: { lengthMin: 99, style: 'mean' } }).live, { lengthMin: 60, style: 'friendly', topic: '', difficulty: '' });
+  assert.deepEqual(validateRealtime({ sdp: 'v=0', mode: 'live', live: { lengthMin: 99, style: 'mean' } }).live, { lengthMin: 60, style: 'friendly', topic: '', difficulty: '', use: 'practice' });
   delete process.env.AZURE_OPENAI_REALTIME_DEPLOYMENT;
+});
+
+test('live coach interview use listens silently and answers with talking points', () => {
+  const v = validateRealtime({ sdp: 'v=0', mode: 'live', speak: true, live: { use: 'interview', topic: 'Kubernetes' } });
+  assert.equal(v.live.use, 'interview');
+  assert.equal(v.speak, false); // never talks during the user's interview
+  const cfg = sessionConfigs(v)[0].session;
+  assert.deepEqual(cfg.output_modalities, ['text']);
+  assert.equal(cfg.audio.input.turn_detection.create_response, true);
+  assert.equal(cfg.audio.input.turn_detection.interrupt_response, false);
+  assert.match(voiceInstructions(v), /INTERVIEW MODE/);
+  assert.doesNotMatch(voiceInstructions(v), /LIVE COACH MODE/);
 });
 
 test('live coach hints need an open session window', async () => {

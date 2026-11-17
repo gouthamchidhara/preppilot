@@ -21,11 +21,14 @@ export function validateRealtime(body) {
     style: LIVE_STYLES.has(body.live?.style) ? body.live.style : 'friendly',
     topic: typeof body.live?.topic === 'string' ? body.live.topic.slice(0, 120) : '',
     difficulty: LIVE_LEVELS.has(body.live?.difficulty) ? body.live.difficulty : '',
+    // 'interview': the app listens during the user's own interview and shows talking points on screen.
+    use: body.live?.use === 'interview' ? 'interview' : 'practice',
   } : null;
+  const interview = live?.use === 'interview';
   return {
     sdp,
     mode: body.mode === 'listen' ? 'listen' : body.mode === 'live' ? 'live' : 'talk',
-    speak: body.speak !== false,
+    speak: interview ? false : body.speak !== false,
     voice: VOICES.has(body.voice) ? body.voice : 'marin',
     profile: typeof body.profileSummary === 'string' ? body.profileSummary.slice(0, 1500) : '',
     context: typeof body.context === 'string' ? body.context.slice(0, 3000) : '',
@@ -35,7 +38,9 @@ export function validateRealtime(body) {
 
 export function voiceInstructions(v) {
   const base = chatSystemPrompt({ profile: v.profile, context: v.context, voice: true });
-  const mode = v.mode === 'live'
+  const mode = v.mode === 'live' && v.live?.use === 'interview'
+    ? `INTERVIEW MODE: you are listening to the candidate's real job interview through their microphone. You will hear the interviewer and the candidate. You never speak; your text appears silently on the candidate's screen. When the interviewer asks the candidate a question, reply at once with 3 to 5 short bullet points the candidate can glance at: the key points to make, in order, plus one concrete example drawn from the candidate's background when it fits. For a coding or design question, add the approach in one line. Keep the whole reply under 70 words. Do not write full sentences to read aloud, greetings or commentary. When what you heard is not a question for the candidate (small talk, the candidate answering, silence or noise), reply with exactly: …${v.live?.topic ? ` The interview is likely to focus on: ${v.live.topic}.` : ''}`
+    : v.mode === 'live'
     ? `LIVE COACH MODE: run a structured practice test, not a real interview. Ask one question at a time, wait for the answer, give brief honest feedback (strong / ok / weak + one improvement), then move to the next question.${v.live?.style === 'tough'
       ? ' Be demanding: short follow-ups that probe gaps, no softening.'
       : v.live?.style === 'direct' ? ' Be direct and businesslike: no small talk, straight to the next question.'
@@ -43,7 +48,7 @@ export function voiceInstructions(v) {
     : v.mode === 'listen'
     ? 'LISTENING MODE: the user is practicing an interview answer out loud. Do not interrupt. When asked to respond, grade the answer (strong / ok / weak), say the two most important missing points, and give one follow-up question an interviewer would ask.'
     : 'TALKING MODE: natural spoken conversation. Start answering immediately. Keep answers to 2-4 sentences unless asked for more; offer to go deeper.';
-  return `${base}\n${mode}\nIf the user interrupts, stop and address what they said.`;
+  return v.live?.use === 'interview' ? `${base}\n${mode}` : `${base}\n${mode}\nIf the user interrupts, stop and address what they said.`;
 }
 
 // Full config first; if Azure rejects an optional field, retry with the minimal documented shape.
@@ -59,13 +64,14 @@ export function sessionConfigs(v) {
       max_output_tokens: 900,
       audio: {
         input: {
-          noise_reduction: { type: 'near_field' },
+          // In interview mode the interviewer is often on laptop speakers, further from the mic.
+          noise_reduction: { type: v.live?.use === 'interview' ? 'far_field' : 'near_field' },
           turn_detection: {
             type: 'server_vad', threshold: 0.5, prefix_padding_ms: 300,
             // Talking: answer ~0.35s after you stop. Listening: never auto-answer; the app sends response.create.
-            silence_duration_ms: v.mode === 'listen' ? 900 : 350,
+            silence_duration_ms: v.mode === 'listen' ? 900 : v.live?.use === 'interview' ? 600 : 350,
             create_response: v.mode !== 'listen',
-            interrupt_response: true,
+            interrupt_response: v.live?.use !== 'interview',
           },
           ...(transcribe ? { transcription: { model: transcribe } } : {}),
         },
