@@ -181,7 +181,7 @@ function dailyReminder() {
   const nt = nextTopic(p);
   const due = dueCards(topics(), p, prog, Date.now(), 999);
   const topic = nt ? nt.name : due[0] ? topicName(due[0].topic) : 'practice';
-  const line = due.length ? `${due.length} card${due.length === 1 ? '' : 's'} due, then ${topic}` : `Up next: ${topic}`;
+  const line = `Up next: ${topic}`;
   const n = pickNudge(topic, due.length);
   return { title: n.title, body: `${line}. ${n.body}`.slice(0, 240), due: due.length };
 }
@@ -331,12 +331,13 @@ function homeView() {
     </section>
     ${livePromo()}
     ${nt ? `<section class="card stacked">
-      <div class="card-head"><span>Up next</span>${due ? `<span>${due} due</span>` : ''}</div>
+      <div class="card-head"><span>Up next</span>${hasPro() ? '' : `<span>${FREE_TOPICS} of ${relevant.length} topics open</span>`}</div>
       <h2>${esc(nt.name)}</h2>
       <p class="muted" style="margin-top:8px">${esc(nextHint)}</p>
       <div class="row" style="margin-top:20px">
         <button class="btn primary" data-act="learn" data-id="${nt.id}">${started ? 'Continue' : 'Start the lesson'}</button>
-        <button class="btn" data-act="deck" data-id="${due ? '' : nt.id}">${due ? `Review ${due} due card${due === 1 ? '' : 's'}` : 'Practice flashcards'}</button>
+        <button class="btn" data-act="deck" data-id="${nt.id}">Practice flashcards</button>
+        ${hasPro() ? '' : `<button class="btn quiet" data-act="plans">${ic('lock')}Unlock all ${relevant.length} topics</button>`}
       </div>
     </section>` : ''}
     ${freshCard()}
@@ -428,7 +429,7 @@ function learnView() {
 
 function deckView() {
   const d = S.deck;
-  if (!d.cards.length) return `<div class="stack" style="padding-top:30px"><h1>Nothing is due.</h1><p class="lede">Every card in this set is scheduled for later. Start a new topic, or come back tomorrow.</p><div class="row"><button class="btn primary" data-act="home">Back to plan</button></div></div>`;
+  if (!d.cards.length) return `<div class="stack" style="padding-top:30px"><h1>You have seen every card here for now.</h1><p class="lede">They come back when they are worth another look. Start a new topic${hasPro() ? '' : ', or unlock every topic and its cards with Pro'}.</p><div class="row">${hasPro() ? '' : '<button class="btn primary" data-act="plans">Unlock more topics</button>'}<button class="btn" data-act="home">Back to plan</button></div></div>`;
   if (S.di >= d.cards.length) {
     const got = d.results.filter(Boolean).length;
     const pct = Math.round((got * 100) / d.cards.length);
@@ -868,7 +869,7 @@ function statsSection() {
     <section class="rings" aria-label="Rings">
       ${statRing(overall.pct, `${overall.pct}%`, 'ready')}
       ${statRing(voicePct, voiceBig, voiceSmall)}
-      ${statRing(todayPct, `${todayGraded}`, dueToday ? `of ${dueToday} due today` : 'practiced today')}
+      ${statRing(todayPct, `${todayGraded}`, 'practised today')}
     </section>
     <section class="card stacked">
       <div class="card-head"><span>Practice streak</span><span>${streak} day${streak === 1 ? '' : 's'}</span></div>
@@ -881,7 +882,7 @@ function statsSection() {
       <div class="card-head"><span>What to do next</span></div>
       ${next
         ? `<p class="muted">Your weakest spot right now is <b>${esc(next.name)}</b> — ${next.known} of ${next.total} cards known.</p><div class="row"><button class="btn primary" data-act="learn" data-id="${next.id}">Open the ${esc(next.name)} lesson</button><button class="btn" data-act="deck" data-id="${next.id}">Practice its cards</button></div>`
-        : `<p class="muted">Everything you have started is solid. Pick any topic below, or practice what is due.</p><div class="row"><button class="btn primary" data-act="deck" data-id="">Practice what's due</button></div>`}
+        : `<p class="muted">Everything you have started is solid. Pick any topic below, or practise a few cards.</p><div class="row"><button class="btn primary" data-act="deck" data-id="">Practice what's due</button></div>`}
     </section>
     <section>
       <div class="sec-head"><h3>Per-topic readiness</h3>${map.topics.length > 6 ? `<button class="link quiet small" data-act="toggletopics">${S.allTopics ? 'Show fewer' : `All ${map.topics.length} topics`}</button>` : ''}</div>
