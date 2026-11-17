@@ -2,7 +2,7 @@
 // Voice seconds are reserved when a call starts and the unused part refunded when it ends;
 // calls that never report an end are hung up by the sweeper once their reservation runs out.
 import { getDb } from './db.js';
-import { limits, planOf, rollPeriod, usageStatus } from './plans.js';
+import { limits, planOf, proPriceLabel, rollPeriod, usageStatus } from './plans.js';
 
 const day = (now = Date.now()) => new Date(now).toISOString().slice(0, 10);
 const err = (status, code, message) => ({ ok: false, status, code, message });
@@ -57,7 +57,9 @@ async function poolLeft(field, now) {
 }
 
 const FREE_POOL_MSG = 'Free AI is at capacity for today. Upgrade to Pro or try again tomorrow.';
-const QUOTA_MSG = { free: 'You\'ve used your free AI allowance. Upgrade to Pro ($4.99/month) to keep going.', pro: 'You\'ve used this month\'s Pro allowance. It resets at the start of your next billing period.' };
+const quotaMsg = plan => (plan === 'pro'
+  ? 'You\'ve used this month\'s Pro allowance. It resets at the start of your next billing period.'
+  : `You've used your free AI allowance. Upgrade to Pro (${proPriceLabel()}) to keep going.`);
 
 export async function consumeMsgs(ident, n, now = Date.now()) {
   const user = await loadUser(ident);
@@ -69,7 +71,7 @@ export async function consumeMsgs(ident, n, now = Date.now()) {
   await (await getDb()).update('users', user.key, u => {
     rollPeriod(u, now);
     const bucket = plan === 'pro' ? u.pro : u.free;
-    if (bucket.msgs + n > limits()[plan].msgs) { result = err(402, 'quota', QUOTA_MSG[plan]); return undefined; }
+    if (bucket.msgs + n > limits()[plan].msgs) { result = err(402, 'quota', quotaMsg(plan)); return undefined; }
     bucket.msgs += n;
     return u;
   });
@@ -101,7 +103,7 @@ export async function reserveVoice(ident, now = Date.now()) {
     rollPeriod(u, now);
     const bucket = plan === 'pro' ? u.pro : u.free;
     allowed = Math.min(L[plan].voiceSec - bucket.voiceSec, L.maxCallSec);
-    if (allowed < L.minCallSec) { result = err(402, 'quota', plan === 'free' ? 'Your free voice minutes are used up. Upgrade to Pro for 45 voice minutes a month.' : QUOTA_MSG.pro); return undefined; }
+    if (allowed < L.minCallSec) { result = err(402, 'quota', plan === 'free' ? `Your free voice minutes are used up. Upgrade to Pro for ${Math.floor(L.pro.voiceSec / 60)} voice minutes a month.` : quotaMsg('pro')); return undefined; }
     bucket.voiceSec += allowed;
     return u;
   });
@@ -119,7 +121,7 @@ export async function reserveVoice(ident, now = Date.now()) {
 }
 
 export async function refundVoice(key, sec, plan, poolDay, now = Date.now()) {
-  if (plan === 'admin' || sec <= 0 || key === 'code:admin') return;
+  if (plan === 'admin' || plan === 'mock' || sec <= 0 || key === 'code:admin') return;
   await (await getDb()).update('users', key, u => {
     if (!u) return undefined;
     rollPeriod(u, now);
@@ -163,24 +165,51 @@ export async function sweepCalls(hangup, now = Date.now()) {
 }
 
 // Consumable session credits for extended mock interview voice sessions.
-export async function addSessionCredits(key, count = 1, now = Date.now()) {
+// txnId (the store transaction id) makes grants idempotent: the webhook can be retried and
+// /billing/refresh reads the same purchases, so each purchase must count once.
+export async function addSessionCredits(key, count = 1, now = Date.now(), txnId = '') {
+  let added = false;
   await (await getDb()).update('users', key, u => {
-    if (!u) return undefined;
+    if (!u || u.deleted) return undefined;
+    if (txnId) {
+      u.creditTxns ||= [];
+      if (u.creditTxns.includes(txnId)) return undefined;
+      u.creditTxns.push(txnId);
+    }
     u.sessionCredits = (u.sessionCredits || 0) + count;
     u.sessionCreditLast = now;
+    added = true;
     return u;
   });
+  return added;
 }
 
-export async function consumeSessionCredit(key, now = Date.now()) {
-  let ok = false;
+// One credit opens a mock-interview window of mockCallSec (wall clock). Reconnecting inside the window
+// (dropped connection, app switch) resumes the remaining time instead of burning another credit.
+export async function startMockSession(key, now = Date.now()) {
+  const L = limits();
+  let out = { ok: false };
   await (await getDb()).update('users', key, u => {
-    if (!u || !u.sessionCredits) return undefined;
+    if (!u || u.deleted) return undefined;
+    const left = Math.floor(((u.mockUntil || 0) - now) / 1000);
+    if (left >= L.minCallSec) { out = { ok: true, allowedSec: left, resumed: true }; return undefined; }
+    if (!u.sessionCredits) return undefined;
     u.sessionCredits--;
-    ok = true;
+    u.mockUntil = now + L.mockCallSec * 1000;
+    out = { ok: true, allowedSec: L.mockCallSec, resumed: false };
     return u;
   });
-  return ok;
+  return out;
+}
+
+// The voice connection could not be set up for a fresh session: give the credit back.
+export async function cancelMockSession(key) {
+  await (await getDb()).update('users', key, u => {
+    if (!u) return undefined;
+    u.sessionCredits = (u.sessionCredits || 0) + 1;
+    delete u.mockUntil;
+    return u;
+  });
 }
 
 export async function setProUntil(key, untilMs, now = Date.now()) {

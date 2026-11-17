@@ -18,6 +18,8 @@ export function limits() {
 }
 
 export const COST = { chat: 1, generate: 5 };
+export const proPriceLabel = () => process.env.PRO_PRICE_LABEL || '$11.99/month';
+export const mockPriceLabel = () => process.env.MOCK_PRICE_LABEL || '$10.99';
 const MONTH = 30 * 86400000;
 
 export function adminEmails() {
@@ -42,7 +44,8 @@ export function rollPeriod(user, now = Date.now()) {
 export function usageStatus(user, now = Date.now()) {
   const plan = planOf(user, now);
   const L = limits();
-  if (plan === 'admin') return { plan, unlimited: true, sessionCredits: user.sessionCredits || 0 };
+  const mockSecLeft = Math.max(0, Math.floor(((user.mockUntil || 0) - now) / 1000));
+  if (plan === 'admin') return { plan, unlimited: true, sessionCredits: user.sessionCredits || 0, mockSecLeft };
   if (plan === 'anon') return { plan, msgsLeft: 0, voiceSecLeft: 0, sessionCredits: 0 };
   rollPeriod(user, now);
   const bucket = plan === 'pro' ? user.pro : user.free;
@@ -52,6 +55,7 @@ export function usageStatus(user, now = Date.now()) {
     msgsLeft: Math.max(0, lim.msgs - bucket.msgs),
     voiceSecLeft: Math.max(0, lim.voiceSec - bucket.voiceSec),
     sessionCredits: user.sessionCredits || 0,
+    mockSecLeft,
     limits: { msgs: lim.msgs, voiceSec: lim.voiceSec, period: lim.period },
     proUntil: plan === 'pro' ? user.proUntil : undefined,
     periodEnds: plan === 'pro' ? user.pro.periodStart + MONTH : undefined,

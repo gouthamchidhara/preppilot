@@ -20,6 +20,7 @@ if (extra.googleWebClientId) {
   GoogleSignin.configure({ webClientId: extra.googleWebClientId, iosClientId: extra.googleIosClientId || undefined });
 }
 if (rcKey) Purchases.configure({ apiKey: rcKey });
+const MOCK_PRODUCT = 'mock_session_60min';
 
 type FromWeb = { type: 'signin'; provider: 'google' | 'apple' } | { type: 'purchase' | 'restore'; userKey: string } | { type: 'buyMock'; userKey: string } | { type: 'signout' };
 
@@ -63,14 +64,16 @@ export default function App() {
         await Purchases.restorePurchases();
       } else {
         const offerings = await Purchases.getOfferings();
-        const pkg = offerings.current?.availablePackages[0];
+        // The subscription, never the mock-session consumable (which may sit in the same offering).
+        const pkgs = offerings.current?.availablePackages ?? [];
+        const pkg = offerings.current?.monthly ?? pkgs.find(p => p.product.identifier.startsWith('pro_monthly')) ?? pkgs.find(p => p.product.identifier !== MOCK_PRODUCT);
         if (!pkg) return fail('Pro is not available right now. Try again later.');
         await Purchases.purchasePackage(pkg);
       }
       toWeb({ type: 'purchased' });
     } catch (e) {
       const err = e as PurchasesError & { userCancelled?: boolean };
-      if (err.userCancelled) return;
+      if (err.userCancelled) return toWeb({ type: 'cancelled' });
       fail(err.message || 'Purchase failed.');
     }
   }
@@ -82,13 +85,13 @@ export default function App() {
       const offerings = await Purchases.getOfferings();
       // Find the mock_session_60min consumable across all offerings
       const allPkgs = Object.values(offerings.all).flatMap(o => o.availablePackages);
-      const mockPkg = allPkgs.find(p => p.product.identifier === 'mock_session_60min');
+      const mockPkg = allPkgs.find(p => p.product.identifier === MOCK_PRODUCT);
       if (!mockPkg) return fail('Mock interview session is not available right now.');
       await Purchases.purchasePackage(mockPkg);
       toWeb({ type: 'purchased' });
     } catch (e) {
       const err = e as PurchasesError & { userCancelled?: boolean };
-      if (err.userCancelled) return;
+      if (err.userCancelled) return toWeb({ type: 'cancelled' });
       fail(err.message || 'Purchase failed.');
     }
   }
@@ -131,7 +134,7 @@ export default function App() {
           allowsBackForwardNavigationGestures
           pullToRefreshEnabled
           startInLoadingState
-          renderLoading={() => <View style={styles.center}><ActivityIndicator color="#6f9dff" /></View>}
+          renderLoading={() => <View style={styles.center}><ActivityIndicator color="#c9f73a" /></View>}
           onError={() => setFailed(true)}
           setSupportMultipleWindows={false}
         />
@@ -141,9 +144,9 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0d131b' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0d131b', padding: 24, gap: 16 },
+  root: { flex: 1, backgroundColor: '#0a0c0f' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0a0c0f', padding: 24, gap: 16 },
   text: { color: '#e5ecf4', fontSize: 16, textAlign: 'center' },
-  btn: { backgroundColor: '#1d5bd1', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 10 },
-  btnText: { color: '#fff', fontWeight: '600' },
+  btn: { backgroundColor: '#c9f73a', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 10 },
+  btnText: { color: '#10140a', fontWeight: '600' },
 });

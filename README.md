@@ -23,7 +23,7 @@ the server then stores just the account ID, email, plan and usage counters. Chat
 current card are sent to the API only when the user asks the AI something.
 
 **Plans and launch:** the guide is free without an account. AI needs sign-in (Google, or Apple in the iOS app): free trial,
-then Pro at $4.99/month through in-app purchase. Usage is enforced on the server. See
+then Pro at $11.99/month, or a one-time $10.99 60-minute voice mock interview, through in-app purchase. Usage is enforced on the server. See
 [docs/MONETIZATION-AND-LAUNCH.md](docs/MONETIZATION-AND-LAUNCH.md) for pricing math, enforcement design and the setup steps.
 
 ## Architecture
@@ -116,7 +116,7 @@ Import `private/packs/personal.json` in the app under Profile → Private packs.
 - Rate limits are in-memory per Functions instance. Fine for a beta; move to Azure Table Storage or Redis for real scale.
 - **Before a public launch, replace the shared access code** with per-user protection (Sign in with Apple + per-user
   quotas, or App Attest/DeviceCheck). Voice costs real money per minute; an open endpoint can be abused.
-  Voice sessions auto-end after 3 minutes of silence or 15 minutes total.
+  Voice sessions auto-end after 3 minutes of silence or 15 minutes total (60 minutes for a paid mock interview).
 - No accounts or sync across devices (by design for privacy). Export/import exists under Profile.
 - Voice input relies on WebRTC + microphone permission; the 🎤 Dictate fallback uses the browser's speech API.
 - Answers are not streamed; add streaming when moving the API to a standalone Function App.

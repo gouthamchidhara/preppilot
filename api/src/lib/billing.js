@@ -24,7 +24,8 @@ export async function applyWebhook(body, now = Date.now()) {
   if (!keys.length) return { ignored: true };
   // Consumable: mock interview session credit
   if (isMock && GRANT.has(e.type)) {
-    for (const k of keys) await addSessionCredits(k, 1, now);
+    const txn = String(e.transaction_id || e.id || '');
+    for (const k of keys) await addSessionCredits(k, 1, now, txn);
     return { mockSession: keys };
   }
   const until = Number(e.expiration_at_ms) || 0;
@@ -47,7 +48,13 @@ export async function refreshFromRevenueCat(key, now = Date.now()) {
     signal: AbortSignal.timeout(8000),
   });
   if (!res.ok) throw Object.assign(new Error(`RevenueCat ${res.status}`), { status: 502 });
-  const ent = (await res.json())?.subscriber?.entitlements?.[ENTITLEMENT()];
+  const sub = (await res.json())?.subscriber;
+  // Consumables: the webhook can land after the app asks for a refresh, so grant from here too (deduped by transaction).
+  for (const p of sub?.non_subscriptions?.[MOCK_PRODUCT()] || []) {
+    const txn = String(p.store_transaction_id || p.id || '');
+    if (txn) await addSessionCredits(key, 1, now, txn);
+  }
+  const ent = sub?.entitlements?.[ENTITLEMENT()];
   if (!ent) return { configured: true, pro: false };
   const until = ent.expires_date ? Date.parse(ent.expires_date) : now + 3650 * 86400000;
   await setProUntil(key, until, now);

@@ -5,7 +5,6 @@ import { apiBase } from './config.js';
 import { authHeaders, setAccount } from './auth.js';
 import { ApiError } from './ai.js';
 
-const MAX_SESSION_MS = 15 * 60 * 1000; // cost guard
 const IDLE_MS = 3 * 60 * 1000;
 
 export const realtimeSupported = !!(window.RTCPeerConnection && navigator.mediaDevices?.getUserMedia);
@@ -24,7 +23,7 @@ export class VoiceSession {
     this.audio.setAttribute('playsinline', '');
     pc.ontrack = e => { this.audio.srcObject = e.streams[0]; };
     pc.onconnectionstatechange = () => {
-      if (['failed', 'disconnected'].includes(pc.connectionState)) this.stop('Connection lost.');
+      if (['failed', 'disconnected'].includes(pc.connectionState)) this.stop(this.mode === 'mock' ? 'Connection lost. Rejoin to continue: your session time is still running.' : 'Connection lost.');
     };
 
     try {
@@ -52,13 +51,16 @@ export class VoiceSession {
     this.degraded = data.degraded;
     this.allowedSec = data.allowedSec;
     this.bump();
-    const capMs = Math.min(MAX_SESSION_MS, (data.allowedSec || 900) * 1000);
-    this.timers.push(setTimeout(() => this.stop(capMs < MAX_SESSION_MS ? 'Voice minutes for this session are used up.' : 'Session limit reached (15 min). Start again to continue.'), capMs));
+    if (data.account) setAccount(data.account);
+    // The server decides how long the call may run (plan minutes, or the 60-minute mock window) and hangs up at that point.
+    const capMs = (data.allowedSec || 900) * 1000;
+    this.endsAt = Date.now() + capMs;
+    this.timers.push(setTimeout(() => this.stop(mode === 'mock' ? 'Your 60-minute mock interview has ended.' : 'Voice time for this session is used up.'), capMs));
   }
 
   bump() {
     clearTimeout(this.idle);
-    this.idle = setTimeout(() => this.stop('Ended after 3 minutes of silence.'), IDLE_MS);
+    this.idle = setTimeout(() => this.stop(this.mode === 'mock' ? 'Paused after 3 minutes of silence. Rejoin any time before the hour is up.' : 'Ended after 3 minutes of silence.'), IDLE_MS);
   }
 
   handle(e) {

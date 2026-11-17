@@ -26,7 +26,7 @@ npm install
 npm test
 ```
 
-**Expected:** 31 tests pass. If any fail, STOP and fix before continuing.
+**Expected:** 32 tests pass (1 skipped). If any fail, STOP and fix before continuing.
 
 ---
 
@@ -130,7 +130,7 @@ npx eas-cli submit -p ios --id <build-id>
 
 ## Phase 6: TestFlight Configuration
 
-After the build appears in AppFlight:
+After the build appears in TestFlight:
 
 1. **Add testers:** App Store Connect → TestFlight → Add testers (email or internal group)
 2. **What to test:** Sign in, study plan, flashcards, AI chat, voice modes, mock interview
@@ -193,7 +193,7 @@ When ready to submit for App Review (not just TestFlight):
 | Product ID | Type | Price | Description |
 |---|---|---|---|
 | `pro_monthly` | Subscription (auto-renew) | $11.99/month | 500 AI messages + 30 voice min/month |
-| `mock_session_60min` | Consumable | $10.99 | One 60-min voice mock interview session |
+| `mock_session_60min` | Consumable | $10.99 | One 60-min voice mock interview session (rejoinable within the hour) |
 
 ## Troubleshooting
 

@@ -75,7 +75,7 @@ export async function renderGoogleButton(el, clientId, onError) {
       auto_select: false,
     });
   }
-  if (!el.childElementCount) window.google.accounts.id.renderButton(el, { theme: 'filled_blue', size: 'large', text: 'continue_with', shape: 'pill' });
+  if (!el.childElementCount) window.google.accounts.id.renderButton(el, { theme: 'outline', size: 'large', text: 'continue_with', shape: 'pill', width: 280 });
 }
 
 /* ---------- native app bridge ---------- */
@@ -84,7 +84,7 @@ export function nativePurchase(userKey) { toNative({ type: 'purchase', userKey }
 export function nativeBuyMock(userKey) { toNative({ type: 'buyMock', userKey }); }
 export function nativeRestore(userKey) { toNative({ type: 'restore', userKey }); }
 
-export function listenNative({ onError, onPurchased }) {
+export function listenNative({ onError, onPurchased, onCancelled }) {
   window.addEventListener('pp-native', async e => {
     const m = e.detail || {};
     try {
@@ -94,7 +94,8 @@ export function listenNative({ onError, onPurchased }) {
         const d = await res.json().catch(() => ({}));
         if (d.account) setAccount(d.account);
         onPurchased?.(d.account);
-      } else if (m.type === 'error') onError?.(m.message);
+      } else if (m.type === 'cancelled') onCancelled?.();
+      else if (m.type === 'error') onError?.(m.message);
     } catch (err) { onError?.(err.message); }
   });
 }
