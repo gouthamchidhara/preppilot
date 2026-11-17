@@ -1,51 +1,8 @@
 {
  "csharp-core": {
   "analogy": {
-   "name": "A document vs a map link",
-   "line": "A value type is like a photocopy: change your copy and the original is untouched. A reference type is like a link to one shared document: everyone with the link edits the same file."
-  },
-  "caption": "Copying a value type copies the data. Copying a reference type copies the address, so both names point at one object.",
-  "steps": [
-   "A photocopy is a value type. Real name: structs and primitives, copied on assignment, so the original never notices your change.",
-   "A shared link is a reference type. Real name: classes live on the heap and assignment copies the address, so a change through either name shows through both."
-  ]
- },
- "aspnet-core": {
-  "analogy": {
-   "name": "A post office sorting line",
-   "line": "A request is like a parcel on a sorting line: the loading door (Kestrel) takes it in, stations check and stamp it (middleware), then the right counter (endpoint) handles it."
-  },
-  "caption": "Middleware runs in the order you register it. Auth before routing means a request can be stopped before it ever reaches your code.",
-  "steps": [
-   "The loading door is Kestrel. Real name: the built-in web server that takes the connection, fast and without IIS in front.",
-   "The sorting stations are middleware. Real name: logging, auth and routing run in registration order, and any can stop the request.",
-   "The counter is the endpoint. Real name: your handler. By the time it runs, auth has passed and the route has matched.",
-   "The parcel goes back out the same line. Real name: the response travels through the middleware again, in reverse order."
-  ]
- },
- "efcore": {
-  "analogy": {
-   "name": "A translator at a bank",
-   "line": "EF Core is like a translator: you speak C# to the clerk, he writes the request in the bank's language (SQL), and he keeps a note of every account he handed back."
-  },
-  "caption": "You write LINQ, EF Core writes SQL. The N+1 problem is what happens when the translation runs once per row instead of once.",
-  "steps": [
-   "You speak to the translator in C#. Real name: LINQ, written against objects, not SQL strings.",
-   "The translator writes the bank's language. Real name: an expression tree becomes SQL. If it cannot translate something, it throws.",
-   "The bank runs the request. Real name: one query, one round trip, unless a lazy load fires once per row, which is N+1.",
-   "The translator keeps notes on what was handed back. Real name: the change tracker, so SaveChanges knows exactly what to write."
-  ]
- },
- "dotnet-runtime": {
-  "analogy": {
-   "name": "A warehouse with a fast lane",
-   "line": "The CLR is like a warehouse: a packer turns instructions into ready goods when first needed (JIT), new items sit on a near shelf (Gen 0), survivors move back, and oversized crates go straight to a loading bay (LOH)."
-  },
-  "caption": "The CLR compiles once, then collects in generations. Survivors age upward, and big objects skip the queue to the large object heap.",
-  "steps": [
-   "The packer is the JIT. Real name: IL is compiled to machine code on first use, and tiered so hot code gets compiled better.",
-   "The shelves are generations. Real name: most objects die young in Gen 0, survivors age into Gen 1 then Gen 2, where collections are rare and costly.",
-   "The oversized crate bay is the LOH. Real name: objects over 85,000 bytes skip generations and are collected only with Gen 2."
-  ]
+   "name": "A photocopy vs a shared doc link",
+   "line": "Passing a value type hands over a photocopy; edits stay with the copy. Passing a reference shares the link; everyone edits the same document."
+  }
  }
 }

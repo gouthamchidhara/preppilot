@@ -1,55 +1,14 @@
 {
  "java-core": {
   "analogy": {
-   "name": "A coat-check room",
-   "line": "A HashMap is like a coat check: the ticket number (hash) picks the rack, and on that rack you compare tags (equals) to find your exact coat."
-  },
-  "caption": "A hash picks the bucket and equals picks the key. A bad hash piles keys into one bucket and turns O(1) lookups into O(n).",
-  "steps": [
-   "The ticket number is the hash. Real name: hashCode of the key. Equal keys must give equal hashes, the contract interviewers test.",
-   "The rack is the bucket. Real name: the hash chooses a slot. Good hashes spread keys evenly, bad ones pile them onto one rack.",
-   "Comparing tags is equals. Real name: inside the bucket, equals finds the exact key. Hash alone is never enough.",
-   "Handing over the coat is the value returned. Real name: a collision only means a short walk along one rack, not a broken map."
-  ]
+   "name": "A coat check",
+   "line": "The ticket number (hash) tells the attendant which hook to go to. If two coats share a hook, they check the name tag (equals) to hand you yours."
+  }
  },
  "jvm": {
   "analogy": {
-   "name": "A warehouse with a sorting belt",
-   "line": "The heap is like a warehouse: new parcels arrive at the loading dock (Eden), most are thrown out quickly, and the few that stay are moved to long-term shelves (old generation)."
-  },
-  "caption": "New objects land in Eden and most die young. Survivors age into the old generation, where collections are rare and expensive.",
-  "steps": [
-   "The office archive is Metaspace. Real name: class data and methods live here, not your objects, so a leak here is a class-loading problem.",
-   "The loading dock is Eden. Real name: new objects start here and a minor GC sweeps it, since most objects die young.",
-   "Survivors move to long-term shelves. Real name: they age through S0 and S1 into the old generation, where a full GC is rare and costly."
-  ]
- },
- "spring": {
-  "analogy": {
-   "name": "A hotel front desk",
-   "line": "A request through Spring is like a hotel stay: the front desk (DispatcherServlet) routes you, the concierge (controller) takes your ask, the manager (service) decides, and the archive clerk (repository) files it."
-  },
-  "caption": "One front door, then layers: controller maps, service decides, repository persists. Business rules live in the service and nowhere else.",
-  "steps": [
-   "The front desk is the DispatcherServlet. Real name: every request enters here and is handed to the right handler.",
-   "The concierge is the controller. Real name: it maps the route and reads the request, with no business rules inside.",
-   "The manager is the service. Real name: business rules and the transaction boundary live here, where the decisions are made.",
-   "The archive clerk is the repository. Real name: it talks to the database in domain terms, not raw SQL strings.",
-   "The archive room is the database. Real name: durable storage, and the repository is the only box allowed to know how it works."
-  ]
- },
- "java-build": {
-  "analogy": {
-   "name": "An assembly line",
-   "line": "A Maven build is like an assembly line: each station runs every earlier station first, so asking for the finished product already means inspected and tested."
-  },
-  "caption": "Maven phases run in order and each runs everything before it. package already compiled and tested; you do not run them separately.",
-  "steps": [
-   "The first station checks the blueprint. Real name: validate. Is the POM, the plugin setup and the project shape sound?",
-   "The second station cuts parts. Real name: compile turns source into bytecode. A failure here is a language error, not a build error.",
-   "The third station inspects. Real name: test runs the suite. A failing test stops the line before anything is packaged.",
-   "The fourth station boxes the product. Real name: package makes one jar from what was just tested, the proof of the build.",
-   "The last station ships to the store room. Real name: install puts the jar in the local repository for other modules to use."
-  ]
+   "name": "Desk, filing cabinet, archive",
+   "line": "New papers land on the desk (Eden) and most are binned quickly. What survives a few clear-outs gets filed (survivor), then archived (old generation), which is cleaned rarely and slowly."
+  }
  }
 }

@@ -1,55 +1,20 @@
 {
  "js-core": {
   "analogy": {
-   "name": "A single-chef restaurant",
-   "line": "The event loop is like one chef: he cooks one dish at a time, orders wait on a ticket rail, and the ovens and timers work on their own while he moves on."
-  },
-  "caption": "JavaScript runs one thing at a time. Async work waits in a queue until the stack is empty, then the event loop lets it in.",
-  "steps": [
-   "The chef's hands are the call stack. Real name: it runs your code one frame at a time. A long task here freezes the whole kitchen.",
-   "The ovens and timers are Web APIs. Real name: timers and fetch run outside JavaScript on their own clocks, so waiting costs the chef nothing.",
-   "The ticket rail is the callback queue. Real name: finished work lines up in the order it completed, waiting for the chef.",
-   "The chef glancing up is the event loop. Real name: when the stack is empty, take the next callback. That is the whole trick."
-  ]
+   "name": "A barista with a buzzer",
+   "line": "One barista takes orders one at a time (call stack). The coffee machine works in the background (Web APIs) and your buzzer goes off when it is ready (callback queue)."
+  }
  },
  "typescript": {
   "analogy": {
-   "name": "A proofreader's red pen",
-   "line": "TypeScript is like a proofreader: he marks every problem on the draft, then the clean copy is printed without any of his marks. The printed page is plain JavaScript."
-  },
-  "caption": "TypeScript checks your types and then deletes them. The JavaScript that ships has no types in it at all.",
-  "steps": [
-   "The draft is your source. Real name: code with annotations, or none, where the compiler infers types from how a value is used.",
-   "The proofreader reads for meaning. Real name: inference. A const string becomes that exact literal, not just string.",
-   "He marks each branch as proven. Real name: narrowing. After an if check, the type is smaller and the compiler knows it.",
-   "The clean copy is printed. Real name: emit. Types are erased, so nothing validates data at runtime unless you add a library like zod."
-  ]
- },
- "node-runtime": {
-  "analogy": {
-   "name": "A restaurant host at the door",
-   "line": "Node is like a single host who seats guests and takes orders but never cooks: slow jobs go to the kitchen, and he only handles the answer when it comes back."
-  },
-  "caption": "One thread takes every request. The trick is never blocking it: slow work goes to the system and your code handles the answer.",
-  "steps": [
-   "The host is the event loop. Real name: one thread juggling many requests. It takes a request and hands it off without waiting.",
-   "A host's quick reply is the callback. Real name: your code runs briefly when an event fires. Keep it short or every guest waits.",
-   "The kitchen is non-blocking I/O. Real name: disk and network work happens off the loop in the OS or thread pool.",
-   "The dish arriving is the response. Real name: the result comes back as a callback, and the host moves on to the next guest."
-  ]
+   "name": "Spell check that vanishes when you print",
+   "line": "Types are checked while you write, then erased in the JavaScript that ships. Nothing checks them at runtime."
+  }
  },
  "express-nest": {
   "analogy": {
-   "name": "Airport security checkpoints",
-   "line": "The middleware chain is like airport security: each checkpoint either waves you through to the next or stops you. Boarding (the handler) only sees passengers who passed all of them."
-  },
-  "caption": "Express runs middleware in registration order. Each one either passes the request on or ends it, and there is no other move.",
-  "steps": [
-   "The passenger arrives at the first checkpoint. Real name: the request enters the chain with nothing decided yet.",
-   "A camera that only watches is middleware 1. Real name: logging. It observes, then always calls next().",
-   "The ID check is middleware 2. Real name: auth. It may refuse and end the request here without calling next().",
-   "Boarding is the handler. Real name: the route code, which only ever sees requests that passed every gate.",
-   "The exit path goes back through the chain. Real name: the response flows out, so order matters on the way out too."
-  ]
+   "name": "Airport security lanes",
+   "line": "Each checkpoint (middleware) inspects you and either passes you on with next() or stops you. The gate (handler) only sees passengers who got through all of them."
+  }
  }
 }

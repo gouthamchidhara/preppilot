@@ -1,120 +1,26 @@
 {
  "dsa": {
   "analogy": {
-   "name": "A trip to the library",
-   "line": "Big-O is like finding a book: grabbing the one on your desk is O(1), halving the shelves is O(log n), reading every spine is O(n), and comparing every book to every other is O(n squared)."
-  },
-  "caption": "Big-O is not a stopwatch. It tells you how the cost grows as the input grows, and that shape decides whether code survives real data.",
-  "steps": [
-   "Grabbing the book already on your desk costs the same in a tiny library or a huge one. That is O(1): a hash lookup or an array index. Interviewers love it.",
-   "Open a sorted shelf in the middle and ignore the wrong half, again and again. That is O(log n): binary search. It only works because the data is sorted.",
-   "Reading every spine once is O(n): one pass over the input. Double the books and you double the work. Most single loops land here.",
-   "Sorting the whole library by splitting, sorting halves and merging costs O(n log n). It is the usual price of a good sort, so quote it when you sort first.",
-   "Comparing every book with every other book is O(n squared): nested loops. Fine for ten books, a wall at ten thousand. Spotting it is the first step to fixing it."
-  ]
- },
- "system-design": {
-  "analogy": {
-   "name": "A busy restaurant",
-   "line": "A system is like a restaurant: the host seats guests (load balancer), identical waiters serve them (API servers), the pass holds ready plates (cache), and the kitchen pantry is the one true stock (database)."
-  },
-  "caption": "Scale by adding more identical workers in the middle, not by making one bigger. Protect the database, because it is the one part you cannot copy easily.",
-  "steps": [
-   "The guest walking in is the client: one address, one request. Everything else exists to answer that request quickly, and you name this first in any design.",
-   "The host at the door seats guests at whichever table is free. The load balancer spreads requests across servers and stops sending to one that stops answering.",
-   "Waiters are interchangeable because they keep no memory of you. Stateless API servers let you add more at will, so state must live further down, in the cache or database.",
-   "Plates already on the pass go out at once, with no trip to the kitchen. A cache answers hot reads from memory. It must be invalidated, or guests get stale food.",
-   "The pantry is the single source of truth, and the hardest part to duplicate. Every other box exists to keep load off it. Say that in an interview and defend it."
-  ]
- },
- "api-design": {
-  "analogy": {
-   "name": "A bank counter",
-   "line": "An API is like a bank counter: the sign says what each window does (resources and verbs), the guard checks ID and queue length (gateway), the teller does one job (handler), and the vault holds the truth."
-  },
-  "caption": "Every request passes the same gates in the same order. Most API bugs live in the gaps between them, so know what each gate owns.",
-  "steps": [
-   "A customer asks one window for one thing. The URL names the resource and the verb names the action. Keep that consistent so callers can guess how your API behaves.",
-   "The guard at the door checks ID and stops people rushing in. The gateway handles authentication and rate limits before your code runs, so handlers stay free of that plumbing.",
-   "The teller does one job: check the form, then act. The handler validates input and applies business rules. Putting those rules in the gateway is a classic design mistake.",
-   "Only the vault may change the balance. The database is the single place truth is written, so retries and concurrent calls must be made safe here, not hoped away.",
-   "The receipt says what happened: a status that means what it says and a body the client can use. A 200 that hides an error breaks every caller who trusts it."
-  ]
- },
- "sql": {
-  "analogy": {
-   "name": "A librarian fetching a book",
-   "line": "A query is like asking a librarian: she first reads your request (parse), then chooses the quickest route through the shelves (plan), walks it (execute), and brings back only the books you named."
-  },
-  "caption": "The database never runs your SQL directly. It plans first, then runs the plan, and slow queries are almost always a bad plan.",
-  "steps": [
-   "The librarian reads your slip and checks it makes sense. Parse validates syntax and names. A typo fails here, before any data is touched.",
-   "She decides between scanning every shelf and using the card catalogue. The planner estimates costs for scans, index seeks and join orders. EXPLAIN shows you this choice.",
-   "She walks the chosen route. A seek touches a few pages, a scan reads the whole table. This is where a missing index shows up as seconds instead of milliseconds.",
-   "She hands over only what you asked for. SELECT * drags every column along and can block index-only reads. Ask for the columns you need."
-  ]
+   "name": "Finding a word in a dictionary",
+   "line": "Knowing the exact page is O(1). Opening the middle and halving is O(log n). Reading every word is O(n). Comparing every word with every other is O(n²)."
+  }
  },
  "git": {
   "analogy": {
-   "name": "Packing a parcel for the post",
-   "line": "Git is like posting a parcel: you work on things at home (working tree), put chosen items in the box (staging), seal and label it (commit), then hand it to the courier (push)."
-  },
-  "caption": "A commit only moves code from staging to your local repo. Nothing reaches your team until you push.",
-  "steps": [
-   "Your desk is the working tree: files as you edit them. Git records nothing here yet, so unsaved ideas and half-done changes are only on your disk.",
-   "The box is the staging area. git add picks exactly which changes go in, so one commit can hold one idea even if your desk is messy.",
-   "Sealing and labelling the box is a commit: a snapshot with a message. It lives only in your local repo, so you can still change or undo it freely.",
-   "Handing the parcel to the courier is git push. Only now can teammates see it. That is why force-pushing shared history is risky: others hold copies."
-  ]
+   "name": "Email: drafts, outbox, sent",
+   "line": "Working tree is your drafts, staging is the outbox, a commit is in your sent folder, and push delivers it to everyone else's inbox (the remote)."
+  }
  },
  "testing": {
   "analogy": {
-   "name": "Checking a new car",
-   "line": "A test pyramid is like checking a car: bench-test each part (unit), connect the engine to the gearbox (integration), then take the whole car round the track (end to end)."
-  },
-  "caption": "Most tests belong at the bottom: small, fast and cheap. A few at the top prove it all works together, but they are slow and brittle.",
-  "steps": [
-   "Bench-testing one part is quick and points straight at the faulty part. Unit tests run one function in milliseconds with no network. Most of your tests should live here.",
-   "Joining engine to gearbox shows whether parts really fit. Integration tests run your code against a real database or queue. They are slower and catch what mocks hide.",
-   "The track run proves the whole car drives, but it is slow and one bad day cancels it. End-to-end tests are flaky, so keep few and make them cover only key journeys."
-  ]
- },
- "oop-design-patterns": {
-  "analogy": {
-   "name": "Lego versus a carved statue",
-   "line": "Composition is like Lego: you click small bricks together and swap any brick later. Inheritance is like a carved statue: the shape is fixed from the block, and a change to the top ripples down."
-  },
-  "caption": "Prefer has-a over is-a. Composed objects can be rearranged at runtime, while inherited ones are locked in when written.",
-  "steps": [
-   "With Lego, an object has parts. Replace one brick and behaviour changes without touching the rest. Interviewers hear 'composition over inheritance': this is why.",
-   "A carved statue is one piece. A child is a kind of its parent, the chain is fixed at birth, and a change to the parent reaches every child. Use it only for true is-a."
-  ]
- },
- "concurrency": {
-  "analogy": {
-   "name": "Staff in a shop",
-   "line": "A thread is like a shop assistant: hired but not started, waiting for a free till, serving a customer, stuck waiting on a delivery or a key, and finally gone home for good."
-  },
-  "caption": "A thread only does work in one state, Running. Every other state is waiting for a CPU, a lock or I/O.",
-  "steps": [
-   "New is an assistant hired but not yet on shift. The thread object exists and has never run. Creating one is cheap, but it does nothing until started.",
-   "Runnable is standing at the till queue, ready to serve. The thread can run but the scheduler has not given it a core. Many runnable threads on few cores means waiting.",
-   "Running is actually serving a customer, the only state doing work. Only as many threads run at once as you have cores, which is the heart of concurrency versus parallelism.",
-   "Blocked is waiting for a delivery or a key someone else holds. The thread gives up its core until a lock or I/O completes. Too much blocking is where deadlocks and slowness hide.",
-   "Terminated is the assistant gone home for good. A finished thread cannot restart, so you create a new one. That cost is why thread pools reuse workers."
-  ]
+   "name": "Building a car",
+   "line": "Test each part on the bench (unit), then the engine with the gearbox (integration), then one test drive (end to end). Lots of bench tests, few test drives."
+  }
  },
  "web-fundamentals": {
   "analogy": {
-   "name": "Posting a letter and getting a reply",
-   "line": "Loading a page is like sending a letter: look up the address (DNS), arrange a sealed, trusted route (TCP and TLS), the recipient finds what you asked for (server), and the answer comes back."
-  },
-  "caption": "Every page load does the same four things: resolve the name, open a secure connection, ask the server, and render the reply.",
-  "steps": [
-   "Looking up the address in a directory is DNS. The browser turns the name into an IP address before anything else. Slow or wrong DNS looks like the site being down.",
-   "Sealing the envelope and agreeing a route is TCP plus TLS. The browser checks the server's certificate and encrypts the connection. Failures here show up as certificate errors.",
-   "The recipient finds the page you asked for. The server routes the request, runs code or reads a file, and prepares a response. This is where most of your backend time goes.",
-   "The reply returns: HTML, CSS and JavaScript. The browser renders it and fetches more files as needed. Knowing this order lets you say where a slow page is losing time."
-  ]
+   "name": "Calling someone from your contacts",
+   "line": "You know the name, the contacts list gives the number (DNS), the call connects and both sides confirm who they are (TCP + TLS), then you talk (HTTP)."
+  }
  }
 }

@@ -41,12 +41,14 @@ export function registerDiagramSpec(topicId, spec) {
 const meanings = new Map();
 export function registerDiagramMeaning(topicId, m) {
   const base = SPECS[topicId];
-  if (base && m && Array.isArray(m.steps) && m.steps.length === base.steps.length) meanings.set(topicId, m);
+  if (!base || !m?.analogy?.name) return;
+  if (m.steps !== undefined && (!Array.isArray(m.steps) || m.steps.length !== base.steps.length)) return;
+  meanings.set(topicId, m);
 }
 export function specFor(topicId) {
   const base = SPECS[topicId] || customSpecs.get(topicId) || null;
   const m = meanings.get(topicId);
-  return base && m ? { ...base, caption: m.caption || base.caption, steps: m.steps, analogy: m.analogy } : base;
+  return base && m ? { ...base, caption: m.caption || base.caption, steps: m.steps || base.steps, analogy: m.analogy } : base;
 }
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

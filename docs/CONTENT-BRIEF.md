@@ -15,16 +15,8 @@ You are writing two data files per content pack. Do not edit any other file. Do 
 - **upNext**: 15 to 160 characters shown when the topic is finished, teasing what to learn after this topic (the next topic in a real job, not a summary of this one).
 - **basics**: indexes of cards an experienced (7+ years) engineer already knows cold. Keep it honest; usually 1 to 3 cards, can be empty.
 
-## Output 2: `web/content/meaning/<pack>.json`
-Only for topics that have a `SPECS` entry.
-```json
-{ "<topicId>": { "analogy": { "name": "An airport", "line": "..." }, "caption": "...", "steps": ["...", "..."] } }
-```
-The diagrams currently describe the parts. Rewrite them so the learner understands what the thing really means and can remember it a week later.
-- **analogy.name**: a short everyday picture, max 40 characters ("A restaurant kitchen", "A post office sorting room"). One analogy per topic, carried through every step. Pick one that maps cleanly onto the diagram's boxes; avoid analogies that need their own explanation.
-- **analogy.line**: 30 to 220 characters. "X is like Y: ..." in one or two sentences, mapping the main parts.
-- **caption**: 20 to 260 characters. The single idea the picture proves, in plain words.
-- **steps**: exactly as many entries as `SPECS[topicId].steps` (one per stage; the stages and their order are fixed by the diagram, so read the existing step to know which part appears). Each step 20 to 240 characters: say what the part is in the analogy, then what it really is, then why it matters in an interview or on the job. Keep technical accuracy; the analogy helps memory, it never replaces the fact.
+## Output 2: analogies (owner rule, do not regenerate per topic)
+Analogies live in `scripts/analogies.mjs`, which writes `web/content/meaning/<pack>.json`. Add one only where a real, widely used everyday picture genuinely helps someone remember the idea in an interview (the shipping container for Docker, the coat check for a HashMap). Most topics should have none. Never reuse a picture, never force one, and keep the diagram's steps technical: the analogy is a single line above the diagram, not a rewrite of it. This is interview prep, not a course.
 
 ## Style
 Plain English, short sentences, no emoji, no exclamation marks, no marketing words. Second person is fine. Do not invent commands or facts; if unsure, keep the original wording's facts.

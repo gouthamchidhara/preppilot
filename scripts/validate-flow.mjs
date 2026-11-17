@@ -31,14 +31,14 @@ for (const pack of packs) {
   }
   if (existsSync(meanFile)) {
     const mean = JSON.parse(readFileSync(meanFile));
-    for (const t of topics) if (SPECS[t.id] && !mean[t.id]) errs.push(`meaning/${pack}: missing topic ${t.id}`);
     for (const [id, m] of Object.entries(mean)) {
       const spec = SPECS[id]; if (!spec) { errs.push(`meaning/${pack}: no diagram spec for ${id}`); continue; }
       checked++;
       if (!m.analogy?.name || m.analogy.name.length > 40) errs.push(`meaning/${pack}/${id}: analogy.name required, max 40 chars`);
       if (!m.analogy?.line || m.analogy.line.length < 30 || m.analogy.line.length > 220) errs.push(`meaning/${pack}/${id}: analogy.line 30-220 chars`);
-      if (typeof m.caption !== 'string' || m.caption.length < 20 || m.caption.length > 260) errs.push(`meaning/${pack}/${id}: caption 20-260 chars`);
-      if (!Array.isArray(m.steps) || m.steps.length !== spec.steps.length) errs.push(`meaning/${pack}/${id}: steps must have exactly ${spec.steps.length} entries (one per diagram stage)`);
+      // caption and steps are optional: without them the diagram keeps its own technical wording.
+      if (m.caption !== undefined && (typeof m.caption !== 'string' || m.caption.length < 20 || m.caption.length > 260)) errs.push(`meaning/${pack}/${id}: caption 20-260 chars`);
+      if (m.steps !== undefined && (!Array.isArray(m.steps) || m.steps.length !== spec.steps.length)) errs.push(`meaning/${pack}/${id}: steps must have exactly ${spec.steps.length} entries (one per diagram stage)`);
       (m.steps || []).forEach((s, i) => { if (typeof s !== 'string' || s.length < 20 || s.length > 240) errs.push(`meaning/${pack}/${id}: step ${i} 20-240 chars`); });
     }
   }
