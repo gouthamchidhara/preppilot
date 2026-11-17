@@ -58,7 +58,7 @@ function sheet(html) {
 // The diagram sheet lives outside #app, so a plain render() never refreshes
 // it — the player inside it has to rebuild the sheet itself.
 function dgSheetHtml(id) {
-  return `<div class="stack"><h2>${esc(topicName(id))}</h2>${diagramHtml(id, S.dgStages[id] ?? null)}<button class="btn block" data-act="closesheet">Back to the cards</button></div>`;
+  return `<div class="stack"><h2>${esc(topicName(id))}</h2>${diagramTeaser(id, diagramHtml(id, S.dgStages[id] ?? null))}<button class="btn block" data-act="closesheet">Back to the cards</button></div>`;
 }
 function refreshDgSheet(id) {
   if (S.sheetDg !== id || !document.getElementById('sheet')) return;
@@ -79,6 +79,29 @@ function todayIndex(p) { return Math.max(0, Math.floor((Date.now() - (p.planStar
 
 function betaNote(t, where) {
   return t?.beta ? `<div class="small muted"><a class="link quiet small" href="${esc(reportUrl(t, where))}" target="_blank" rel="noopener">Report a problem</a></div>` : '';
+}
+
+/* ---------- what Free can open ---------- */
+// Free: the plan, and the first FREE_TOPICS topics in it, without the animated diagrams.
+// Pro (or admin / beta code): everything. Topics the user wrote or imported are always open.
+// This is a client-side gate on public study content; the AI itself is enforced on the server.
+const FREE_TOPICS = 3;
+const hasPro = () => { const a = store.account(); return !!(a?.unlimited || a?.plan === 'pro' || store.accessCode()); };
+function freeTopicIds() {
+  const p = profile();
+  return new Set(p ? rankTopics(topics(), p).filter(t => !t.custom && !t.private).slice(0, FREE_TOPICS).map(t => t.id) : []);
+}
+function isLocked(id) {
+  if (hasPro()) return false;
+  const t = topicById(id);
+  if (t?.custom || t?.private) return false;
+  return !freeTopicIds().has(id);
+}
+// A diagram Free users can see but not use: blurred, with the way in on top.
+function diagramTeaser(id, html) {
+  if (hasPro()) return html;
+  return `<div class="teaser" aria-label="Animated diagram, part of Pro"><div class="teaser-blur" aria-hidden="true" inert>${html}</div>
+    <div class="teaser-over"><b>${ic('lock')}This picture draws itself, step by step</b><span class="muted small">Animated diagrams for every topic come with Pro.</span><button class="btn primary" data-act="plans">See pricing</button></div></div>`;
 }
 
 /* ---------- pricing facts (server-provided, with offline fallbacks) ---------- */
@@ -276,12 +299,15 @@ function homeView() {
     : `${nLearn} short lesson${nLearn === 1 ? '' : 's'}, then ${nQs} question${nQs === 1 ? '' : 's'} to check it stuck.`;
   const countdown = left === null ? `Day ${ti + 1} of ${plan.length}` : left === 0 ? 'Your interview is today' : `${left} day${left === 1 ? '' : 's'} until your interview`;
   const upcoming = S.fullPlan ? plan.map((d, i) => [d, i]) : plan.map((d, i) => [d, i]).slice(ti, ti + 5);
+  const lockMark = id => isLocked(id) ? `<span class="lockmark" aria-label="Pro">${ic('lock')}</span>` : '';
   const topicRow = t => {
     const tr = readiness([t], p, prog);
-    return `<button class="rowi" data-act="learn" data-id="${t.id}">
-      <span class="main"><span class="t">${esc(t.name)}</span><span class="d">${esc(t.blurb || '')}</span></span>
-      ${tr.total ? `<span class="pct"><span>${tr.pct}%</span><span class="bar"><i style="width:${tr.pct}%"></i></span></span>` : ''}</button>`;
+    return `<button class="rowi ${isLocked(t.id) ? 'is-locked' : ''}" data-act="learn" data-id="${t.id}">
+      <span class="main"><span class="t">${esc(t.name)}${lockMark(t.id)}</span><span class="d">${esc(t.blurb || '')}</span></span>
+      ${isLocked(t.id) ? '<span class="tag">Pro</span>' : tr.total ? `<span class="pct"><span>${tr.pct}%</span><span class="bar"><i style="width:${tr.pct}%"></i></span></span>` : ''}</button>`;
   };
+  const lockedCount = relevant.filter(t => isLocked(t.id)).length;
+  const lockedCards = relevant.filter(t => isLocked(t.id)).reduce((n, t) => n + t.qa.length, 0);
   return `<div class="stack loose">
     <section class="greet">
       <div class="label">${esc(new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }))}</div>
@@ -305,19 +331,22 @@ function homeView() {
         const order = { unseen: 0, weak: 1, ok: 2, strong: 3 };
         const fresh = prevMap && prevMap[t.id] !== undefined && order[t.state] > order[prevMap[t.id]];
         return `<button class="tile ${t.state}${fresh ? ' tile-fresh' : ''}" data-act="learn" data-id="${t.id}" style="animation-delay:${S._stagger ? i * 60 : 0}ms" aria-label="${esc(t.name)}: ${t.state === 'strong' ? 'solid' : t.state === 'ok' ? 'getting there' : t.state === 'weak' ? 'shaky' : 'not started'}, ${t.known} of ${t.total} cards known">
-        <span class="t">${esc(t.name)}</span><span class="bar"><i style="width:${t.pct}%;animation-delay:${S._stagger ? i * 60 + 150 : 0}ms"></i></span>
+        <span class="t">${esc(t.name)}${lockMark(t.id)}</span><span class="bar"><i style="width:${t.pct}%;animation-delay:${S._stagger ? i * 60 + 150 : 0}ms"></i></span>
         <span class="m">${t.state === 'strong' ? 'Solid' : t.state === 'ok' ? 'Getting there' : t.state === 'weak' ? 'Shaky' : 'Not started'} · ${t.total ? `${t.known}/${t.total}` : 'no cards here'}</span></button>`; }).join('')}</div>
       <p class="muted small">${map.counts.strong} solid · ${map.counts.ok} getting there · ${map.counts.weak} shaky · ${map.counts.unseen} not started</p>
     </section>
     <section>
       <div class="sec-head"><h3>${S.fullPlan ? 'Full plan' : 'Coming up'}</h3><button class="link quiet small" data-act="toggleplan">${S.fullPlan ? 'Show less' : `All ${plan.length} days`}</button></div>
       <div class="rows">${upcoming.map(([d, i]) => `<button class="rowi ${i < ti ? 'past' : i === ti ? 'now' : ''}" ${d.kind === 'learn' ? `data-act="learn" data-id="${d.topics[0]}"` : d.kind === 'live' ? 'data-act="livesetup"' : 'data-act="deck"'}>
-        <span class="when">${i === ti ? 'Today' : esc(short(d.date))}</span><span class="main"><span class="t">${esc(dayLabel(d))}</span></span></button>`).join('')}</div>
+        <span class="when">${i === ti ? 'Today' : esc(short(d.date))}</span><span class="main"><span class="t">${esc(dayLabel(d))}</span></span>${d.kind === 'learn' ? lockMark(d.topics[0]) : ''}</button>`).join('')}</div>
     </section>
     ${roleIds.length > 1 ? `<section><div class="sec-head"><h3>Practice one role</h3></div><div class="chips">${roleIds.map(id => `<button class="chip" data-act="roledeck" data-id="${esc(id)}">${esc(label(id))}</button>`).join('')}</div></section>` : ''}
     ${roleIds.includes('other') ? `<section class="panel stack"><h3>Make it specific to ${esc(p.otherRole)}</h3>
       <p class="muted">Your plan starts from the closest listed role. The coach can write topics for your exact role. This uses 5 AI messages.</p>
       <div class="row"><button class="btn" data-act="buildrole" ${S.busy ? 'disabled' : ''}>${S.busy ? 'Writing your guide…' : 'Write my role guide'}</button></div></section>` : ''}
+    ${lockedCount ? `<section class="unlock-strip">
+      <div><b>${relevant.length - lockedCount} of ${relevant.length} topics open on Free</b><span class="muted small">${lockedCount} more topics, ${lockedCards} interview questions and every animated diagram are waiting in Pro.</span></div>
+      <button class="btn primary" data-act="plans">Unlock all</button></section>` : ''}
     <section>
       <div class="sec-head"><h3>Your topics</h3>${relevant.length > 8 ? `<button class="link quiet small" data-act="toggletopics">${S.allTopics ? 'Show fewer' : `All ${relevant.length} topics`}</button>` : ''}</div>
       <div class="rows">${(S.allTopics ? relevant : relevant.slice(0, 8)).map(topicRow).join('')}</div>
@@ -328,9 +357,32 @@ function homeView() {
   </div>`;
 }
 
+function lockedTopicView(t) {
+  const p = profile();
+  const all = rankTopics(topics(), p).filter(x => !x.custom && !x.private);
+  const open = [...freeTopicIds()].map(topicById).filter(Boolean);
+  const first = t.concepts[0];
+  const story = storyView(t.id, Math.max(0, t.concepts.length - 1), t.concepts.length);
+  return `<div class="stack">
+    <div class="row between"><button class="back" data-act="home">${ic('left')}Plan</button><span class="tag">${ic('lock')} Pro</span></div>
+    <div class="head"><h1>${esc(t.name)}</h1><p class="lede" style="margin-top:8px">${esc(t.blurb || '')}</p></div>
+    <p class="muted">${t.concepts.length} lessons, ${t.qa.length} interview questions${story ? ', and a diagram that builds as you read' : ''}.</p>
+    ${story ? diagramTeaser(t.id, story.html) : ''}
+    ${first ? `<article class="peek" aria-label="Preview of the first lesson"><h2>${esc(first.t)}</h2><p class="lede" style="max-width:none">${fmt(first.what)}</p></article>` : ''}
+    <section><div class="sec-head"><h3>Inside this topic</h3></div>
+      <div class="rows">${t.concepts.map((c, i) => `<div class="rowi static ${i > 1 ? 'dim' : ''}"><span class="main"><span class="t">${esc(c.t)}</span></span>${i > 1 ? ic('lock') : ''}</div>`).join('')}</div></section>
+    <section class="card live-hero stack">
+      <h2>Unlock all ${all.length} of your topics</h2>
+      <p>Free opens ${open.length ? open.map(x => esc(x.name)).join(', ') : `your first ${FREE_TOPICS} topics`}. Pro opens every lesson, every flashcard and every animated diagram for your role, plus the coach.</p>
+      <div class="row"><button class="btn invert lg" data-act="plans">See pricing</button><button class="btn quiet invert-quiet" data-act="home">Back to my free topics</button></div>
+    </section>
+  </div>`;
+}
+
 function learnView() {
   const t = topicById(S.topic);
   if (!t) return '<p class="muted">Loading…</p>';
+  if (isLocked(t.id)) return lockedTopicView(t);
   const c = t.concepts[S.ci];
   if (!c) return `<div class="stack"><h2>${esc(t.name)}</h2><p class="muted">This topic has questions only.</p><div class="row"><button class="btn primary" data-act="deck" data-id="${t.id}">Practice flashcards</button></div></div>`;
   const last = S.ci >= t.concepts.length - 1;
@@ -343,7 +395,7 @@ function learnView() {
   return `<div class="stack">
     <div class="row between"><button class="back" data-act="home">${ic('left')}Plan</button><span class="muted small">${esc(t.name)}, ${S.ci + 1} of ${t.concepts.length}</span></div>
     <div class="segs">${t.concepts.map((_, i) => `<i class="${i <= S.ci ? 'on' : ''}"></i>`).join('')}</div>
-    ${story ? `${scene}${story.html}` : scene}
+    ${story ? `${scene}${diagramTeaser(t.id, story.html)}` : scene}
     <article class="lesson" style="padding:14px 0 6px">
       <h1>${esc(c.t)}</h1>
       <div class="part body" style="margin-top:16px"><p class="lede" style="max-width:none">${fmt(c.what)}</p></div>
@@ -376,7 +428,7 @@ function deckView() {
       <div class="score-ring"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="52"/><circle class="ring-prog" cx="60" cy="60" r="52" pathLength="100" style="stroke-dashoffset:${ringOffset(pct)}"/></svg><div class="score-num"><span class="n" data-countup="${got}">${got}</span><span class="muted small">of ${d.cards.length} · ${pct}%</span></div></div>
       <h2>${pct >= 80 ? 'A strong round.' : pct >= 50 ? 'Getting there.' : 'Better to find out now.'}</h2>
       <p class="lede">${pct >= 80 ? 'These cards come back later, spaced further apart each time.' : 'The cards you missed come back first next time. Rereading the lessons for those topics will help.'}</p>
-      ${worst && diagramFor(worst) ? `<section class="stack tight"><h3>The one to reread: ${esc(topicName(worst))}</h3>${diagramHtml(worst)}<div class="row"><button class="btn" data-act="learn" data-id="${worst}">Reread the ${esc(topicName(worst))} lesson</button></div></section>` : ''}
+      ${worst && diagramFor(worst) ? `<section class="stack tight"><h3>The one to reread: ${esc(topicName(worst))}</h3>${diagramTeaser(worst, diagramHtml(worst))}<div class="row"><button class="btn" data-act="learn" data-id="${worst}">Reread the ${esc(topicName(worst))} lesson</button></div></section>` : ''}
       <div class="row"><button class="btn primary" data-act="deck" data-id="">Practice another round</button><button class="btn" data-act="home">Back to plan</button></div></div>`;
   }
   const q = d.cards[S.di];
@@ -536,7 +588,7 @@ function liveSettings() {
     style: ['friendly', 'direct', 'tough'].includes(saved.style) ? saved.style : 'friendly',
     topic: typeof saved.topic === 'string' ? saved.topic : '',
     difficulty: ['junior', 'mid', 'senior'].includes(saved.difficulty) ? saved.difficulty : (p?.level || 'mid'),
-    use: saved.use === 'interview' ? 'interview' : 'practice',
+    use: ['interview', 'talk'].includes(saved.use) ? saved.use : 'practice',
   };
 }
 
@@ -552,6 +604,7 @@ function liveSetupSheet() {
     <p class="muted">${esc(state)}</p>
     <fieldset class="stack tight"><legend class="small" style="font:600 14px var(--sans);margin-bottom:6px">How will you use it?</legend>
       ${opt('practice', 'Practice test', 'The coach asks the questions out loud. Hints as each question lands, feedback after every answer.')}
+      ${opt('talk', 'Open conversation', 'Talk with the coach for the whole session. It listens and answers back and forth, with no time-outs.')}
       ${opt('interview', 'During your interview', 'It listens to your interviewer and shows talking points on your screen within seconds. Silent: it never speaks.')}
     </fieldset>
     <label>Session length<select name="lengthMin">${[20, 30, 45, 60].map(n => `<option value="${n}" ${s.lengthMin === n ? 'selected' : ''}>${n} minutes</option>`).join('')}</select></label>
@@ -673,9 +726,15 @@ function rtHandlers() {
     },
     end(reason) {
       const wasLive = S.rtMode === 'live';
+      const retry = wasLive && /^Connection lost/.test(reason || '') && (S.liveRetries || 0) < 3;
       S.rt = null; S.rtMode = null; S.rtStatus = ''; S.live = null; S.pendingUser = false; S.muted = false; S.liveHint = null; S.liveUse = null;
       store.setChat(store.chat().filter(m => m.content !== '🎙 …'));
       if (reason) store.setChat([...store.chat(), { role: 'assistant', content: `ℹ️ ${reason}` }]);
+      if (retry) {
+        S.liveRetries = (S.liveRetries || 0) + 1;
+        store.setChat([...store.chat().filter(m => !isNotice(m) || m.content !== `ℹ️ ${reason}`), { role: 'assistant', content: 'ℹ️ Connection dropped. Reconnecting to the same session…' }]);
+        setTimeout(() => startVoice('live'), 1500);
+      } else S.liveRetries = 0;
       if (wasLive) refreshAccount().catch(() => {}); // remaining session time for the "rejoin" button
       if (S.view === 'chat') render();
     },
@@ -830,8 +889,9 @@ function plansView() {
   const yes = '<span class="yes" aria-label="Included">' + ic('check') + '</span>';
   const no = '<span class="no" aria-label="Not included">–</span>';
   const rows = [
-    ['Day-by-day plan, lessons, flashcards', yes, yes, '–'],
-    ['Animated diagrams for every topic', yes, yes, '–'],
+    ['Day-by-day plan', yes, yes, '–'],
+    ['Lessons and flashcards', `First ${FREE_TOPICS} topics`, 'Every topic', '–'],
+    ['Animated diagrams for every topic', no, yes, '–'],
     ['Coach messages', `${o.freeMsgs} to try`, `${o.proMsgs} a month`, '–'],
     ['Voice practice', `${o.freeVoice} min to try`, `${o.proVoice} min a month`, `${o.liveMin} min, continuous`],
     ['Longest single voice call', `${o.freeVoice} min`, '10 min', `${o.liveMin} min`],
@@ -853,13 +913,13 @@ function plansView() {
       <section class="tier">
         <div class="tier-name">Free</div>
         <div class="price">$0</div>
-        <p class="muted small">The whole study guide, plus a taste of the coach.</p>
+        <p class="muted small">Your plan, your first ${FREE_TOPICS} topics, and a taste of the coach.</p>
         <button class="btn block" data-act="pickfree" ${isPro ? 'hidden' : ''}>Continue on Free</button>
       </section>
       <section class="tier">
         <div class="tier-name">Pro</div>
         <div class="price">${esc(o.proAmount)}<span>/ ${esc(o.proPer)}</span></div>
-        <p class="muted small">A coach to practise with every day of your prep.${o.perDay ? ` ${esc(o.perDay)}.` : ''}</p>
+        <p class="muted small">Every topic, every flashcard, every animated diagram, and a coach to practise with.${o.perDay ? ` ${esc(o.perDay)}.` : ''}</p>
         ${isPro ? '<button class="btn block" disabled>Your plan</button>' : `<button class="btn primary block" data-act="buysub" ${dis}>${S.buyBusy === 'pro' ? `Opening the ${storeName()}…` : 'Start Pro'}</button>`}
       </section>
       <section class="tier card live-hero">
@@ -1046,7 +1106,8 @@ function onPurchased(acc) {
 /* ---------- actions ---------- */
 // ids = topics the user explicitly chose (may be outside their role); null = everything relevant.
 function startDeck(ids) {
-  const list = ids ? topics().filter(t => ids.includes(t.id)) : topics();
+  if (ids?.length && ids.every(isLocked)) return openTopic(ids[0]);
+  const list = (ids ? topics().filter(t => ids.includes(t.id)) : topics()).filter(t => !isLocked(t.id));
   S.deck = { cards: dueCards(list, profile(), store.progress(), Date.now(), 20, { relevantOnly: !ids }), results: [] };
   S.di = 0; S.reveal = false; S.view = 'deck'; render();
 }
@@ -1192,7 +1253,7 @@ document.addEventListener('submit', async e => {
       style: String(fd.get('style') || 'friendly'),
       topic: String(fd.get('topic') || ''),
       difficulty: String(fd.get('difficulty') || 'mid'),
-      use: fd.get('use') === 'interview' ? 'interview' : 'practice',
+      use: ['interview', 'talk'].includes(fd.get('use')) ? fd.get('use') : 'practice',
     };
     store.setLiveSettings(settings);
     closeSheet();

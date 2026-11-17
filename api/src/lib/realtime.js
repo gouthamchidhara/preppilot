@@ -22,7 +22,7 @@ export function validateRealtime(body) {
     topic: typeof body.live?.topic === 'string' ? body.live.topic.slice(0, 120) : '',
     difficulty: LIVE_LEVELS.has(body.live?.difficulty) ? body.live.difficulty : '',
     // 'interview': the app listens during the user's own interview and shows talking points on screen.
-    use: body.live?.use === 'interview' ? 'interview' : 'practice',
+    use: ['interview', 'talk'].includes(body.live?.use) ? body.live.use : 'practice',
   } : null;
   const interview = live?.use === 'interview';
   return {
@@ -40,6 +40,8 @@ export function voiceInstructions(v) {
   const base = chatSystemPrompt({ profile: v.profile, context: v.context, voice: true });
   const mode = v.mode === 'live' && v.live?.use === 'interview'
     ? `INTERVIEW MODE: you are listening to the candidate's real job interview through their microphone. You will hear the interviewer and the candidate. You never speak; your text appears silently on the candidate's screen. When the interviewer asks the candidate a question, reply at once with 3 to 5 short bullet points the candidate can glance at: the key points to make, in order, plus one concrete example drawn from the candidate's background when it fits. For a coding or design question, add the approach in one line. Keep the whole reply under 70 words. Do not write full sentences to read aloud, greetings or commentary. When what you heard is not a question for the candidate (small talk, the candidate answering, silence or noise), reply with exactly: …${v.live?.topic ? ` The interview is likely to focus on: ${v.live.topic}.` : ''}`
+    : v.mode === 'live' && v.live?.use === 'talk'
+    ? `OPEN CONVERSATION MODE: an uninterrupted spoken session with the candidate for as long as they want. Listen fully, answer naturally in 2-4 sentences, then hand the turn back; ask a follow-up question when they go quiet so the conversation keeps moving. Explain concepts, quiz them, discuss their stories, or role-play an interviewer if they ask.${v.live?.style === 'tough' ? ' Be demanding and probe gaps.' : v.live?.style === 'direct' ? ' Be direct, no small talk.' : ' Be warm and encouraging.'}${v.live?.topic ? ` Lean towards: ${v.live.topic}.` : ''}${v.live?.difficulty ? ` Pitch it at ${v.live.difficulty} level.` : ''}`
     : v.mode === 'live'
     ? `LIVE COACH MODE: run a structured practice test, not a real interview. Ask one question at a time, wait for the answer, give brief honest feedback (strong / ok / weak + one improvement), then move to the next question.${v.live?.style === 'tough'
       ? ' Be demanding: short follow-ups that probe gaps, no softening.'
@@ -67,7 +69,8 @@ export function sessionConfigs(v) {
           // In interview mode the interviewer is often on laptop speakers, further from the mic.
           noise_reduction: { type: v.live?.use === 'interview' ? 'far_field' : 'near_field' },
           turn_detection: {
-            type: 'server_vad', threshold: 0.5, prefix_padding_ms: 300,
+            // Open conversation: a slightly higher threshold so a cough or background noise doesn't cut the coach off.
+            type: 'server_vad', threshold: v.live?.use === 'talk' ? 0.62 : 0.5, prefix_padding_ms: 300,
             // Talking: answer ~0.35s after you stop. Listening: never auto-answer; the app sends response.create.
             silence_duration_ms: v.mode === 'listen' ? 900 : v.live?.use === 'interview' ? 600 : 350,
             create_response: v.mode !== 'listen',

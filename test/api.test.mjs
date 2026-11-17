@@ -184,6 +184,17 @@ test('live coach interview use listens silently and answers with talking points'
   assert.doesNotMatch(voiceInstructions(v), /LIVE COACH MODE/);
 });
 
+test('live coach open conversation talks back and forth and is harder to cut off', () => {
+  const v = validateRealtime({ sdp: 'v=0', mode: 'live', live: { use: 'talk' } });
+  assert.equal(v.live.use, 'talk');
+  assert.equal(v.speak, true);
+  const td = sessionConfigs(v)[0].session.audio.input.turn_detection;
+  assert.equal(td.create_response, true);
+  assert.equal(td.interrupt_response, true);
+  assert.ok(td.threshold > 0.5);
+  assert.match(voiceInstructions(v), /OPEN CONVERSATION MODE/);
+});
+
 test('live coach hints need an open session window', async () => {
   const h = await signIn('hint@gmail.com', 'hint');
   assert.equal((await call('POST live/hint', { question: 'What is a Kubernetes Pod?' }, h)).status, 402);

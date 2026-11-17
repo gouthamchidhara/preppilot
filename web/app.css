@@ -468,3 +468,22 @@ pre code { background: none; border: 0; padding: 0; }
 .use-opt:has(input:checked) { border-color: var(--ink); background: var(--sunk); }
 .use-opt input { width: auto; margin-top: 3px; accent-color: var(--ink); }
 .use-opt > span { display: flex; flex-direction: column; gap: 2px; }
+
+/* ---------- Free vs Pro ---------- */
+.teaser { position: relative; border-radius: 10px; overflow: hidden; min-height: 180px; }
+.teaser-blur { filter: blur(2.5px); opacity: .85; pointer-events: none; user-select: none; }
+.teaser-over { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 18px;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--desk) 88%, transparent), color-mix(in srgb, var(--desk) 25%, transparent)); }
+.teaser-over b { display: inline-flex; gap: 6px; align-items: center; }
+.teaser-over b svg { width: 16px; height: 16px; }
+.peek { position: relative; max-height: 190px; overflow: hidden; }
+.peek h2 { margin-bottom: 10px; }
+.peek::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 120px; background: linear-gradient(to bottom, transparent, var(--desk)); }
+.rowi.dim .t { color: var(--muted); filter: blur(2.5px); }
+.rowi.dim > svg.ic { color: var(--muted); }
+.lockmark { display: inline-flex; vertical-align: -2px; margin-left: 6px; color: var(--muted); }
+.lockmark svg { width: 14px; height: 14px; }
+.rowi.is-locked .d { opacity: .7; }
+.tile .lockmark { margin-left: 4px; }
+.unlock-strip { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 14px 16px; border: 1px dashed var(--line-strong); border-radius: 10px; }
+.unlock-strip > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 220px; }
