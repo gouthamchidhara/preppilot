@@ -10,7 +10,7 @@ const DAY = 86400000;
 const app = document.getElementById('app');
 const S = { view: 'home', topic: null, ci: 0, deck: null, di: 0, reveal: false, busy: false, listening: false, chatContext: '',
   rt: null, rtMode: null, rtStatus: '', rtStarting: false, voiceServer: false, live: null, pendingUser: false, muted: false,
-  googleClientId: '', plans: null, paywall: false, draft: null, roleSearch: '', showPlans: false, fullPlan: false, allTopics: false, buying: null, buyBusy: false, healthLoaded: false, lastView: '', liveHint: null };
+  googleClientId: '', plans: null, paywall: false, draft: null, roleSearch: '', showPlans: false, fullPlan: false, allTopics: false, buying: null, buyBusy: false, healthLoaded: false, lastView: '', liveHint: null, suggestPending: false };
 
 /* ---------- helpers ---------- */
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -477,6 +477,43 @@ function liveHintCard() {
   </section>`;
 }
 
+/* ---------- guide suggestions ---------- */
+// One form, two places: the ask-once sheet after Google sign-in, and Profile.
+// The address suggestions go to lives on the server (SUGGESTIONS_EMAIL),
+// never in client code. Fields are found by role, not id, so the two copies
+// can share the page with the sheet open.
+function suggestFormHtml(id) {
+  return `<form id="${id}" class="suggest-form stack">
+    <label class="small muted" for="${id}-text">What guide or topic should we add?</label>
+    <textarea id="${id}-text" rows="3" maxlength="500" minlength="10" required placeholder="e.g. A guide to system design interviews for backend roles"></textarea>
+    <input maxlength="120" placeholder="Topic (optional)" aria-label="Topic">
+    <button class="btn primary block" type="submit">Send suggestion</button>
+  </form>`;
+}
+
+function suggestSheet() {
+  sheet(`<h2>What should we teach next?</h2>
+    <p class="muted">You are signed in — tell us what guide or topic you want and we will look at adding it.</p>
+    ${suggestFormHtml('suggestForm')}
+    <button class="btn block" type="button" data-act="closesheet">Not now</button>`);
+}
+
+async function submitSuggestion(form) {
+  if (!signedIn()) { toast('Sign in first, then send your suggestion.'); return; }
+  const text = form.querySelector('textarea').value.trim();
+  const topic = form.querySelector('input').value.trim();
+  if (text.length < 10) { oops('Tell us what guide or topic you want (at least 10 characters).'); return; }
+  const btn = form.querySelector('button[type=submit]');
+  if (btn) btn.disabled = true;
+  try {
+    await ai.post('/api/suggestions', { text, topic });
+    closeSheet();
+    toast('Thanks — your suggestion is in. We read every one.');
+    render();
+  } catch (err) { aiFailed(err); }
+  if (btn) btn.disabled = false;
+}
+
 async function fetchLiveHint(question) {
   S.liveHint = { question, hint: '', strong: '', showStrong: false, loading: true };
   render();
@@ -577,6 +614,10 @@ function settingsView() {
       <input type="file" id="importPack" accept="application/json,.json" aria-label="Import pack">
       ${priv.length ? `<div class="rows">${priv.map(p => `<div class="rowi static"><span class="main"><span class="t">${esc(p.name)}</span><span class="d">${p.topics.length} topics</span></span><button class="link quiet small" data-act="delpack" data-id="${esc(p.id)}">Remove</button></div>`).join('')}</div>` : ''}
     </section>
+    <section class="stack"><div class="head"><h2>Suggest a guide</h2>
+      <p class="muted">Want a guide or topic we don't cover? Tell us — it goes straight to the people who write them.</p></div>
+      ${suggestFormHtml('suggestFormSettings')}
+    </section>
     <section class="stack"><div class="head"><h2>Your data</h2>
       <p class="muted">Your profile, progress and chats are stored only on this device.</p></div>
       <div class="row"><button class="btn" data-act="export">Export my data</button><button class="btn danger" data-act="reset">Erase everything</button></div>
@@ -658,6 +699,13 @@ function render() {
   filterRoles();
   if (key === 'chat') { paintVoice(); if (!changed || store.chat().length) scrollEnd(); else window.scrollTo({ top: 0 }); }
   else if (changed || key === 'learn' || key === 'deck') window.scrollTo({ top: 0 });
+  // Ask once, after a Google sign-in, what extra guides the user wants. Waits until
+  // the plans screen is closed and no voice call is live, so it never covers either.
+  if (S.suggestPending && !S.showPlans && !S.live && profile()) {
+    S.suggestPending = false;
+    store.setSuggestAsked(true);
+    suggestSheet();
+  }
 }
 
 /* ---------- purchases ---------- */
@@ -770,11 +818,12 @@ async function sendChat(text, { fromVoice = false } = {}) {
 
 function cardContext(t, c) { return `${t.name} — ${c.t}\n${c.what}\n${c.ex ? 'Example:\n' + c.ex.slice(0, 1200) : ''}`; }
 
-app.addEventListener('submit', async e => {
+document.addEventListener('submit', async e => {
   e.preventDefault();
   if (e.target.id === 'profileForm') return saveProfile();
   if (e.target.id === 'chatForm') { const i = document.getElementById('chatInput'); const v = i.value; i.value = ''; i.style.height = ''; return sendChat(v); }
   if (e.target.id === 'codeForm') { store.setAccessCode(document.getElementById('code').value.trim()); return render(); }
+  if (e.target.classList?.contains('suggest-form')) return submitSuggestion(e.target);
   if (e.target.id === 'liveSetupForm') {
     const fd = new FormData(e.target);
     const settings = {
@@ -975,6 +1024,7 @@ document.addEventListener('click', async e => {
   let prevAccount = store.account();
   onAccountChange(acc => {
     if (acc && !prevAccount && acc.plan === 'free' && profile()) S.showPlans = true;
+    if (acc && !prevAccount && store.lastProvider() === 'google' && !store.suggestAsked()) S.suggestPending = true;
     prevAccount = acc;
     if (!acc || (acc.plan === 'free' && acc.msgsLeft > 0 && acc.voiceSecLeft >= 20)) S.paywall = false;
     if (!S.live) render();

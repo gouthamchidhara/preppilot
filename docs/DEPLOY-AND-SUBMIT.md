@@ -26,7 +26,7 @@ npm install
 npm test
 ```
 
-**Expected:** 34 tests pass (1 skipped). If any fail, STOP and fix before continuing.
+**Expected:** 40 tests pass (1 skipped). If any fail, STOP and fix before continuing.
 
 ---
 
@@ -154,6 +154,28 @@ git push origin main
 ```
 
 **CI/CD:** Every push to `main` auto-deploys the web app to Azure Static Web Apps via GitHub Actions. Tests run automatically.
+
+---
+
+## Guide suggestion emails (Azure Communication Services)
+
+Signed-in users can suggest extra guides from Profile, and once after Google sign-in. Suggestions are always stored in Table Storage (`ppsuggestions`). Emailing them to palpriya0825@gmail.com needs Azure Communication Services Email — without it, the API still stores the suggestion and answers `emailed: false`.
+
+One-time setup (Azure portal):
+
+1. Create a **Communication Services** resource (same resource group as the app).
+2. In it, add **Email** and connect a domain: the free Azure-managed domain (`<name>.azurecomm.net`) works, or verify a custom domain.
+3. Copy the resource **endpoint** (`https://<name>.communication.azure.com`) and a **primary access key** (Keys blade).
+4. Set the four app settings on the Static Web App — or pass them as parameters to `infra/main.bicep` (`acsEmailEndpoint`, `acsEmailKey`, `acsEmailSender`, `suggestionsEmail`) and redeploy:
+
+   | Setting | Value |
+   |---|---|
+   | `ACS_EMAIL_ENDPOINT` | `https://<name>.communication.azure.com` |
+   | `ACS_EMAIL_KEY` | the access key |
+   | `ACS_EMAIL_SENDER` | `DoNotReply@<domain>.azurecomm.net` (a verified sender) |
+   | `SUGGESTIONS_EMAIL` | `palpriya0825@gmail.com` (default; change to redirect) |
+
+   The sender address must belong to a verified Email domain, or ACS rejects the send. Redeploy (or restart) after changing app settings. The API sends with a raw HMAC-SHA256 signed REST call (`api/src/lib/email.js`, no extra dependency).
 
 ---
 

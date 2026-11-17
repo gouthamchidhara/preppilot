@@ -68,6 +68,19 @@ param revenueCatSecretKey string = ''
 @description('Exact Authorization header value RevenueCat sends with webhooks.')
 param revenueCatWebhookAuth string = ''
 
+@description('Azure Communication Services endpoint for suggestion emails, e.g. https://preppilot.communication.azure.com. Empty = suggestions are stored only, not emailed.')
+param acsEmailEndpoint string = ''
+
+@secure()
+@description('Azure Communication Services access key (base64). Empty = suggestions are stored only, not emailed.')
+param acsEmailKey string = ''
+
+@description('Verified ACS Email sender address, e.g. DoNotReply@<domain>.azurecomm.net.')
+param acsEmailSender string = ''
+
+@description('Where guide suggestions are emailed.')
+param suggestionsEmail string = 'palpriya0825@gmail.com'
+
 var suffix = uniqueString(resourceGroup().id)
 
 // Users, daily free pool and voice calls live in Table Storage (cents per month).
@@ -88,7 +101,7 @@ resource tableService 'Microsoft.Storage/storageAccounts/tableServices@2023-05-0
   name: 'default'
 }
 
-resource tables 'Microsoft.Storage/storageAccounts/tableServices/tables@2023-05-01' = [for t in [ 'ppusers', 'ppdaily', 'ppcalls', 'pproles' ]: {
+resource tables 'Microsoft.Storage/storageAccounts/tableServices/tables@2023-05-01' = [for t in [ 'ppusers', 'ppdaily', 'ppcalls', 'pproles', 'ppsuggestions' ]: {
   parent: tableService
   name: t
 }]
@@ -180,6 +193,10 @@ resource swaSettings 'Microsoft.Web/staticSites/config@2023-12-01' = {
     APPLE_AUDIENCES: appleAudiences
     REVENUECAT_SECRET_KEY: revenueCatSecretKey
     REVENUECAT_WEBHOOK_AUTH: revenueCatWebhookAuth
+    ACS_EMAIL_ENDPOINT: acsEmailEndpoint
+    ACS_EMAIL_KEY: acsEmailKey
+    ACS_EMAIL_SENDER: acsEmailSender
+    SUGGESTIONS_EMAIL: suggestionsEmail
   }
   dependsOn: [ realtime, transcribe, tables ]
 }

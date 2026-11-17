@@ -1,7 +1,7 @@
 // Framework-agnostic handlers: (req) -> { status, body, headers }.
 // req = { body, headers (lower-case keys), ip }
 import { complete, llmConfigured } from './llm.js';
-import { rateLimit, validateChat, validateGenerate, validateLiveHint, sanitizeGenerated } from './guard.js';
+import { rateLimit, validateChat, validateGenerate, validateLiveHint, validateSuggestion, sanitizeGenerated } from './guard.js';
 import { chatSystemPrompt, generateSystemPrompt, generateUserPrompt } from './prompts.js';
 import { realtimeConfigured, validateRealtime, startRealtime, hangupCall } from './realtime.js';
 import { identify, verifyIdToken, signSession } from './auth.js';
@@ -9,7 +9,8 @@ import { upsertUser, status, consumeMsgs, refundMsgs, reserveVoice, refundVoice,
 import { COST, limits, proPriceLabel, livePriceLabel, planOf } from './plans.js';
 import { webhookAuthorized, applyWebhook, refreshFromRevenueCat } from './billing.js';
 import { getDb } from './db.js';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
+import { sendSuggestionEmail } from './email.js';
 
 const json = (status, body, headers = {}) => ({ status, body, headers });
 const denied = r => json(r.status, { error: r.message, code: r.code });
@@ -181,6 +182,35 @@ export async function handleLiveHint(req, log) {
   } catch (e) {
     return fail(e, log);
   }
+}
+
+/* ---------- guide suggestions ---------- */
+// Signed-in users can ask for extra guides/topics. Stored in Table Storage and,
+// when ACS Email is configured, emailed to the address in SUGGESTIONS_EMAIL.
+// Email is best-effort: a failed or unconfigured send still stores the suggestion
+// and answers 200 with emailed: false, so the user never loses their request.
+export async function handleSuggestion(req, log) {
+  const v = validateSuggestion(req.body);
+  if (v.error) return json(400, { error: v.error });
+  const w = who(req);
+  if (w.error) return w.error;
+  const rl = limited('suggestions', w.ident);
+  if (rl) return rl;
+  const user = await loadUser(w.ident);
+  const email = user?.email || w.ident.email || '';
+  const createdAt = new Date().toISOString();
+  await (await getDb()).update('suggestions', randomUUID(), () => ({
+    text: v.text, topic: v.topic, userId: w.ident.key, userEmail: email, createdAt,
+  }));
+  let emailed = false;
+  try {
+    const r = await sendSuggestionEmail({ text: v.text, topic: v.topic, userEmail: email, createdAt });
+    emailed = r.sent;
+    if (!r.sent) log?.(`suggestion email skipped: ${r.reason}`);
+  } catch (e) {
+    log?.(`suggestion email failed: ${e.message}`);
+  }
+  return json(200, { stored: true, emailed });
 }
 
 export async function handleDeleteAccount(req) {

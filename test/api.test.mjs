@@ -257,3 +257,25 @@ test('unlisted-role telemetry stores only a normalized role name and is rate lim
   for (let i = 0; i < 4; i++) await call('POST telemetry/role', { role: 'sap basis' }, h);
   assert.equal((await call('POST telemetry/role', { role: 'sap basis' }, h)).status, 429);
 });
+
+test('guide suggestions: sign-in required, stored, emailed only when ACS is configured', async () => {
+  const body = { text: 'A guide to system design interviews for backend roles', topic: 'system design' };
+  assert.equal((await call('POST suggestions', body)).status, 401);
+  const h = await signIn('sugg@gmail.com', 'sugg');
+  assert.equal((await call('POST suggestions', { text: 'too short' }, h)).status, 400);
+  const r = await call('POST suggestions', body, h);
+  assert.equal(r.status, 200);
+  assert.equal(r.body.stored, true);
+  assert.equal(r.body.emailed, false); // no ACS settings in this environment
+  const { getDb } = await import('../api/src/lib/db.js');
+  const rows = await (await getDb()).list('suggestions');
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].text, body.text);
+  assert.equal(rows[0].userEmail, 'sugg@gmail.com');
+});
+
+test('guide suggestions are rate-limited to 5 per hour per user', async () => {
+  const h = await signIn('limit@gmail.com', 'limit');
+  for (let i = 0; i < 5; i++) assert.equal((await call('POST suggestions', { text: `Suggestion number ${i} please` }, h)).status, 200);
+  assert.equal((await call('POST suggestions', { text: 'One more suggestion please' }, h)).status, 429);
+});

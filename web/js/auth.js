@@ -30,6 +30,7 @@ async function exchange(provider, idToken, name) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || 'Sign-in failed');
+  store.setLastProvider(provider);
   store.setSession(data.token);
   setAccount(data.account);
   return data.account;
