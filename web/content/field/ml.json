@@ -1,0 +1,104 @@
+{
+"statistics": {
+"terms": [
+{"q":"Population vs sample?","a":"The population is every unit of interest; a sample is the subset you measured. Sample statistics (mean, variance) estimate population parameters, with variance using n-1 in the denominator."},
+{"q":"What is standard deviation vs standard error?","a":"Standard deviation describes spread of individual observations. Standard error is the standard deviation of an estimate such as the mean, roughly sigma divided by the square root of n."},
+{"q":"Null vs alternative hypothesis?","a":"The null states no effect or difference and is what the test tries to reject. The alternative states there is an effect. A test gives evidence against the null, not proof of the alternative."},
+{"q":"What is statistical significance vs practical significance?","a":"Significance means the result is unlikely under the null at a chosen alpha. Practical significance asks whether the effect size matters to the business; huge samples can make trivial effects significant."},
+{"q":"What is a confounder?","a":"A variable that influences both the treatment and the outcome, creating a spurious association. Randomization or adjusting for it controls for confounding."}
+],
+"trouble": [
+{"q":"An A/B test reached significance after three days but you planned two weeks. Do you ship?","a":"Not on that alone. Stopping at the first significant peek inflates false positives. Run to the planned sample size, or use a sequential testing method designed for early stopping, and cover full weekly cycles."},
+{"q":"The A/B split shows 52 to 48 user counts instead of 50 to 50. What is it called and what do you do?","a":"A sample ratio mismatch, often a sign of broken assignment, bot filtering or logging bugs. Run a chi-square test on the counts and investigate before trusting any result."},
+{"q":"Regression coefficients are unstable and signs flip between samples. Why?","a":"Likely multicollinearity among predictors. Check variance inflation factors and correlation, drop or combine correlated features, or use regularization such as ridge."},
+{"q":"You ran 20 metric comparisons and one is significant at 0.05. How do you interpret it?","a":"Expected by chance: about one in twenty tests at alpha 0.05 is a false positive. Correct for multiple comparisons (Bonferroni, Benjamini-Hochberg) or pre-register a primary metric."}
+],
+"scenarios": [
+{"q":"Product wants to know whether a new checkout flow increases conversion. How do you design the test?","a":"Define the primary metric and minimum detectable effect, compute sample size from baseline rate, power and alpha, randomize by user, run through whole weekly cycles, check sample ratio and guardrail metrics, then analyze once."},
+{"q":"Sales rise in months when ice cream sales rise. A manager concludes ice cream drives sales. Respond.","a":"Correlation does not imply causation; a confounder such as temperature or season likely drives both. Control for it, compare within season, or use an experiment to test causality."},
+{"q":"The data has heavy outliers and a skewed distribution. How do you summarize and test it?","a":"Report median and percentiles instead of mean, consider a log transform, and use robust or nonparametric methods such as Mann-Whitney or bootstrap confidence intervals. Investigate outliers before removing any."}
+]
+},
+"ml-fundamentals": {
+"terms": [
+{"q":"What is a feature vs a label?","a":"A feature is an input variable used for prediction; the label (target) is the value the model learns to predict."},
+{"q":"What is a hyperparameter vs a parameter?","a":"Parameters are learned from data during training (weights). Hyperparameters are set before training (learning rate, tree depth) and tuned with validation data."},
+{"q":"What is a loss function?","a":"The function a model minimizes during training that measures prediction error, such as mean squared error for regression or cross-entropy for classification."},
+{"q":"What is gradient descent?","a":"An optimization method that updates parameters in the direction opposite the loss gradient, scaled by the learning rate. Variants include SGD with mini-batches and Adam."},
+{"q":"What is a confusion matrix?","a":"A table of true positives, false positives, true negatives and false negatives for a classifier. Precision, recall and F1 are derived from it."},
+{"q":"What is one-hot encoding?","a":"Representing a categorical value as a binary vector with a single 1. It avoids implying order but grows with cardinality; trees can often use target or ordinal encodings instead."}
+],
+"trouble": [
+{"q":"Training accuracy is 99 percent but validation accuracy is 70 percent. What do you do?","a":"That is overfitting. Get more data, simplify the model, add regularization or dropout, use early stopping, reduce features, and verify there is no leakage that makes train unrealistically easy."},
+{"q":"Validation scores are great but production performance is poor. What are likely causes?","a":"Data leakage, train versus serving feature mismatch, distribution shift, or a validation split that does not mimic production (for example random split on time-ordered data). Use a time-based split and audit the features."},
+{"q":"A classifier has 98 percent accuracy on a dataset with 2 percent positives. Is it good?","a":"Not necessarily; predicting all negatives gives 98 percent. Look at precision, recall, PR-AUC, and the confusion matrix, and use class weights, resampling or threshold tuning."},
+{"q":"A neural network loss shows NaN. What do you check?","a":"Exploding gradients, too high a learning rate, log of zero or division by zero, or bad inputs with NaN or inf. Lower the learning rate, clip gradients, normalize inputs and check the data."}
+],
+"scenarios": [
+{"q":"You are asked to build a churn model. Walk through the approach.","a":"Define churn and the prediction horizon, build features only from data available before it, split by time, start with a simple baseline like logistic regression, then gradient boosting. Evaluate with PR-AUC and lift, calibrate, and agree an action threshold with the business."},
+{"q":"A fraud model must catch fraud with few false alarms. How do you choose a threshold?","a":"Estimate the cost of a missed fraud versus a false alarm, plot the precision-recall curve and choose the threshold that minimizes expected cost or meets a target recall, then monitor it as fraud patterns shift."},
+{"q":"A stakeholder asks why the model denied a customer. What do you offer?","a":"Use an interpretable model or explanations such as SHAP values or feature importance for that prediction, check for proxy features that encode protected attributes, and document the reasoning with fairness checks."}
+]
+},
+"python-data": {
+"terms": [
+{"q":"What is a pandas Series vs a DataFrame?","a":"A Series is a one-dimensional labeled array. A DataFrame is a two-dimensional table of Series sharing an index, each column with its own dtype."},
+{"q":"What is the index in pandas?","a":"The row labels used for alignment and lookup. Operations between objects align on index, which can create NaN where labels do not match."},
+{"q":"What is `groupby` doing?","a":"Split-apply-combine: it splits rows by key, applies an aggregation or transform per group, and combines the results, for example `df.groupby('region')['sales'].sum()`."},
+{"q":"What is broadcasting in NumPy?","a":"The rule that lets arrays of different shapes combine in element-wise operations by virtually expanding size-1 dimensions, avoiding explicit loops and copies."},
+{"q":"What is a categorical dtype?","a":"A pandas dtype that stores repeated strings as integer codes plus a lookup of categories, cutting memory and speeding up groupby for low-cardinality columns."}
+],
+"trouble": [
+{"q":"What does SettingWithCopyWarning mean and how do you avoid it?","a":"You may be assigning to a copy of a slice, so the original is not updated. Use `.loc` for assignment (`df.loc[mask, 'col'] = v`) or make an explicit `.copy()`; copy-on-write in recent pandas versions reduces this."},
+{"q":"A merge produced far more rows than either input. Why?","a":"Duplicate keys on both sides create a many-to-many join. Check uniqueness, use `validate='one_to_one'` or `'many_to_one'` in `merge`, and dedupe first."},
+{"q":"Reading a large CSV raises MemoryError. What are your options?","a":"Read with `usecols`, explicit `dtype`, and `chunksize`, or convert to Parquet. Alternatively use Polars, DuckDB or Dask for out-of-core processing."},
+{"q":"A column of integers became floats after loading. Why?","a":"Missing values force NaN, which is a float. Use nullable dtypes such as `Int64` with `convert_dtypes()` or `dtype='Int64'` to keep integers with missing values."}
+],
+"scenarios": [
+{"q":"You get a messy CSV and must prepare it for analysis. What are your first steps?","a":"Inspect with `info()`, `describe()` and `head()`, fix dtypes and parse dates, check missing values and duplicates, standardize categories and units, validate ranges, and write a reproducible cleaning script rather than manual edits."},
+{"q":"A pandas script takes ten minutes on a 5 GB file. How do you speed it up?","a":"Profile first. Use vectorized operations instead of `apply`, reduce dtypes, load only needed columns, store as Parquet, then consider Polars or DuckDB if still slow."},
+{"q":"You must report week-over-week change by product from a transactions table. How in pandas?","a":"Resample or group by product and week with `groupby(['product', pd.Grouper(key='date', freq='W')])`, sum amounts, then compute `pct_change()` within each product group."}
+]
+},
+"ml-ops": {
+"terms": [
+{"q":"What is a model registry?","a":"A versioned catalog of trained models with metadata, lineage and stage labels (staging, production), enabling approvals, rollback and traceability. MLflow Model Registry is one example."},
+{"q":"What is training-serving skew?","a":"A difference between how features are computed in training and in production, producing worse live predictions. A shared feature store or shared transformation code prevents it."},
+{"q":"Data drift vs concept drift?","a":"Data drift is a change in input distribution. Concept drift is a change in the relationship between inputs and the target. Either can degrade accuracy; concept drift needs labels to detect."},
+{"q":"What are canary and shadow deployments?","a":"A canary routes a small share of live traffic to the new model. Shadow runs the new model on live requests without returning its results, to compare outputs safely."},
+{"q":"What is a model card?","a":"Documentation of a model's intended use, training data, metrics, limitations and fairness considerations, kept with the registry entry for audit and handover."}
+],
+"trouble": [
+{"q":"Model accuracy has slowly dropped in production. How do you investigate?","a":"Compare recent input distributions to training (PSI, KS test), check upstream pipeline or schema changes, and measure with fresh labels. Retrain on recent data or fix the broken feature."},
+{"q":"A retrained model cannot be reproduced. What was probably missing?","a":"Versions of data, code, environment or random seeds. Pin the dataset snapshot or hash, container image, dependencies and seeds, and log them with the run."},
+{"q":"Online predictions are too slow. What do you try?","a":"Profile feature fetching versus inference, cache or precompute features, batch requests, use a smaller or quantized model or an optimized runtime such as ONNX, and scale replicas."},
+{"q":"A feature is null for many production requests but not in training. What do you do?","a":"Check the serving pipeline and feature freshness, add input validation and default handling, alert on null rate, and align training with what is actually available at serving time."}
+],
+"scenarios": [
+{"q":"Describe how you would take a notebook model to production.","a":"Refactor into tested code, package the environment, track experiments and register the model, build a CI/CD pipeline to train and validate, deploy behind an API or batch job with a canary, and add monitoring for latency, drift and quality with a rollback path."},
+{"q":"Labels arrive weeks late. How do you monitor model quality meanwhile?","a":"Monitor proxies: input drift, prediction distribution, confidence and business signals. Backfill actual metrics when labels arrive and trigger retraining on drift alerts with human review."},
+{"q":"A new model beats the old offline. How do you decide to release it?","a":"Check it on a time-based holdout and key segments, then run shadow or an A/B test on live traffic with guardrail metrics, and promote only if online business metrics improve with an easy rollback."}
+]
+},
+"llm-apps": {
+"terms": [
+{"q":"What is a context window?","a":"The maximum number of tokens a model can take in and produce in one request, covering the prompt, retrieved context, history and output. Exceeding it truncates or errors."},
+{"q":"What is a system prompt vs a user prompt?","a":"The system prompt sets role, rules and format for the whole conversation and has higher priority. User messages carry the request. Never trust either to enforce security alone."},
+{"q":"What is a vector database?","a":"A store optimized for nearest-neighbor search over embeddings, using indexes such as HNSW, returning the most similar chunks to a query vector."},
+{"q":"What is few-shot prompting?","a":"Including a few worked input and output examples in the prompt so the model follows the pattern or format. Zero-shot gives only instructions."},
+{"q":"What is fine-tuning vs RAG?","a":"Fine-tuning changes model weights to teach style, format or skills. RAG supplies fresh or private knowledge at query time. RAG is better for changing facts and citations."},
+{"q":"What is structured output?","a":"Constraining the model to return JSON that matches a schema, via JSON mode or schema-constrained decoding, then validating it in code before use."}
+],
+"trouble": [
+{"q":"The RAG system answers confidently but wrongly. What do you check?","a":"First whether retrieval returned the right chunks; if not, fix chunking, embeddings, hybrid search or reranking. If it did, tighten the prompt to answer only from context, require citations and say when unsure."},
+{"q":"The model returns malformed JSON occasionally. How do you handle it?","a":"Use schema-constrained or structured output modes, validate with a schema, and retry with the validation error fed back. Keep the schema simple and set temperature low."},
+{"q":"Costs and latency spiked after launch. What are the levers?","a":"Trim prompt and context size, cache prompts and responses, route simple requests to a smaller model, stream output, limit output tokens, and batch non-urgent work."},
+{"q":"A user input makes the bot ignore its instructions. What is it and how do you mitigate it?","a":"Prompt injection. Separate and label untrusted content, restrict tool permissions, validate tool arguments and outputs, require confirmation for sensitive actions, and never put secrets in the prompt."}
+],
+"scenarios": [
+{"q":"Design a support chatbot over internal documents.","a":"Ingest and chunk the docs with metadata, embed into a vector store, retrieve with hybrid search and rerank, answer with citations from retrieved text only, enforce access control per user, add guardrails and a human handoff, and evaluate on a labeled question set."},
+{"q":"How do you know if a prompt change made the application better?","a":"Keep a versioned evaluation set of real cases, score outputs with deterministic checks, human review and calibrated LLM judges, compare against the baseline, and review failures by category before shipping."},
+{"q":"An agent with tool access must be safe to run in production. What controls do you add?","a":"Least-privilege tools, argument validation, step and cost limits, sandboxed execution, human approval for irreversible actions, full logging of tool calls, and evaluation of trajectories as well as final answers."}
+]
+}
+}

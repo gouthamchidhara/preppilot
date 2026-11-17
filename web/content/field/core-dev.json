@@ -1,0 +1,183 @@
+{
+"dsa": {
+"terms": [
+{"q":"What is an array vs a linked list?","a":"An array is contiguous memory with O(1) index access and costly mid-insertion. A linked list chains nodes by pointers: O(1) insert given the node, O(n) lookup, poor cache locality."},
+{"q":"What is a hash table?","a":"A structure mapping keys to buckets through a hash function. Average O(1) insert, lookup and delete; worst case O(n) when many keys collide."},
+{"q":"What is a heap / priority queue?","a":"A complete binary tree where each parent is ordered against its children. Peek min or max is O(1), insert and extract are O(log n). Used for top-K and scheduling."},
+{"q":"BFS vs DFS?","a":"BFS uses a queue and explores level by level, so it finds shortest paths in unweighted graphs. DFS uses a stack or recursion and goes deep first; it suits cycle detection and topological sort."},
+{"q":"What is amortized complexity?","a":"The average cost per operation over a sequence of operations. A dynamic array append is O(1) amortized even though an occasional resize copies all elements in O(n)."},
+{"q":"What is dynamic programming?","a":"Solving a problem by combining solutions to overlapping subproblems, stored via memoization (top down) or a table (bottom up) so each subproblem is computed once."}
+],
+"trouble": [
+{"q":"Recursive solution throws stack overflow on large input.","a":"Recursion depth equals input size. Convert to an iterative version with an explicit stack, add memoization to cut calls, or use tail-call style where the language supports it."},
+{"q":"Off-by-one errors in binary search or sliding window loops.","a":"Fix the invariant first: decide whether bounds are inclusive or half-open and keep it consistent. Use mid = lo + (hi - lo) / 2 and test with empty, one-element and two-element inputs."},
+{"q":"Solution times out on large inputs with nested loops.","a":"Find the repeated work. Typical fixes: a hash map for lookups, sorting plus two pointers, a prefix sum, or memoization. State the new time and space complexity."},
+{"q":"Infinite loop when traversing a graph.","a":"Missing visited set. Mark a node visited when you enqueue or push it, not when you pop it, so cycles and duplicates cannot re-enter the frontier."}
+],
+"scenarios": [
+{"q":"Given a stream of events, how do you return the top 10 most frequent items?","a":"Count with a hash map, then keep a min-heap of size 10 keyed by count: O(n log 10). For unbounded streams mention approximate structures such as count-min sketch."},
+{"q":"You are given a problem you have never seen in an interview. How do you proceed?","a":"Restate it, ask about constraints and edge cases, give a brute force with its complexity, then improve it by spotting the bottleneck. Code cleanly, then walk through a test case aloud."}
+]},
+"system-design": {
+"terms": [
+{"q":"What is a load balancer?","a":"A component that spreads requests across instances using round robin, least connections or hashing, with health checks. L4 balances on TCP; L7 can route on HTTP paths and headers."},
+{"q":"What is a CDN?","a":"A network of edge servers that cache content close to users, cutting latency and origin load. Freshness is governed by Cache-Control headers and explicit invalidation."},
+{"q":"What is sharding vs replication?","a":"Sharding splits data across nodes by key to scale writes and storage. Replication copies the same data to several nodes for availability and read scaling."},
+{"q":"What is the CAP theorem?","a":"During a network partition a distributed store must choose between consistency and availability. It says nothing about the normal case, where latency vs consistency is the real trade-off."},
+{"q":"What is a message queue?","a":"A broker that decouples producers from consumers, buffers load spikes and enables retries. Delivery is usually at-least-once, so consumers must be idempotent."},
+{"q":"What are SLA, SLO and SLI?","a":"SLI is a measured indicator such as p99 latency. SLO is the internal target for it. SLA is the contractual promise to customers, with consequences if missed."}
+],
+"trouble": [
+{"q":"Cache stampede: many requests hit the database when a hot key expires.","a":"Use request coalescing or a lock so one caller refills the key, add jitter to TTLs, or refresh early in the background. Serving slightly stale data while refreshing also works."},
+{"q":"One shard receives far more traffic than the rest (hot key).","a":"Pick a higher-cardinality shard key, add a salt suffix to spread a hot key, cache the hot item, or use consistent hashing with virtual nodes."},
+{"q":"A retry storm takes down a struggling downstream service.","a":"Use exponential backoff with jitter, retry budgets, timeouts and a circuit breaker. Shed load at the edge and make retried operations idempotent."},
+{"q":"Users see stale data right after writing, when reading from replicas.","a":"Replication lag. Route a user's reads to the primary shortly after a write (read-your-writes), or pass a version token and read from a replica that has caught up."}
+],
+"scenarios": [
+{"q":"Design a URL shortener. Walk me through your approach.","a":"Clarify scale, read-heavy ratio and expiry. Generate unique ids (counter encoded in base62, or pre-allocated ranges), store id to URL in a key-value store, cache hot reads, redirect with 301 or 302, add analytics asynchronously."},
+{"q":"Traffic grows 10x next quarter. How do you prepare the system?","a":"Measure first: find the bottleneck with load tests and metrics. Scale stateless tiers horizontally, add caching, read replicas and queues, then plan sharding for the database. Set alerts and capacity targets."},
+{"q":"Design a rate limiter for a public API.","a":"Choose token bucket or sliding window, keyed by API key or IP. Keep counters in Redis with atomic operations, return 429 with Retry-After, and decide whether to fail open or closed if the store is down."}
+]},
+"api-design": {
+"terms": [
+{"q":"What is REST?","a":"An architectural style using resources identified by URLs, manipulated through standard HTTP verbs, with stateless requests and cacheable responses."},
+{"q":"PUT vs PATCH?","a":"PUT replaces the whole resource and is idempotent. PATCH applies a partial change; it is idempotent only if designed so (for example JSON Merge Patch)."},
+{"q":"What is an idempotency key?","a":"A client-generated unique value sent in a header so the server can detect a repeated request, such as a retried payment POST, and return the original result instead of repeating the action."},
+{"q":"What is OpenAPI?","a":"A machine-readable specification (YAML or JSON) describing endpoints, schemas and auth. It drives documentation, client generation, mocking and contract validation."},
+{"q":"What is HATEOAS?","a":"Responses include links to related actions and resources so clients navigate by following links rather than hard-coding URLs. It is rarely implemented fully in practice."},
+{"q":"What is API versioning?","a":"A way to evolve an API without breaking clients: a path segment such as /v2, a header or a media type. Prefer additive, backward-compatible changes and deprecate old versions with notice."}
+],
+"trouble": [
+{"q":"Browser call fails with a CORS error.","a":"The server lacks Access-Control-Allow-Origin for that origin, or the preflight OPTIONS request is not handled. Configure allowed origins, methods and headers on the server; the client cannot fix it."},
+{"q":"Clients get duplicate orders after a timeout and retry.","a":"The POST is not idempotent. Add an idempotency key stored with the result, or use a unique business constraint so the repeat is rejected or returns the original."},
+{"q":"Offset pagination returns duplicates or skips items while data changes.","a":"Offsets shift when rows are inserted or deleted. Switch to cursor (keyset) pagination on a stable, unique sort key and return the next cursor in the response."},
+{"q":"A new release broke existing mobile clients.","a":"A breaking change such as a removed or renamed field shipped without versioning. Restore compatibility, make changes additive, and add contract tests and a deprecation policy."}
+],
+"scenarios": [
+{"q":"Design the API for a booking system with cancellations.","a":"Resources: /bookings with POST to create (idempotency key), GET by id, and cancel as a state change via PATCH or POST /bookings/{id}/cancel. Return 201 with Location, 409 on conflicts, validate input with 422, and paginate lists."},
+{"q":"How would you roll out a breaking change to a widely used API?","a":"Introduce the new version alongside the old, publish a migration guide, add deprecation and Sunset headers, track usage per client, contact heavy users, and remove the old version only after traffic drops."}
+]},
+"sql": {
+"terms": [
+{"q":"What is a primary key vs a foreign key?","a":"A primary key uniquely identifies each row and cannot be NULL. A foreign key references another table's key and enforces referential integrity."},
+{"q":"WHERE vs HAVING?","a":"WHERE filters rows before grouping and cannot use aggregates. HAVING filters groups after aggregation, for example HAVING COUNT(*) > 5."},
+{"q":"What is a window function?","a":"A function computed over a set of rows related to the current row, using OVER (PARTITION BY ... ORDER BY ...), without collapsing rows. Examples: ROW_NUMBER, RANK, SUM OVER."},
+{"q":"What is an index?","a":"A separate structure, usually a B-tree, that lets the database find rows without scanning the whole table. It speeds reads but costs storage and slows writes."},
+{"q":"What is a transaction and what does ACID mean?","a":"A unit of work that commits or rolls back as a whole. ACID: atomicity, consistency, isolation, durability."},
+{"q":"UNION vs UNION ALL?","a":"UNION removes duplicate rows, which requires extra work. UNION ALL keeps all rows and is faster; use it when duplicates are impossible or wanted."}
+],
+"trouble": [
+{"q":"Query is slow on a large table.","a":"Run EXPLAIN (ANALYZE) to see the plan. Look for sequential scans, add an index matching the filter and sort columns, select only needed columns, and avoid functions on indexed columns."},
+{"q":"Join returns more rows than expected.","a":"A one-to-many or many-to-many join multiplies rows. Check join keys and cardinality, aggregate before joining, or use DISTINCT only after understanding why duplicates appear."},
+{"q":"Deadlock detected between two transactions.","a":"Transactions lock the same rows in different orders. Acquire locks in a consistent order, keep transactions short, and retry the victim transaction."},
+{"q":"WHERE col = NULL returns nothing.","a":"NULL is not equal to anything, including itself. Use IS NULL or IS NOT NULL, and remember NOT IN with a NULL in the list returns no rows."},
+{"q":"Index exists but the planner ignores it.","a":"Common causes: a function or cast on the column, a leading wildcard in LIKE, low selectivity, a type mismatch, or stale statistics. Rewrite the predicate or run ANALYZE."}
+],
+"scenarios": [
+{"q":"Find the second highest salary per department.","a":"Use DENSE_RANK() OVER (PARTITION BY dept ORDER BY salary DESC) in a subquery and filter rank = 2. Mention that ties and departments with a single salary behave differently with ROW_NUMBER."},
+{"q":"A production report query went from seconds to minutes after data growth. What do you do?","a":"Capture the plan with EXPLAIN ANALYZE, check missing or unused indexes and stale statistics, rewrite expensive joins or subqueries, consider partitioning or a pre-aggregated table, and verify the fix on production-sized data."},
+{"q":"How would you safely add a NOT NULL column to a huge table?","a":"Add it nullable with a default handled in application code, backfill in small batches, then add the constraint once data is complete. This avoids a long table lock."}
+]},
+"git": {
+"terms": [
+{"q":"What is the working tree, staging area and repository?","a":"The working tree holds your files on disk. The staging area (index) holds the snapshot for the next commit, built with git add. The repository stores committed history."},
+{"q":"What is a branch?","a":"A lightweight movable pointer to a commit. Creating one is cheap, and committing advances the branch pointer."},
+{"q":"git fetch vs git pull?","a":"fetch downloads remote commits without changing your branch. pull is fetch followed by merge (or rebase with --rebase) into the current branch."},
+{"q":"What is a fast-forward merge?","a":"When the target branch has no new commits, git just moves its pointer forward, creating no merge commit. Use --no-ff to force a merge commit."},
+{"q":"What is git stash?","a":"Saves uncommitted changes on a stack and restores a clean working tree. Reapply with git stash pop."},
+{"q":"What is cherry-pick?","a":"Applies the changes of a specific commit onto the current branch as a new commit. Useful for backporting a fix."}
+],
+"trouble": [
+{"q":"Detached HEAD state.","a":"HEAD points at a commit, not a branch, so new commits can be lost. Run git switch -c new-branch to keep them, or git switch main to leave."},
+{"q":"Push rejected (non-fast-forward).","a":"The remote has commits you lack. Run git pull --rebase (or fetch and merge), resolve conflicts, then push. Do not force push to a shared branch."},
+{"q":"Committed a secret or API key.","a":"Revoke and rotate the secret first, since it is already exposed. Then remove it from history with git filter-repo or BFG and force push, and tell collaborators to re-clone."},
+{"q":"Merge conflict markers in files.","a":"Edit the files to the intended result, remove the <<<<<<<, ======= and >>>>>>> markers, git add them, then git commit (or git rebase --continue). git merge --abort backs out."},
+{"q":"Accidentally committed to the wrong branch.","a":"Create the right branch from here with git branch feature, move the wrong branch back with git reset --hard origin/main (if unpushed), then switch to feature."}
+],
+"scenarios": [
+{"q":"A release shipped with a bug and you must undo it on main without rewriting history. What do you do?","a":"Use git revert <sha> (with -m 1 for a merge commit) to create a new commit that undoes the change, push it through the normal review and CI path, then fix forward properly on a branch."},
+{"q":"Your feature branch is two weeks behind main and conflicts heavily. How do you handle it?","a":"Fetch, then rebase or merge main in regularly. Resolve conflicts in small steps, run tests after, and in future keep branches short lived or use feature flags with trunk-based development."},
+{"q":"You need to find which commit introduced a regression.","a":"Use git bisect: mark a known bad and a known good commit, let git binary search, run the test at each step (or git bisect run script), then inspect the culprit with git show."}
+]},
+"testing": {
+"terms": [
+{"q":"Unit vs integration vs end-to-end test?","a":"Unit tests check one piece in isolation and run fast. Integration tests check components working together, such as code and a database. End-to-end tests drive the whole system as a user would."},
+{"q":"What is a test double?","a":"A stand-in for a real dependency: dummy, stub (canned answers), fake (working lightweight version), mock (verifies interactions) and spy (records calls)."},
+{"q":"What is code coverage?","a":"The share of code executed by tests, by line or branch. It shows what is untested, not whether the assertions are meaningful."},
+{"q":"What is a fixture?","a":"The fixed setup state a test runs against, such as seeded data or configured objects, created before and cleaned up after the test."},
+{"q":"What is a regression test?","a":"A test that guards behaviour that previously worked or a bug that was fixed, so it cannot silently return."},
+{"q":"What is mutation testing?","a":"Tools make small changes to code and check that tests fail. Surviving mutants reveal weak assertions that coverage alone hides."}
+],
+"trouble": [
+{"q":"Flaky test that passes locally and fails in CI.","a":"Look for timing, shared state, test order dependence, randomness or time zones. Replace sleeps with explicit waits, isolate data, fake the clock, and quarantine while fixing."},
+{"q":"Tests are slow and developers stop running them.","a":"Push checks down the pyramid, run tests in parallel, replace heavy dependencies with fakes or containers started once, and split a fast smoke suite from the full one."},
+{"q":"Tests break on every refactor.","a":"They are coupled to implementation details, often through over-mocking. Test observable behaviour through public interfaces and mock only at system boundaries."},
+{"q":"Test passes but the bug reaches production.","a":"The assertions are weak or the case is missing. Reproduce with a failing test first, fix, and add edge cases; check with mutation testing or review the assertion quality."}
+],
+"scenarios": [
+{"q":"You inherit a legacy module with no tests and must change it. What is your approach?","a":"Write characterization tests that pin current behaviour, find seams to isolate dependencies, make the change in small steps under test cover, and refactor only once the safety net exists."},
+{"q":"How do you decide what to automate?","a":"Automate stable, repetitive, high-value and high-risk paths, favouring lower levels of the pyramid. Leave one-off, rapidly changing or exploratory checks manual."},
+{"q":"A third-party payment API is unreliable in tests. How do you test the integration?","a":"Hide it behind an interface, use fakes or recorded stubs for most tests, add a few contract tests against the sandbox, and test failure paths such as timeouts and error responses."}
+]},
+"oop-design-patterns": {
+"terms": [
+{"q":"What are the SOLID principles?","a":"Single responsibility, Open/closed, Liskov substitution, Interface segregation, Dependency inversion. Guidelines for keeping classes cohesive, extensible and loosely coupled."},
+{"q":"What is dependency injection?","a":"Supplying an object's dependencies from outside (constructor, setter or container) instead of creating them inside, which loosens coupling and makes testing easier."},
+{"q":"Interface vs abstract class?","a":"An interface defines a contract with no state and allows multiple implementation. An abstract class can share state and partial implementation but allows only single inheritance in most languages."},
+{"q":"What is the Strategy pattern?","a":"Encapsulates interchangeable algorithms behind a common interface so behaviour can be swapped at runtime without conditionals."},
+{"q":"What is the Factory pattern?","a":"Centralizes object creation so callers depend on an abstraction rather than concrete classes, hiding construction details."},
+{"q":"What is the Observer pattern?","a":"A subject notifies registered observers when its state changes, giving one-to-many updates with loose coupling. Event listeners are a common example."}
+],
+"trouble": [
+{"q":"A class has grown huge and does everything (god class).","a":"It violates single responsibility. Identify cohesive groups of methods, extract them into collaborating classes, and cover the behaviour with tests first."},
+{"q":"A subclass breaks code that expects the base class.","a":"A Liskov substitution violation. Prefer composition, narrow the base contract, or restructure so subclasses honour preconditions and postconditions."},
+{"q":"Long if/else or switch on type keeps growing.","a":"Replace with polymorphism or the Strategy pattern so each case lives in its own class, and adding a case does not edit existing code."},
+{"q":"Singleton makes unit tests interfere with each other.","a":"Global state persists between tests. Inject the instance through an interface, let the container manage its lifetime, and reset or fake it in tests."}
+],
+"scenarios": [
+{"q":"Design a parking lot system. How do you model it?","a":"Identify entities: ParkingLot, Level, Spot types, Vehicle types, Ticket. Use inheritance sparingly, a strategy for spot assignment and pricing, and keep responsibilities small. Discuss extension points such as new vehicle types."},
+{"q":"You need to add a new payment method to existing checkout code. How do you do it cleanly?","a":"Define a PaymentMethod interface, implement the new class, register it through a factory or DI, and leave existing code unchanged. That follows open/closed and is easy to test."},
+{"q":"When would you not use a design pattern?","a":"When the problem is simple. Patterns add indirection; apply one only when a real, recurring force such as variation or coupling justifies it."}
+]},
+"concurrency": {
+"terms": [
+{"q":"Process vs thread?","a":"A process has its own memory space. Threads share memory inside a process, so they are cheaper to create but need synchronization."},
+{"q":"What is a lock-free or atomic operation?","a":"An operation that completes indivisibly, often via compare-and-swap, so threads can update shared values without a mutex."},
+{"q":"What is a thread-safe object?","a":"One that behaves correctly when used by multiple threads without extra coordination, through immutability, locking or atomics."},
+{"q":"What is a future or promise?","a":"A handle for a result that will be available later, letting code continue and then await or compose the outcome."},
+{"q":"What is a producer-consumer queue?","a":"A shared queue where producers add work and consumers take it, decoupling rates. A bounded queue gives backpressure."},
+{"q":"What is starvation vs livelock?","a":"Starvation: a thread never gets the resource it needs. Livelock: threads keep reacting to each other and make no progress, yet are not blocked."}
+],
+"trouble": [
+{"q":"Intermittent wrong results under load.","a":"Likely a race condition on shared mutable state. Find the unsynchronized access, protect it with a lock, use atomics or immutable data, and reproduce with stress tests or a race detector."},
+{"q":"Application hangs with threads waiting forever.","a":"Suspect a deadlock. Take a thread dump, look for a cycle of locks, then enforce a consistent lock order, use timeouts or reduce lock scope."},
+{"q":"Adding threads made the program slower.","a":"Causes: lock contention, false sharing, context switching, or work that is not CPU parallel. Profile, reduce shared state, and size pools to cores or to I/O waiting."},
+{"q":"Thread pool exhausted and requests queue up.","a":"Blocking calls hold all workers. Separate pools for blocking and CPU work, set timeouts, bound queues, and use async I/O where it fits."}
+],
+"scenarios": [
+{"q":"Implement a thread-safe counter or cache. What do you consider?","a":"Choose atomics or a lock, think about visibility and compound operations such as check-then-act, prefer concurrent collections, and mention contention and per-key locking for scale."},
+{"q":"Process a million records faster using multiple workers. How do you design it?","a":"Partition the data, use a bounded worker pool fed by a queue, keep workers stateless, handle errors and retries, and merge results. Measure to choose the pool size."},
+{"q":"Two services update the same account balance concurrently. How do you avoid lost updates?","a":"Use a database transaction with row locking or optimistic concurrency with a version column, and retry on conflict. Atomic SQL updates such as balance = balance - x also work."}
+]},
+"web-fundamentals": {
+"terms": [
+{"q":"What is DNS?","a":"The system that resolves domain names to IP addresses, using caches and a hierarchy of resolvers and authoritative servers, with TTLs controlling cache time."},
+{"q":"What is the DOM?","a":"The browser's in-memory tree representation of an HTML document, which JavaScript can read and modify."},
+{"q":"What is CORS?","a":"A browser mechanism that blocks cross-origin requests unless the server allows the origin through Access-Control-Allow-* headers. It protects users, not servers."},
+{"q":"Cookies vs localStorage vs sessionStorage?","a":"Cookies are sent with every request and can be HttpOnly. localStorage persists per origin and is script accessible. sessionStorage lasts for the tab. Avoid storing tokens in script-readable storage."},
+{"q":"What is HTTP caching?","a":"Reuse of responses controlled by Cache-Control, ETag and Last-Modified. Conditional requests return 304 Not Modified when the content is unchanged."},
+{"q":"What is XSS vs CSRF?","a":"XSS injects attacker script into a page; fix with output encoding and CSP. CSRF tricks a logged-in browser into sending a request; fix with SameSite cookies and anti-CSRF tokens."}
+],
+"trouble": [
+{"q":"Console shows a blocked CORS request.","a":"The API response lacks the right Access-Control-Allow-Origin, or the preflight failed. Fix server headers; a proxy is only a dev workaround."},
+{"q":"Users still see the old version of a site after deploy.","a":"Stale browser or CDN cache. Use content-hashed filenames for assets, short or no-cache for HTML, and purge the CDN when needed."},
+{"q":"Mixed content warning after moving to HTTPS.","a":"The page loads resources over http. Change them to https or relative URLs, and add an HSTS header once everything works."},
+{"q":"Login works but the session cookie is not sent.","a":"Check the Secure flag over HTTP, SameSite restrictions on cross-site requests, the Domain and Path attributes, and credentials mode on fetch."},
+{"q":"Page is slow to become interactive.","a":"Measure with Lighthouse or DevTools. Reduce and defer JavaScript, compress and size images, use caching and a CDN, and remove render-blocking resources."}
+],
+"scenarios": [
+{"q":"What happens when you type a URL and press Enter?","a":"DNS resolution, TCP connection, TLS handshake, HTTP request, server response, then the browser parses HTML, builds the DOM and CSSOM, fetches subresources, runs scripts and renders."},
+{"q":"A page that loaded fast last month is now slow. How do you investigate?","a":"Compare with a baseline using the network and performance panels, check payload size, third-party scripts, cache headers and server response time, and bisect recent changes."},
+{"q":"How would you secure a login form?","a":"Serve over HTTPS, hash passwords with bcrypt or argon2, rate limit and lock out, use Secure, HttpOnly and SameSite cookies, add CSRF protection and MFA, and avoid leaking whether an account exists."}
+]}
+}

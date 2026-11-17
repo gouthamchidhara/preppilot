@@ -1,0 +1,162 @@
+{
+"sql-advanced": {
+"terms": [
+{"q":"What is a window frame?","a":"The set of rows around the current row that a window function sees, set with `ROWS BETWEEN ... AND ...` or `RANGE BETWEEN ...`. With ORDER BY and no frame, the default is `RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW`."},
+{"q":"ROW_NUMBER vs RANK vs DENSE_RANK?","a":"ROW_NUMBER gives unique sequential numbers even for ties. RANK gives ties the same number and skips the next ones (1,1,3). DENSE_RANK gives ties the same number without gaps (1,1,2)."},
+{"q":"What is a correlated subquery?","a":"A subquery that references columns from the outer query, so it logically runs once per outer row. Often rewritten as a join or window function for performance."},
+{"q":"EXISTS vs IN?","a":"EXISTS stops at the first match and handles NULLs safely. NOT IN returns no rows if the subquery yields any NULL, which is a classic bug; prefer NOT EXISTS."},
+{"q":"What is an execution plan?","a":"The optimizer's chosen strategy for a query: scan types, join order and join algorithms, with row estimates. Read it with `EXPLAIN` or `EXPLAIN ANALYZE` to see estimated versus actual rows."}
+],
+"trouble": [
+{"q":"A LAST_VALUE window returns the current row's value instead of the last in the partition. Why?","a":"The default frame ends at CURRENT ROW. Specify `ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING`, or use FIRST_VALUE with the order reversed."},
+{"q":"NOT IN returns zero rows when you expect results. What is wrong?","a":"The subquery contains a NULL, so every comparison evaluates to unknown. Filter NULLs out in the subquery or switch to `NOT EXISTS`."},
+{"q":"A join doubled the totals in a SUM. What happened?","a":"Fan-out: the join key is not unique on one side, so rows are duplicated before aggregation. Aggregate the many side first in a CTE, or join on the true grain, and check counts before and after the join."},
+{"q":"A query is slow after a filter on a function of a column, such as `WHERE DATE(ts) = ...`. Why?","a":"Wrapping the column in a function defeats indexes and partition pruning. Rewrite as a range: `ts >= '2026-01-01' AND ts < '2026-01-02'`."}
+],
+"scenarios": [
+{"q":"A dashboard query that ran in seconds now takes minutes. How do you investigate?","a":"Get the plan with `EXPLAIN ANALYZE`, compare estimated and actual rows, look for full scans, spills and bad join order. Check stale statistics, new data volume and missing partition filters. Fix with filters, pre-aggregation or statistics refresh, then re-measure."},
+{"q":"You must report daily active users with zeros for days that had no activity. How?","a":"Generate a calendar of dates, LEFT JOIN the activity counts onto it, and COALESCE nulls to zero. A date spine table is the usual approach in a warehouse."},
+{"q":"Product asks for the latest order per customer in a table with billions of rows. What do you write?","a":"Use `ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY order_ts DESC)` and keep rn = 1, or a QUALIFY clause where supported. Make sure the table is clustered or partitioned so the sort is cheap."}
+]
+},
+"data-modeling": {
+"terms": [
+{"q":"What is grain?","a":"What one row of a fact table represents, such as one order line or one daily account balance. Declare it first; every measure and dimension must be true at that grain."},
+{"q":"Surrogate key vs natural key?","a":"A natural key comes from the source system (order number, email). A surrogate key is a warehouse-generated meaningless integer or hash, which survives source key changes and enables SCD Type 2 history."},
+{"q":"What is a conformed dimension?","a":"A dimension shared by several fact tables with identical keys and meaning, such as date or customer. It lets you drill across facts consistently."},
+{"q":"What is a degenerate dimension?","a":"A dimension attribute stored directly in the fact table with no dimension table of its own, such as an order number or invoice id."},
+{"q":"Additive vs semi-additive vs non-additive measures?","a":"Additive measures sum across all dimensions (revenue). Semi-additive sum across some but not time (account balance). Non-additive cannot be summed (ratios, unit price)."}
+],
+"trouble": [
+{"q":"Revenue totals differ between two reports built on the same warehouse. Where do you look?","a":"Check grain mismatch, duplicated rows from a join to a non-unique dimension, different filters or time zones, and metrics defined separately in each report. Fix by defining the metric once in a modeled layer."},
+{"q":"A fact row has no matching dimension row after a load. What is the cause and fix?","a":"Late-arriving dimension or a missing key. Insert an inferred placeholder member (an unknown row) and update it when the real record arrives; never drop the fact row."},
+{"q":"An SCD Type 2 dimension has overlapping validity ranges. Why?","a":"Usually the merge closes the old row and inserts the new one with inconsistent timestamps, or the job reran without being idempotent. Use one load timestamp, close with `valid_to = new valid_from`, and add a uniqueness test on key plus current flag."},
+{"q":"Queries on a wide denormalized table are slow and storage is large. What do you consider?","a":"Check for repeated text columns and consider moving them into dimensions, use columnar compression, and cluster by common filters. Denormalize only where joins are the measured cost."}
+],
+"scenarios": [
+{"q":"You are modeling an e-commerce business from scratch. How do you start?","a":"Pick the business process (orders), declare the grain (order line), then identify dimensions (date, customer, product) and measures (quantity, amount). Confirm with stakeholders, build the star schema, and add tests for key uniqueness and referential integrity."},
+{"q":"Customers change region and finance wants historical sales by the region at time of sale. How do you model it?","a":"Use an SCD Type 2 customer dimension with valid_from, valid_to and is_current, and join facts to the surrogate key that was current at the transaction time. Type 1 would restate history, which finance does not want."},
+{"q":"Source teams keep changing schemas and your warehouse breaks weekly. What do you propose?","a":"Land raw data unchanged in a bronze layer, add schema checks and data contracts with producers, and absorb additive changes automatically. Model stable silver and gold layers on top so downstream consumers are insulated."}
+]
+},
+"etl-elt": {
+"terms": [
+{"q":"What is a full load vs an incremental load?","a":"A full load reloads the entire source each run, simple but costly. An incremental load pulls only new or changed rows, tracked by a watermark column or CDC log, and needs deletes and late data handled separately."},
+{"q":"What is an upsert (MERGE)?","a":"An operation that updates rows matching a key and inserts the rest, in one statement: `MERGE INTO target USING staging ON key WHEN MATCHED THEN UPDATE WHEN NOT MATCHED THEN INSERT`. Basis of idempotent loads."},
+{"q":"What is a backfill?","a":"Re-running a pipeline over a past date range to fill gaps or correct data after a bug or logic change. Safe only if the job is idempotent and parameterized by date."},
+{"q":"What is a staging table?","a":"An intermediate table where extracted data lands before validation and transformation, letting you check it and swap or merge into the target atomically."},
+{"q":"What is a dbt model materialization?","a":"How dbt persists a model: view, table, incremental, or ephemeral. Incremental builds only new rows using `is_incremental()` and a `unique_key` for merges."}
+],
+"trouble": [
+{"q":"Rerunning a failed load created duplicate rows. How do you fix and prevent it?","a":"The load was append-only and not idempotent. Delete-and-insert the affected partition in one transaction or use MERGE on a business key; add a uniqueness test to catch regressions."},
+{"q":"An incremental load on `updated_at` misses rows. Why?","a":"Rows committed late with older timestamps, clock skew, or a strict greater-than comparison on the watermark. Use an overlap window (reload the last N hours), or use CDC, and dedupe on the key."},
+{"q":"A dbt incremental model drifted from the source after the logic changed. What do you do?","a":"Incremental models do not reprocess history. Run `dbt run --full-refresh` for that model, or backfill the affected range, and consider an `on_schema_change` setting for column changes."},
+{"q":"A pipeline fails because a source added a column. How do you handle it?","a":"Select explicit columns instead of `SELECT *`, land raw data in a schema-tolerant format, and add schema-change detection with alerts. Evolve downstream models deliberately."}
+],
+"scenarios": [
+{"q":"A nightly job takes six hours and is missing its SLA. How do you speed it up?","a":"Profile which stage is slow. Switch to incremental loads, partition by date and process partitions in parallel, push transformations into the warehouse (ELT), use columnar formats, and drop unnecessary full scans."},
+{"q":"Finance finds that yesterday's numbers changed overnight. How do you respond?","a":"Identify the cause: late-arriving data, a reprocessing job, or a source correction. Show the lineage and what changed, decide whether to freeze snapshots for closed periods, and add freshness and reconciliation checks."},
+{"q":"You need to ingest a production database into the warehouse without loading the source. What approach?","a":"Use log-based CDC (for example Debezium reading the WAL) to stream inserts, updates and deletes to the lake, then merge them into tables. It avoids heavy queries on the source and captures deletes."}
+]
+},
+"spark": {
+"terms": [
+{"q":"What is a DataFrame vs an RDD?","a":"An RDD is a low-level distributed collection of objects with no schema. A DataFrame has named, typed columns and goes through the Catalyst optimizer, so it is usually faster and preferred."},
+{"q":"What is a partition?","a":"A chunk of data processed by one task on one core. The count controls parallelism; a common target is 2 to 4 tasks per core with partitions around 100 to 200 MB."},
+{"q":"What is the Catalyst optimizer?","a":"Spark SQL's query optimizer: it builds a logical plan, applies rules like predicate pushdown and column pruning, then selects a physical plan. See it with `df.explain()`."},
+{"q":"What is Adaptive Query Execution (AQE)?","a":"A Spark 3 feature that re-optimizes plans at runtime using shuffle statistics: coalesces small shuffle partitions, switches join strategies and splits skewed partitions. Enable with `spark.sql.adaptive.enabled`."},
+{"q":"What does spark-submit do?","a":"Launches an application on a cluster, with options for master, deploy mode, executor memory and cores, and dependencies: `spark-submit --master yarn --deploy-mode cluster --executor-memory 8g app.py`."}
+],
+"trouble": [
+{"q":"An executor dies with OutOfMemoryError. What do you check?","a":"Oversized partitions, skew, a large collect or broadcast, or too many cores per executor sharing memory. Increase partitions, raise executor memory or overhead, avoid `collect()`, and handle skewed keys."},
+{"q":"One task runs far longer than the rest in a stage. What is it and what do you do?","a":"Data skew on a join or group key. Check the Spark UI task duration distribution, enable AQE skew join, salt the hot key, or broadcast the smaller side."},
+{"q":"The job writes thousands of tiny files. Why and how do you fix it?","a":"Too many shuffle partitions or writing with high-cardinality partitioning. Use `coalesce` or `repartition` before write, tune `spark.sql.shuffle.partitions`, or compact files afterward."},
+{"q":"Spill to disk is high in the Spark UI. What does it mean?","a":"Shuffle or aggregation data did not fit in execution memory and was written to disk, slowing the stage. Add partitions so each is smaller, increase executor memory, or reduce data earlier with filters."}
+],
+"scenarios": [
+{"q":"A join between a huge table and a small lookup is slow. What do you do?","a":"Broadcast the small table with `broadcast(df)` or raise `spark.sql.autoBroadcastJoinThreshold`, avoiding the shuffle of the large side. Confirm in the plan that BroadcastHashJoin is chosen."},
+{"q":"A job that ran fine for months now fails at month end. How do you diagnose it?","a":"Compare input size and key distribution to a good run in the Spark UI, look for skew, spill and failed task reasons in the executor logs. Likely a data volume or skew change; tune partitions and handle skewed keys."},
+{"q":"You must process data from Kafka continuously with exactly-once results into Delta. How?","a":"Use Structured Streaming with checkpointing and an idempotent or transactional sink like Delta, which tracks batch ids. Set a watermark for late data and monitor lag and state size."}
+]
+},
+"airflow": {
+"terms": [
+{"q":"What is a DAG run vs a task instance?","a":"A DAG run is one execution of the DAG for a logical date. A task instance is one task within that run, with its own state such as queued, running, success or failed."},
+{"q":"What is an executor?","a":"The component that runs task instances: LocalExecutor on one machine, CeleryExecutor with a worker pool, KubernetesExecutor with a pod per task."},
+{"q":"What is the logical date (data interval)?","a":"The start of the data interval a run covers, not when it runs. A daily run for 2026-01-01 starts after that interval ends, at the start of 2026-01-02."},
+{"q":"What are pools and concurrency limits?","a":"Pools cap how many tasks of a resource group run at once, protecting a database or API. DAG-level `max_active_runs` and task-level `max_active_tis_per_dag` also limit concurrency."},
+{"q":"What is the TaskFlow API?","a":"A decorator-based way to write DAGs with `@dag` and `@task`, where return values pass between tasks through XCom automatically."}
+],
+"trouble": [
+{"q":"A DAG does not appear in the UI. What do you check?","a":"Import errors (see the UI banner or `airflow dags list-import-errors`), the file being in the dags folder, a top-level DAG object, and the scheduler parsing it. Heavy top-level code can also time out parsing."},
+{"q":"A task is stuck in queued. What are common causes?","a":"No free worker slots, a full pool, hitting `max_active_tasks`, or the executor or scheduler being unhealthy. Check pool usage, worker logs and scheduler heartbeat."},
+{"q":"Enabling a DAG triggered hundreds of runs at once. Why?","a":"`catchup=True` with an old start_date creates a run for every missed interval. Set `catchup=False` or limit with `max_active_runs`."},
+{"q":"A task succeeded but produced wrong data on retry. What is the likely cause?","a":"The task is not idempotent, for example appending instead of overwriting the partition for the run's date. Make writes keyed on the logical date so reruns replace the same output."}
+],
+"scenarios": [
+{"q":"A downstream task must run only after an upstream team's file arrives at an unpredictable time. What do you use?","a":"A sensor, ideally in deferrable mode so it does not hold a worker slot, with a timeout and a poke interval. Alternatively trigger the DAG from an event with the API or datasets."},
+{"q":"A critical DAG failed at 3 a.m. Describe how you make this observable.","a":"Set `retries` with backoff, `on_failure_callback` to alert Slack or PagerDuty, SLAs or freshness checks on the output, and runbook links in the alert. Include run id and logical date in the message."},
+{"q":"You need to rerun last month's data after fixing a bug. How?","a":"Clear the task instances for that date range or run `airflow dags backfill`, with the tasks idempotent and partition-scoped. Limit concurrency so the backfill does not starve daily runs."}
+]
+},
+"streaming": {
+"terms": [
+{"q":"What is a partition key?","a":"The record key hashed to choose a partition. Same key goes to the same partition, which preserves per-key ordering and enables per-key stateful processing."},
+{"q":"What is consumer lag?","a":"The difference between the latest offset in a partition and the consumer group's committed offset. Growing lag means consumers cannot keep up."},
+{"q":"What is ISR (in-sync replicas)?","a":"The set of replicas fully caught up with the partition leader. With `acks=all` a write is acknowledged only after all ISR members have it, bounded by `min.insync.replicas`."},
+{"q":"What is log compaction?","a":"A retention mode that keeps only the latest record per key, so a topic works as a changelog or table snapshot. Deleting a key uses a tombstone (null value)."},
+{"q":"Event time vs processing time?","a":"Event time is when the event happened; processing time is when the system sees it. Event-time processing with watermarks gives correct windows despite out-of-order or late data."}
+],
+"trouble": [
+{"q":"Consumer lag keeps growing. What do you check?","a":"Slow processing per record, too few consumers versus partitions, frequent rebalances, or a hot partition. Scale consumers up to the partition count, speed up handling, tune `max.poll.records` and `max.poll.interval.ms`."},
+{"q":"Consumers keep rebalancing. Why?","a":"A consumer exceeds `max.poll.interval.ms`, misses heartbeats (`session.timeout.ms`), or instances restart often. Reduce batch work per poll, use static membership and cooperative rebalancing."},
+{"q":"Duplicates appear downstream after a consumer crash. Why?","a":"At-least-once delivery: offsets were committed after processing, so uncommitted work replays. Make the sink idempotent or use transactions with `isolation.level=read_committed`."},
+{"q":"A producer gets `RecordTooLargeException`. What are the options?","a":"The message exceeds `max.request.size` or the broker's `message.max.bytes`. Prefer storing large payloads elsewhere and sending a reference; otherwise raise limits consistently on producer, broker and consumer."}
+],
+"scenarios": [
+{"q":"You need to count orders per minute from a Kafka topic with late events. How do you design it?","a":"Use a tumbling event-time window of one minute with a watermark that tolerates expected lateness, keyed by minute. Decide how to handle later data: drop it, send it to a side output, or update results downstream."},
+{"q":"A new consumer team wants to read the same topic without affecting existing consumers. What do you do?","a":"Give them their own consumer group id so they track independent offsets. Check broker capacity and quotas, and ensure retention is long enough for them to catch up."},
+{"q":"Message ordering matters per customer but throughput is too low. What do you do?","a":"Key messages by customer id and add partitions so different customers run in parallel while each customer stays ordered. Note adding partitions later changes key-to-partition mapping."}
+]
+},
+"warehouses": {
+"terms": [
+{"q":"What is a virtual warehouse in Snowflake?","a":"An independent compute cluster that runs queries, sized from XS upward and billed per second while running. Multiple warehouses share the same storage without contention."},
+{"q":"What is a lakehouse?","a":"An architecture that puts warehouse features (ACID tables, schema enforcement, SQL) on open file formats in object storage, using table formats like Delta Lake, Iceberg or Hudi."},
+{"q":"What is a table format (Iceberg, Delta, Hudi)?","a":"A metadata layer over Parquet files that tracks snapshots, schema and file lists, giving transactions, time travel and schema evolution on object storage."},
+{"q":"What is a materialized view?","a":"A precomputed and stored query result that the engine refreshes as base data changes, trading storage and refresh cost for faster reads."},
+{"q":"On-demand vs reserved capacity pricing?","a":"On-demand charges per bytes scanned or per second of compute, flexible but variable. Reserved or committed capacity (BigQuery slots, Snowflake capacity) lowers unit cost for predictable load."}
+],
+"trouble": [
+{"q":"A BigQuery query scans the full table despite a date filter. Why?","a":"The table is not partitioned on that column, the filter wraps the column in a function, or a partition filter is missing. Partition on the date column and filter on it directly; consider `require_partition_filter`."},
+{"q":"Snowflake credits are burning overnight. What do you check?","a":"Warehouses that never suspend or have a long auto-suspend, oversized warehouses, runaway queries, and serverless features. Review `QUERY_HISTORY` and `WAREHOUSE_METERING_HISTORY`, set resource monitors and `AUTO_SUSPEND`."},
+{"q":"Queries queue during morning peak. What are the options?","a":"Add a multi-cluster warehouse or more slots, separate workloads into different warehouses or reservations, and cache or pre-aggregate hot dashboards."},
+{"q":"A Delta table has become slow with many small files. What do you do?","a":"Compact with `OPTIMIZE`, optionally with ZORDER on filter columns, and enable auto compaction or optimized writes. Run `VACUUM` to remove old files after the retention period."}
+],
+"scenarios": [
+{"q":"Leadership wants to cut warehouse spend by 30 percent. Where do you start?","a":"Find top costs by query, user and table. Fix full scans with partitioning and clustering, right-size and auto-suspend compute, remove duplicated pipelines, materialize expensive repeated queries and archive cold data."},
+{"q":"Should a company choose a warehouse, a lake or a lakehouse for analytics and ML?","a":"A warehouse suits governed SQL BI. A lake suits cheap raw and unstructured data. A lakehouse covers both on open formats, fitting mixed BI and ML needs; weigh team skills, governance, vendor lock-in and cost."},
+{"q":"You must share data with an external partner securely. What do you use?","a":"Use native sharing (Snowflake secure shares, BigQuery Analytics Hub, Delta Sharing) with a view that exposes only permitted columns and rows, with masking and access auditing, rather than copying files."}
+]
+},
+"data-quality": {
+"terms": [
+{"q":"What is data lineage?","a":"A record of where data came from and which transformations produced it, down to column level. It supports impact analysis and root-cause debugging."},
+{"q":"What is a data SLA vs SLO?","a":"An SLO is an internal target such as data ready by 7 a.m. 99 percent of days. An SLA is the commitment to consumers, often with consequences when missed."},
+{"q":"What is data observability?","a":"Monitoring the health of data through freshness, volume, schema, distribution and lineage signals, so issues are detected before consumers notice."},
+{"q":"What is a data steward vs data owner?","a":"The owner is accountable for a dataset and its access decisions. The steward handles day-to-day quality, definitions and metadata."},
+{"q":"What is anonymization vs pseudonymization?","a":"Anonymization irreversibly removes identifiability. Pseudonymization replaces identifiers with tokens that can be reversed with extra data, so under GDPR it is still personal data."}
+],
+"trouble": [
+{"q":"A dashboard shows a sudden drop in daily orders. How do you triage?","a":"Check freshness and row counts upstream, then job failures and late data, schema or filter changes, and compare against the source. Use lineage to find the first broken table and notify consumers."},
+{"q":"A dbt `unique` test fails on a key. What do you do?","a":"Query for the duplicate keys, determine if the source produced them or a join fanned out, fix at the cause (dedupe with a window function or correct the join), and keep the test as a guard."},
+{"q":"Null rates in a column jumped after a deploy. What could it be?","a":"A source schema or format change, a broken join, or a code change dropping the mapping. Compare against the previous schema, check commit history, and add a not-null or distribution test."},
+{"q":"A PII column was found in an analytics table accessible to everyone. What are the steps?","a":"Restrict access immediately, determine exposure from audit logs, mask or drop the column and rebuild downstream copies, notify the privacy team per policy, and add classification tags and automated scans."}
+],
+"scenarios": [
+{"q":"You inherit a pipeline with no tests and frequent complaints. How do you improve quality?","a":"Start with the tables consumers rely on most. Add tests for uniqueness, not-null, accepted values and relationships, freshness checks and volume anomaly alerts, assign owners, and track incidents to prioritize further checks."},
+{"q":"A user asks you to delete all their data under GDPR. How does that work in a data platform?","a":"Locate the user's identifiers across systems using the catalog and lineage, delete or anonymize them in source, warehouse, backups and derived tables within the legal window, and log the request. Design with a central identifier to make this tractable."},
+{"q":"Two teams argue over the definition of an active customer. What do you do?","a":"Document one agreed definition in a shared semantic layer or metrics model, version it, and have a named owner. Expose it as the single source so both dashboards compute from the same logic."}
+]
+}
+}

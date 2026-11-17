@@ -1,0 +1,89 @@
+{
+  "js-core": {
+    "terms": [
+      { "q": "What is the call stack, heap and event loop?", "a": "The call stack tracks executing functions, the heap stores objects, and the event loop moves queued callbacks onto the stack when it is empty." },
+      { "q": "What is hoisting?", "a": "Declarations are registered before code runs. `var` and function declarations are hoisted (var as undefined), while `let` and `const` are hoisted but unusable until their declaration, the temporal dead zone." },
+      { "q": "What is a Promise and its states?", "a": "An object for a future value, either pending, fulfilled or rejected. Use `.then`, `.catch`, `.finally` or `await`; `Promise.all` waits for all, `allSettled` never rejects." },
+      { "q": "What is a higher-order function?", "a": "A function that takes or returns functions, such as `map`, `filter`, `reduce` or a decorator. It underlies callbacks and composition." },
+      { "q": "What is event delegation?", "a": "Attaching one listener to a parent and using `event.target` to handle events bubbling from children. It saves listeners and works for dynamically added elements." },
+      { "q": "What is a shallow vs deep copy?", "a": "A shallow copy (`{...obj}`, `slice`) copies top-level values but shares nested references. A deep copy duplicates nested data too, via `structuredClone`." }
+    ],
+    "trouble": [
+      { "q": "TypeError: Cannot read properties of undefined.", "a": "You accessed a property on `undefined`, often from missing data or an unfinished async call. Check the source, use optional chaining `a?.b`, and fix the cause instead of hiding it." },
+      { "q": "`this` is undefined inside a callback.", "a": "The method lost its binding when passed as a callback. Use an arrow function, `.bind(this)`, or call it through the object." },
+      { "q": "Loop with setTimeout prints the same value every time.", "a": "With `var`, all callbacks share one function-scoped variable. Use `let` (new binding per iteration) or an IIFE." },
+      { "q": "Unhandled promise rejection or a swallowed error in async code.", "a": "A rejected promise had no handler, or `await` was missing. Wrap awaits in try/catch, return promises, and use `.catch` at the end of chains." },
+      { "q": "0.1 + 0.2 is not 0.3.", "a": "Numbers are IEEE 754 doubles, so decimals cannot be stored exactly. Compare with a tolerance, or work in integer cents and use a decimal library for money." }
+    ],
+    "scenarios": [
+      { "q": "You have to call three APIs, two independent and one dependent on both. How do you code it?", "a": "Run the independent ones in parallel with `Promise.all`, await the combined result, then call the third. Handle failures with try/catch or `allSettled` if partial results are acceptable." },
+      { "q": "A search box fires a request on every keystroke. What do you do?", "a": "Debounce the input, cancel the stale request with `AbortController` and ignore out-of-order responses so only the latest query updates the UI." },
+      { "q": "A page freezes during a big array computation. How do you fix it?", "a": "The main thread is blocked. Chunk the work and yield with `setTimeout` or `requestIdleCallback`, or move it to a Web Worker and keep the algorithm efficient." }
+    ]
+  },
+  "typescript": {
+    "terms": [
+      { "q": "What is `tsconfig.json` and `strict`?", "a": "The compiler configuration file. `strict: true` turns on strict checks such as `strictNullChecks` and `noImplicitAny`, and is recommended for new code." },
+      { "q": "What does the compiler do versus the runtime?", "a": "`tsc` type-checks and erases types, emitting plain JavaScript. Types do not exist at runtime, so external data still needs runtime validation." },
+      { "q": "What is a type assertion and a type guard?", "a": "An assertion (`x as Foo`) tells the compiler to trust you without checking. A guard (`typeof`, `in`, a function returning `x is Foo`) proves the type at runtime so it narrows safely." },
+      { "q": "What are generics?", "a": "Type parameters that make code reusable with type safety, such as `function first<T>(a: T[]): T`. Constraints use `extends`." },
+      { "q": "What is a declaration file (`.d.ts`) and `@types`?", "a": "Files describing types of JavaScript code. `@types/xyz` packages from DefinitelyTyped supply typings for libraries that do not ship their own." },
+      { "q": "`enum` vs union of string literals?", "a": "Enums generate runtime objects. A union like `'a' | 'b'` is erased, simpler and works well with inference; many teams prefer it or `as const` objects." }
+    ],
+    "trouble": [
+      { "q": "Object is possibly 'undefined' (TS2532).", "a": "Strict null checks found a value that may be missing. Narrow it with a check, optional chaining or a default; use `!` only when you can prove it." },
+      { "q": "Type 'X' is not assignable to type 'Y'. How do you read it?", "a": "Read the nested message from the bottom: it names the exact property that differs. Fix the data or widen the target type, rather than casting." },
+      { "q": "Cannot find module or its type declarations.", "a": "Install the package types (`npm i -D @types/pkg`), or declare the module in a `.d.ts`. Also check `moduleResolution`, `paths` and `include` in tsconfig." },
+      { "q": "Types say one thing but runtime data differs.", "a": "API responses are not checked by the compiler. Validate at the boundary with a schema library such as zod, and infer the type from the schema." }
+    ],
+    "scenarios": [
+      { "q": "You are migrating a JavaScript codebase to TypeScript. How do you do it?", "a": "Add TS with `allowJs` and `checkJs` off, convert files incrementally starting from leaves and shared types, enable strict flags gradually, and add CI type-check so the migrated area does not regress." },
+      { "q": "Two services share request and response shapes. How do you keep types in sync?", "a": "Generate types from a single source: OpenAPI or GraphQL schema, or share a validated schema package. Avoid copying interfaces by hand." },
+      { "q": "A function accepts many shapes and gets unsafe with `any`. How do you improve it?", "a": "Model inputs as a discriminated union, narrow on the tag, or use overloads or generics. Replace `any` with `unknown` at boundaries and narrow." }
+    ]
+  },
+  "node-runtime": {
+    "terms": [
+      { "q": "What are V8 and libuv in Node.js?", "a": "V8 executes JavaScript. libuv provides the event loop, async I/O and the thread pool for file, DNS and crypto work." },
+      { "q": "What are `npm`, `package.json` and semver ranges?", "a": "npm installs dependencies listed in `package.json`. `^1.2.3` allows minor and patch updates, `~1.2.3` allows patch only; the lockfile pins exact versions." },
+      { "q": "dependencies vs devDependencies?", "a": "`dependencies` are needed at runtime. `devDependencies` are build and test tools. `npm ci --omit=dev` installs only the first group in production." },
+      { "q": "What is a stream and its types?", "a": "An interface for processing data in chunks: Readable, Writable, Duplex and Transform. Use `pipeline()` to connect them with proper error handling and back-pressure." },
+      { "q": "What is `process.nextTick` vs `setImmediate`?", "a": "`nextTick` callbacks run right after the current operation, before other microtasks and the next loop phase. `setImmediate` runs in the check phase after I/O callbacks." },
+      { "q": "What is `Buffer` and `process.env`?", "a": "`Buffer` represents raw binary data. `process.env` holds environment variables as strings, the usual way to configure a service." }
+    ],
+    "trouble": [
+      { "q": "Error: listen EADDRINUSE: address already in use.", "a": "Another process holds the port. Find it with `lsof -i :3000`, stop it or choose another port, and ensure your own process shuts down cleanly." },
+      { "q": "FATAL ERROR: JavaScript heap out of memory.", "a": "The heap hit its limit, due to a leak or large data. Take a heap snapshot, fix retained references, stream large data, and as a stopgap raise it with `--max-old-space-size`." },
+      { "q": "Error [ERR_REQUIRE_ESM] or Cannot use import statement outside a module.", "a": "Mixed module systems. Set `\"type\": \"module\"` or use `.mjs` for ESM, use `import()` from CommonJS, and align `tsconfig` module settings." },
+      { "q": "ECONNRESET or ETIMEDOUT calling another service.", "a": "The peer closed or did not answer. Set client timeouts, retry idempotent calls with backoff, reuse connections with keep-alive and check for server-side limits." },
+      { "q": "Process exits with no error or hangs and will not exit.", "a": "A silent exit often means an unhandled rejection or empty event loop. A hang means open handles (timers, sockets); find them with `--trace-exit` or close resources, and use `unref()` on non-essential timers." }
+    ],
+    "scenarios": [
+      { "q": "A Node API's latency spikes under load. How do you investigate?", "a": "Check event loop lag and CPU with a profiler (`--cpu-prof`, clinic), look for synchronous work or slow queries, add caching or pooling, and scale out with cluster or more instances if CPU bound." },
+      { "q": "Deploys cause dropped requests. What do you change?", "a": "Handle `SIGTERM`: stop accepting connections, finish in-flight requests with `server.close()`, close DB pools, then exit, and set the orchestrator's grace period and readiness probe to match." },
+      { "q": "A supply chain advisory hits a dependency. What do you do?", "a": "Run `npm audit` and `npm ls pkg` to see the path, upgrade or override the version, review lockfile changes, and add automated updates and audit in CI." }
+    ]
+  },
+  "express-nest": {
+    "terms": [
+      { "q": "What is `req`, `res` and `next` in Express?", "a": "`req` is the request, `res` builds the response, and `next()` passes control to the next middleware; `next(err)` jumps to the error handler." },
+      { "q": "What is a router in Express?", "a": "A mini app made with `express.Router()` that groups routes and middleware, mounted on a path with `app.use('/users', router)`." },
+      { "q": "What are decorators and providers in NestJS?", "a": "Decorators like `@Controller`, `@Get` and `@Injectable` attach metadata. Providers are injectable classes registered in a module and resolved by the DI container." },
+      { "q": "What are guards, pipes, interceptors and filters in Nest?", "a": "Guards authorize, pipes validate or transform input, interceptors wrap handlers (logging, caching, mapping), and exception filters shape error responses. They run in that general order." },
+      { "q": "What is DTO validation with class-validator?", "a": "A DTO class describes request shape with decorators (`@IsEmail`, `@Min`). A global `ValidationPipe` rejects bad input with a 400 before the handler runs." },
+      { "q": "What is an ORM like Prisma or TypeORM used for?", "a": "It maps database tables to typed objects and generates queries and migrations, so you work with models instead of raw SQL strings." }
+    ],
+    "trouble": [
+      { "q": "Request hangs and never responds in Express.", "a": "A handler neither sent a response nor called `next()`, or an async error was never caught. Always end with `res.send/json` or `next`, and wrap async handlers (Express 5 does it natively)." },
+      { "q": "Cannot set headers after they are sent to the client.", "a": "The response was sent twice, often a missing `return` after `res.send()` in a branch. Return after responding." },
+      { "q": "req.body is undefined.", "a": "No body parser is registered or it comes after the route. Add `app.use(express.json())` before your routes and send `Content-Type: application/json`." },
+      { "q": "Nest can't resolve dependencies of the X (?). Please make sure the argument at index [0] is available.", "a": "The provider is not registered or exported where it is used. Add it to `providers`, export it from its module and import that module, and watch for circular dependencies (`forwardRef`)." },
+      { "q": "CORS error in the browser but the API works in Postman.", "a": "Browsers enforce CORS, Postman does not. Configure allowed origin, methods and headers (the `cors` middleware or `app.enableCors`), and handle the preflight `OPTIONS` request." }
+    ],
+    "scenarios": [
+      { "q": "You need consistent error responses across an API. How do you do it?", "a": "Centralize it: an Express error middleware or a Nest exception filter maps domain and validation errors to one JSON shape with status, code and message, and logs the details server side." },
+      { "q": "An endpoint is slow because it does many queries per request. What do you check?", "a": "Look for N+1 patterns in logs, batch with joins or `include`, add indexes, paginate, and cache stable results. Confirm with query timing before and after." },
+      { "q": "How do you secure a public API in Express or Nest?", "a": "Use HTTPS, helmet headers, rate limiting, input validation, authentication with short-lived JWTs or sessions, least-privilege authorization, secrets from the environment and dependency audits." }
+    ]
+  }
+}

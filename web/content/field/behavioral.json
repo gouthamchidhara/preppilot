@@ -1,0 +1,24 @@
+{
+"behavioral": {
+"terms": [
+{"q":"What is the STAR method?","a":"Situation, Task, Action, Result: a structure for behavioural answers. Spend most time on your own actions and the measurable result."},
+{"q":"What does impact mean in an answer?","a":"The measurable outcome of your work, such as time saved, errors reduced or revenue protected. Use numbers or a clear before and after."},
+{"q":"What is ownership?","a":"Taking responsibility for an outcome end to end, including follow-through and fixing gaps beyond your narrow task, without waiting to be asked."},
+{"q":"What is scope in a story?","a":"The size of the problem you handled: people, systems, duration and stakes. Interviewers use it to judge your level."},
+{"q":"What is a blameless postmortem?","a":"A review of an incident that focuses on causes and system fixes rather than individuals, ending in concrete action items."},
+{"q":"What does 'I vs we' mean in interviews?","a":"Interviewers want to hear what you personally did. Credit the team, but say I for your decisions and actions."}
+],
+"trouble": [
+{"q":"Answering with 'we' throughout, so your own role is unclear.","a":"Interviewers cannot assess you. Name your specific actions and decisions, and mention the team only for context."},
+{"q":"Rambling through background and never reaching the result.","a":"Keep the situation to two sentences, put the weight on actions and end with a result. Aim for about two minutes."},
+{"q":"Story with no measurable result.","a":"Add a number or a concrete outcome, such as latency cut by a share or a deploy time reduced, and say what you learned or changed afterwards."},
+{"q":"Blaming a colleague or former employer in a conflict story.","a":"It signals poor teamwork. Describe the disagreement neutrally, show how you listened and found a resolution, and what you would do differently."},
+{"q":"Giving a fake weakness such as 'I work too hard'.","a":"It sounds rehearsed. Choose a real, minor weakness and show the steps you are taking to improve it, with evidence of progress."}
+],
+"scenarios": [
+{"q":"Tell me about a time you disagreed with your manager.","a":"Give context, explain you raised your view with data and respect, listened to their reasoning, and either aligned or committed to their decision. End with the outcome and what you learned."},
+{"q":"Describe a time you missed a deadline.","a":"Own it honestly, explain the cause, how you communicated early to stakeholders, what you did to recover, and the process change you made to prevent a repeat."},
+{"q":"Tell me about a time you had to learn something quickly.","a":"Name the gap, how you structured learning, who you asked, how quickly you delivered, and the result. Show it is a repeatable skill."},
+{"q":"Tell me about a time you led without authority.","a":"Describe the goal and the people, how you built agreement through data and listening, what you did yourself to unblock others, and the shared result."}
+]}
+}

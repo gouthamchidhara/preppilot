@@ -1,0 +1,86 @@
+{
+  "ios-swift": {
+    "terms": [
+      { "q": "What are Xcode, a scheme and a target?", "a": "Xcode is the IDE. A target defines one product to build (app, extension, test bundle) with its settings. A scheme chooses which targets to build, run, test and archive, and with which configuration." },
+      { "q": "Swift Package Manager vs CocoaPods?", "a": "SPM is Apple's built-in dependency manager, declared in `Package.swift` or the Xcode UI. CocoaPods is a third-party tool using a `Podfile` and generating a workspace. SPM is now the default choice." },
+      { "q": "What is a provisioning profile and signing certificate?", "a": "The certificate proves who signed the build. The provisioning profile links the app ID, certificate, entitlements and allowed devices. Both are required to run on devices and ship to the App Store." },
+      { "q": "What is the app lifecycle in SwiftUI?", "a": "An `App` struct with a `Scene` is the entry point. Scene phase (`active`, `inactive`, `background`) is read via `@Environment(\\.scenePhase)`. UIKit apps use `AppDelegate` and `SceneDelegate` callbacks." },
+      { "q": "What is `async`/`await` and an actor in Swift?", "a": "`async`/`await` is structured concurrency with suspension points. An actor protects its mutable state by serializing access, so callers `await` its methods, which prevents data races." },
+      { "q": "What is TestFlight?", "a": "Apple's beta distribution service. You upload a build to App Store Connect, then internal or external testers install it and send feedback before release." }
+    ],
+    "trouble": [
+      { "q": "Fatal error: Unexpectedly found nil while unwrapping an Optional.", "a": "A force unwrap (`!`) or implicitly unwrapped optional was nil. Replace with `if let`, `guard let` or `??`, and check outlets or injected values that were not set." },
+      { "q": "Retain cycle: a view controller never deinitializes.", "a": "Two objects hold strong references to each other, often a closure capturing `self`. Use `[weak self]` in closures and `weak` for delegates. Find it with the Memory Graph debugger or Instruments Leaks." },
+      { "q": "UI is updated from a background thread and the app crashes or glitches.", "a": "UI work must run on the main thread. Mark view models `@MainActor` or use `await MainActor.run { }` or `DispatchQueue.main.async`. The Main Thread Checker flags this in debug." },
+      { "q": "Code signing error: No profiles for bundle identifier were found.", "a": "The bundle ID, team or profile does not match. Check Signing and Capabilities, enable automatic signing with the right team, or install the correct profile, and make sure the device is registered for development builds." }
+    ],
+    "scenarios": [
+      { "q": "Your app crashes on launch for some users after release. What do you do?", "a": "Pull crash logs from Xcode Organizer or Crashlytics, symbolicate them, group by signature and reproduce on the affected OS and device. Ship a fix with a phased release, and consider a remote kill switch for the risky feature." },
+      { "q": "The app must work offline. How do you design it?", "a": "Persist data locally (Core Data, SwiftData or SQLite), read from the local store as the source of truth, queue writes with retry and sync in the background with conflict rules. Show clear sync status in the UI." },
+      { "q": "App Store review rejected your build. What is your process?", "a": "Read the guideline cited in Resolution Center, fix or clarify (for example, provide a demo account or privacy purpose strings), reply to the reviewer or resubmit, and appeal only if the rejection is clearly wrong." }
+    ]
+  },
+  "android-kotlin": {
+    "terms": [
+      { "q": "What are Gradle, AGP and build variants?", "a": "Gradle runs the build, and the Android Gradle Plugin adds Android tasks. Build variants combine build types (debug, release) and product flavors, each with its own config, code and resources." },
+      { "q": "What are APK vs AAB?", "a": "An APK is an installable package. An Android App Bundle (AAB) is the publishing format uploaded to Google Play, which then generates optimized APKs per device." },
+      { "q": "What is the Activity lifecycle?", "a": "Callbacks `onCreate`, `onStart`, `onResume`, `onPause`, `onStop`, `onDestroy`. Configuration changes such as rotation recreate the activity, so state belongs in a `ViewModel` or saved state." },
+      { "q": "What is AndroidManifest.xml?", "a": "The file declaring the package, components (activities, services, receivers), permissions, intent filters and minimum and target SDK. The OS reads it before running any code." },
+      { "q": "What are coroutines and dispatchers?", "a": "Coroutines are lightweight suspendable tasks. Dispatchers pick the thread: `Main` for UI, `IO` for blocking IO, `Default` for CPU work. Use `withContext` to switch." },
+      { "q": "What are ProGuard / R8?", "a": "R8 shrinks, optimizes and obfuscates release code. Keep rules (`proguard-rules.pro`) protect classes used through reflection or serialization." }
+    ],
+    "trouble": [
+      { "q": "Application Not Responding (ANR).", "a": "The main thread was blocked for about 5 seconds, typically by disk, network or heavy computation. Move work to coroutines on `Dispatchers.IO`, and find the culprit with the ANR trace and StrictMode." },
+      { "q": "Release build crashes but debug works.", "a": "Usually R8 removed or renamed something used by reflection. Read the deobfuscated stack trace with the mapping file and add keep rules for the affected classes." },
+      { "q": "Data lost on screen rotation.", "a": "The activity is recreated and plain fields are lost. Hold UI state in a `ViewModel`, use `rememberSaveable` in Compose or `onSaveInstanceState` for small transient state." },
+      { "q": "Gradle sync fails with a duplicate class or version conflict.", "a": "Two dependencies pull different versions of the same library. Run `./gradlew app:dependencies` to locate it, then align with a BOM or force a version in `constraints`." }
+    ],
+    "scenarios": [
+      { "q": "You need to run a task reliably even if the app is closed. What do you use?", "a": "WorkManager for deferrable, guaranteed work with constraints and retries (sync, uploads). For exact user-visible timing use alarms or a foreground service. Avoid plain background threads, which the OS can kill." },
+      { "q": "The app is slow to start. How do you improve it?", "a": "Measure with Macrobenchmark and Android Studio profiler, defer non-critical initialization (App Startup, lazy DI), avoid heavy work in `Application.onCreate`, and add Baseline Profiles." },
+      { "q": "How do you roll out a risky feature safely on Android?", "a": "Gate it behind a remote feature flag, do a staged rollout in Play Console (for example 5 percent), watch crash-free rate and ANRs in Android Vitals, and halt the rollout if they regress." }
+    ]
+  },
+  "react-native": {
+    "terms": [
+      { "q": "What is Metro?", "a": "The JavaScript bundler for React Native. It bundles your code and assets, serves them with fast refresh in development and is configured through `metro.config.js`." },
+      { "q": "What is the New Architecture?", "a": "The replacement for the async bridge: JSI for direct JS to native calls, Fabric for rendering and TurboModules for native modules, which cuts serialization overhead." },
+      { "q": "What is Hermes?", "a": "The JavaScript engine optimized for React Native. It precompiles to bytecode, giving faster startup and lower memory use." },
+      { "q": "What is EAS?", "a": "Expo Application Services: cloud build (`eas build`), submit to stores and OTA update (`eas update`) for Expo projects." },
+      { "q": "What is autolinking and a config plugin?", "a": "Autolinking registers native modules from `node_modules` automatically at build time. Expo config plugins modify native projects during prebuild so you can customize without hand-editing them." },
+      { "q": "What are `StyleSheet` and Flexbox defaults in RN?", "a": "Styles are JS objects with no CSS cascade. Layout is Flexbox with `flexDirection: 'column'` as the default and unitless density-independent sizes." }
+    ],
+    "trouble": [
+      { "q": "Red screen: Unable to resolve module.", "a": "Metro cannot find an import. Check the path and case, run `npm install`, and restart with a cleared cache: `npx react-native start --reset-cache` (or `expo start -c`)." },
+      { "q": "App works in debug but crashes in release on Android.", "a": "Common causes are a missing native dependency config, minification removing code, or a network call over cleartext HTTP. Read `adb logcat`, check R8 rules and verify permissions in the manifest." },
+      { "q": "Native module not found after installing a package.", "a": "It needs native code, so the app must be rebuilt. Run `pod install` for iOS, rebuild the binary, and note that Expo Go cannot load custom native code, so use a development build." },
+      { "q": "FlatList is slow and blank during fast scroll.", "a": "Rows are heavy or re-render. Memoize the row component, provide a stable `keyExtractor` and `getItemLayout`, tune `windowSize` and avoid inline functions and big images." }
+    ],
+    "scenarios": [
+      { "q": "A critical bug is live and the store review takes days. What can you do?", "a": "If the fix is JavaScript or assets only, push an OTA update (EAS Update or CodePush alternative) to the right channel. Native changes still need a store release, and OTA must follow store policy." },
+      { "q": "Product wants a feature that needs a native SDK. How do you proceed?", "a": "Check for a maintained library or Expo module first. If none, write a native module (TurboModule or Expo Modules API) wrapping the SDK, expose a typed JS interface and test on both platforms." },
+      { "q": "How do you test a React Native app?", "a": "Unit and component tests with Jest and React Native Testing Library, plus end to end tests on real or simulated devices with Detox or Maestro in CI before release." }
+    ]
+  },
+  "flutter": {
+    "terms": [
+      { "q": "What is `pubspec.yaml`?", "a": "The project manifest listing the package name, SDK constraints, dependencies, assets and fonts. `flutter pub get` resolves it and writes `pubspec.lock`." },
+      { "q": "What are hot reload and hot restart?", "a": "Hot reload injects changed code into the running app and keeps state. Hot restart restarts the app and resets state. Full rebuilds are needed for native changes." },
+      { "q": "What is `BuildContext`?", "a": "A handle to a widget's location in the tree, used to look up inherited widgets such as `Theme.of(context)` or `Navigator.of(context)`." },
+      { "q": "What is an `InheritedWidget`?", "a": "A widget that exposes data to descendants and rebuilds dependents when it changes. Provider and `Theme` are built on this idea." },
+      { "q": "What are Dart isolates?", "a": "Independent workers with their own memory that communicate by message passing, with no shared state. Use `Isolate.run` or `compute` to move heavy work off the UI isolate." },
+      { "q": "Debug, profile and release modes?", "a": "Debug is JIT with asserts and hot reload. Profile is AOT with some tooling for performance measurement. Release is fully optimized AOT. Always judge performance in profile or release." }
+    ],
+    "trouble": [
+      { "q": "A RenderFlex overflowed by N pixels.", "a": "A Row or Column has children larger than the available space. Wrap them in `Expanded` or `Flexible`, make the parent scrollable (`SingleChildScrollView`) or constrain text with `overflow`." },
+      { "q": "setState() called after dispose().", "a": "An async callback finished after the widget was removed. Check `if (!mounted) return;` before `setState`, or cancel timers and subscriptions in `dispose`." },
+      { "q": "Vertical viewport was given unbounded height.", "a": "A scrollable (`ListView`) sits inside a Column with no height limit. Wrap it in `Expanded`, give it a fixed height or use `shrinkWrap: true` for short lists." },
+      { "q": "Dependency version solving failed.", "a": "Package constraints conflict. Run `flutter pub deps` or `dart pub outdated`, loosen or upgrade the conflicting packages, and use `dependency_overrides` only temporarily." }
+    ],
+    "scenarios": [
+      { "q": "A list screen drops frames. How do you find out why?", "a": "Run in profile mode with DevTools Performance view, check which frames exceed 16ms, and fix with `const` widgets, `ListView.builder`, smaller rebuild scopes, cached images and moving heavy parsing to an isolate." },
+      { "q": "You must ship to iOS and Android from one codebase with different config per environment. How?", "a": "Use flavors or `--dart-define` for environment values, separate bundle IDs and signing per platform, and automate builds in CI with Fastlane or Codemagic." },
+      { "q": "How do you structure a Flutter app so it stays testable?", "a": "Separate UI, state (Bloc, Riverpod) and data layers, inject repositories, write unit tests for logic, widget tests for screens and integration tests for key flows." }
+    ]
+  }
+}

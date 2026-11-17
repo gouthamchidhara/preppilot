@@ -1,0 +1,123 @@
+{
+"test-strategy": {
+"terms": [
+{"q":"What is a test case vs a test scenario?","a":"A scenario is a high-level thing to verify, such as user logs in. A test case is a concrete script with preconditions, steps, data and expected result."},
+{"q":"What is a traceability matrix?","a":"A table mapping requirements to test cases, used to show coverage and to see what is affected when a requirement changes."},
+{"q":"Smoke vs sanity vs regression testing?","a":"Smoke: a quick check that the build is stable enough to test. Sanity: a narrow check that a specific change works. Regression: broad re-testing that existing behaviour still works."},
+{"q":"What are entry and exit criteria?","a":"Entry criteria are conditions before testing starts, such as a deployable build. Exit criteria define when testing is done, such as no open critical defects and agreed coverage."},
+{"q":"What is risk-based testing?","a":"Prioritizing test effort by likelihood and impact of failure, so critical and fragile areas get tested first and deepest."},
+{"q":"What is shift-left testing?","a":"Moving testing earlier in the lifecycle: reviewing requirements, unit and contract tests, and static analysis, since defects are cheaper to fix early."}
+],
+"trouble": [
+{"q":"Bugs keep being found late, right before release.","a":"Testing starts too late. Involve QA in refinement, test per story, automate regression in CI, and use risk-based prioritization so critical paths are covered early."},
+{"q":"Developers dispute that a reported bug is a bug.","a":"Check it against the requirement or acceptance criteria. Provide clear reproduction steps, evidence and expected vs actual result, and escalate ambiguous requirements to the product owner."},
+{"q":"Cannot reproduce a defect reported from production.","a":"Collect logs, build version, data, environment and user steps. Match the environment, try different data and timing, add logging, and ask for a recording."},
+{"q":"Test suite is too large to run before every release.","a":"Prioritize by risk, tag suites, run smoke on every commit and full regression nightly, parallelize, and retire redundant or low-value tests."}
+],
+"scenarios": [
+{"q":"You join a project with no test plan and a release in two weeks. What do you do?","a":"Meet stakeholders to learn the risks, list critical user flows, agree scope, run risk-based exploratory and smoke testing first, log defects with severity, and report status and residual risk clearly."},
+{"q":"A defect is found one day before release. How do you handle it?","a":"Assess severity and user impact, reproduce, and tell the product owner and developers. Let the stakeholders decide to fix, defer or release with a workaround, and record the decision."},
+{"q":"How do you test a feature with unclear requirements?","a":"Ask clarifying questions, write assumptions down, use exploratory testing based on similar behaviour, and have stakeholders confirm expected results before marking anything as failed."}
+]},
+"selenium-playwright": {
+"terms": [
+{"q":"What is a locator?","a":"The expression that finds an element: CSS, XPath, role, text or test id. Prefer user-facing locators like role or data-testid over brittle structure."},
+{"q":"What are implicit, explicit and fluent waits in Selenium?","a":"Implicit: a global polling timeout for finding elements. Explicit: WebDriverWait for a specific condition. Fluent: an explicit wait with custom polling and ignored exceptions."},
+{"q":"What is a headless browser?","a":"A browser run without a visible window, which is faster and suited to CI. Rendering is generally the same, though some issues only show in headed mode."},
+{"q":"What is a Playwright browser context?","a":"An isolated, incognito-like session within one browser instance, with its own cookies and storage. It makes parallel, independent tests cheap."},
+{"q":"What is WebDriver?","a":"The W3C protocol and driver layer through which Selenium sends commands to browsers such as ChromeDriver or GeckoDriver."},
+{"q":"What is a trace in Playwright?","a":"A recording of a test run with DOM snapshots, network, console and actions, opened in the Trace Viewer to debug failures."}
+],
+"trouble": [
+{"q":"StaleElementReferenceException in Selenium.","a":"The element was re-rendered or removed after you located it. Re-find the element, use a wait for the new state, or use Playwright style lazy locators."},
+{"q":"ElementClickInterceptedException or element not clickable.","a":"Another element such as an overlay or sticky header covers it. Wait for the overlay to go, scroll into view, or fix the layout; avoid forcing the click with JavaScript."},
+{"q":"Test passes locally but fails in CI.","a":"Check viewport size, speed differences, missing fonts, headless behaviour, test data and parallel runs sharing state. Capture screenshots, video and traces from CI."},
+{"q":"Tests fail after a UI change though the feature works.","a":"Selectors depend on structure or classes. Use stable test ids or roles, centralise selectors in page objects, and update in one place."},
+{"q":"Login is repeated in every test and slows the suite.","a":"Log in once and reuse the authenticated state, for example Playwright storageState, or set the session through the API."}
+],
+"scenarios": [
+{"q":"How would you design a UI automation framework from scratch?","a":"Pick the tool, use the page object pattern with stable locators, separate test data and config, handle waits through auto-waiting, run in parallel on CI with reports and artifacts, and keep the suite small and focused on key flows."},
+{"q":"Half of your UI tests fail randomly. What is your plan?","a":"Quantify the flakiness per test, quarantine the worst, review traces to find timing, data and environment causes, fix root causes rather than adding sleeps or retries, and track the flake rate."},
+{"q":"Which tests would you not automate at the UI level?","a":"Anything verifiable at API or unit level, visual judgement checks, one-off cases and unstable features. Keep UI tests for a few critical end-to-end journeys."}
+]},
+"api-testing": {
+"terms": [
+{"q":"What is a request and response contract?","a":"The agreed shape of endpoints, fields, types and status codes. Tests check that provider and consumer both honour it."},
+{"q":"What is Postman vs REST Assured?","a":"Postman is a GUI and scriptable collection runner suited to exploration and quick automation. REST Assured is a Java library for code-based API tests inside a build."},
+{"q":"What is a mock server?","a":"A fake API returning predefined responses, so clients can be tested before or without the real service."},
+{"q":"What is a JSON schema?","a":"A document describing the allowed structure and types of JSON, used to validate responses automatically."},
+{"q":"What is a smoke test for an API?","a":"A minimal run of key endpoints, checking they respond with expected codes after a deploy."},
+{"q":"What is an idempotency check?","a":"A test that repeating a request such as PUT or DELETE leaves the system in the same state, or that a repeated POST with an idempotency key creates only one resource."}
+],
+"trouble": [
+{"q":"API tests fail because test data changes between runs.","a":"Tests depend on shared state. Create data in setup through the API, use unique values, clean up afterwards, and avoid relying on pre-existing records."},
+{"q":"401 Unauthorized in an automated test that worked yesterday.","a":"The token likely expired. Fetch a fresh token in setup, cache it with expiry, and check scopes and the environment."},
+{"q":"Tests pass against the mock but fail against the real service.","a":"The mock drifted from reality. Add contract tests or run a few checks against a real sandbox, and generate mocks from the OpenAPI spec."},
+{"q":"Response times vary and assertions on latency fail.","a":"Do not assert tight timings in functional tests. Use generous thresholds and move timing checks to performance tests on a stable environment."}
+],
+"scenarios": [
+{"q":"How would you test a new endpoint that creates an order?","a":"Check the happy path with 201 and body, required and invalid fields, boundary values, auth and permission cases, duplicates and idempotency, database side effects, and error format."},
+{"q":"A downstream service is down during testing. How do you proceed?","a":"Stub or mock that dependency, test timeouts, retries and error handling by injecting failures, and verify the API returns a clear error rather than hanging."},
+{"q":"How do you introduce API tests into CI?","a":"Run fast smoke and contract tests on every pull request, the fuller suite after deploy to a test environment, publish reports, and fail the build on regressions."}
+]},
+"performance-testing": {
+"terms": [
+{"q":"What is throughput vs latency?","a":"Throughput is requests handled per unit time. Latency is the time one request takes. Both are needed, and latency should be reported as percentiles."},
+{"q":"What is a virtual user and ramp-up?","a":"A virtual user simulates a real user session. Ramp-up increases the number gradually so the system is not hit cold with the full load."},
+{"q":"Load vs stress vs spike vs soak?","a":"Load: expected traffic. Stress: beyond capacity to find the breaking point. Spike: sudden surge. Soak: long run to find leaks and degradation."},
+{"q":"What is think time?","a":"A pause between user actions in a script that models real behaviour, otherwise the test overstates the request rate per user."},
+{"q":"What is a baseline?","a":"A recorded set of metrics from a known good run, used to detect regressions in later runs."},
+{"q":"What is a bottleneck?","a":"The resource limiting overall performance, such as CPU, database queries, connection pool, network or a lock. Fixing anything else changes little."}
+],
+"trouble": [
+{"q":"Response times rise sharply as users increase.","a":"Saturation somewhere. Check CPU, memory, DB connections and slow queries, thread pool and queue lengths with APM and metrics to find the limiting resource."},
+{"q":"Test results are inconsistent between runs.","a":"Environment noise: shared hosts, cold caches, varying data or the load generator itself being the bottleneck. Use a stable environment, warm up, and monitor the generator."},
+{"q":"Memory keeps growing during a soak test.","a":"Likely a leak or unbounded cache. Take heap dumps over time, compare object counts, and fix retention. Check also connection and file handle leaks."},
+{"q":"Errors appear only at high load.","a":"Look for exhausted connection pools, rate limits, timeouts or thread starvation in logs. Raise limits only after understanding the cause."}
+],
+"scenarios": [
+{"q":"A new service must handle Black Friday traffic. How do you test it?","a":"Estimate peak load from history, build a realistic workload mix, test in a production-like environment, run load, stress and soak, find and fix bottlenecks, and set alerts and a scaling plan."},
+{"q":"The business says it feels slow, but you have no metrics. What do you do?","a":"Establish what slow means by measuring: add monitoring and RUM, define SLOs, reproduce with a load test, profile the hot path and compare before and after changes."},
+{"q":"How do you report performance results to stakeholders?","a":"Lead with whether goals were met, give p95 and p99 latency, throughput and error rate, name the bottlenecks found, and give clear recommendations and risks."}
+]},
+"appsec": {
+"terms": [
+{"q":"What is injection?","a":"Untrusted input interpreted as code or commands, such as SQL or OS commands. Prevent with parameterized queries and input validation."},
+{"q":"What is XSS?","a":"Cross-site scripting: attacker script runs in a victim's browser through unescaped output. Mitigate with context-aware output encoding and a Content Security Policy."},
+{"q":"What is CSRF?","a":"Cross-site request forgery: a malicious site makes a logged-in browser send a state-changing request. Use SameSite cookies and anti-CSRF tokens."},
+{"q":"What is the principle of least privilege?","a":"Give each user, service and token only the permissions it needs, limiting damage from compromise."},
+{"q":"What is SCA or dependency scanning?","a":"Software composition analysis checks third-party libraries against known vulnerability databases such as CVEs."},
+{"q":"What is hashing vs encryption?","a":"Hashing is one way, used for passwords with a slow salted algorithm like bcrypt or argon2. Encryption is reversible with a key, used for data that must be read back."}
+],
+"trouble": [
+{"q":"Scanner flags a vulnerable dependency.","a":"Check whether the vulnerable code path is reachable, upgrade to a fixed version or patch, rerun tests, and document an exception with a time limit if no fix exists."},
+{"q":"A secret was pushed to the repository.","a":"Rotate the secret immediately, remove it from history, move secrets to a vault or environment injection, and add secret scanning and pre-commit hooks."},
+{"q":"Users can view other users' records by changing an id in the URL.","a":"Broken access control (IDOR). Enforce authorization on the server for every object access, check ownership, and avoid relying on hidden ids."},
+{"q":"Penetration test reports missing security headers.","a":"Add HSTS, Content-Security-Policy, X-Content-Type-Options and frame protections, and Secure, HttpOnly and SameSite cookie flags, then retest."}
+],
+"scenarios": [
+{"q":"How would you review a new feature for security before release?","a":"Do a quick threat model, check authentication and authorization, input validation, data handling, logging and dependencies, run SAST and DAST, and fix or accept findings by risk."},
+{"q":"You suspect a breach in production. What are your first steps?","a":"Follow the incident process: contain, for example by revoking credentials and isolating systems, preserve logs and evidence, assess scope, notify the security team and stakeholders, then remediate and write a postmortem."},
+{"q":"How do you make security part of the CI pipeline?","a":"Add secret scanning, SAST and dependency checks on pull requests, DAST against staging, fail builds on high severity, and track findings with owners and deadlines."}
+]},
+"threat-modeling": {
+"terms": [
+{"q":"What is an asset and an attack surface?","a":"An asset is something worth protecting, such as data or a service. The attack surface is every point where an attacker can interact with the system."},
+{"q":"What is an attack tree?","a":"A diagram with the attacker's goal at the root and the alternative ways to achieve it as branches, helping to find and rate attack paths."},
+{"q":"What is a threat vs a vulnerability vs a risk?","a":"A threat is a potential harmful event, a vulnerability is a weakness that allows it, and risk combines likelihood with impact."},
+{"q":"What is a mitigation?","a":"A control that reduces a threat, such as validation, encryption or authorization. Options are to mitigate, transfer, accept or avoid the risk."},
+{"q":"What is DREAD or a risk matrix?","a":"A way to rank threats by factors such as damage and likelihood, or by a likelihood versus impact grid, to decide what to fix first."},
+{"q":"What is defense in depth?","a":"Layering several independent controls so the failure of one does not expose the system."}
+],
+"trouble": [
+{"q":"Threat modeling sessions produce a long list nobody acts on.","a":"Prioritize by risk, assign each top threat an owner and a ticket, and keep sessions focused on one feature or flow."},
+{"q":"The data flow diagram is out of date.","a":"Keep it with the design docs, revisit it on architecture changes, and update it in design reviews."},
+{"q":"Team treats threat modeling as a one-off exercise.","a":"Integrate it into design review and definition of ready for risky changes, and use lightweight templates so it stays quick."},
+{"q":"Developers lack security knowledge to find threats.","a":"Use STRIDE prompts as a checklist, include a security champion, and share past incidents and common patterns."}
+],
+"scenarios": [
+{"q":"Threat model a password reset feature.","a":"Draw the flow and trust boundaries, apply STRIDE: spoofing via guessable tokens, tampering with the link, information disclosure via account enumeration, denial of service through email spam. Mitigate with random single-use expiring tokens, rate limits and uniform responses."},
+{"q":"A new third-party integration will receive customer data. How do you assess it?","a":"Map what data leaves, over what channel and who can access it, check the vendor's security and compliance, apply least privilege and encryption, and plan for revocation and monitoring."},
+{"q":"How do you explain threat modeling value to a skeptical manager?","a":"It finds design flaws cheaply before code exists, focuses effort on real risks, and avoids costly rework or incidents later."}
+]}
+}

@@ -1,0 +1,130 @@
+{
+  "html-css": {
+    "terms": [
+      { "q": "What is the DOM vs the CSSOM?", "a": "The DOM is the tree the browser builds from HTML. The CSSOM is the tree built from CSS rules. The browser combines them into the render tree, which holds only visible nodes with their computed styles." },
+      { "q": "What is a CSS reset vs normalize?", "a": "A reset strips browser default styles (margins, sizes) to zero. Normalize keeps useful defaults and only smooths out cross-browser inconsistencies. Both run before your own styles." },
+      { "q": "What is a media query vs a container query?", "a": "A media query (`@media (min-width: 768px)`) responds to the viewport. A container query (`@container`) responds to the size of an ancestor container, so a component adapts to where it is placed." },
+      { "q": "What are rem, em and px units?", "a": "`px` is fixed. `em` is relative to the element's own font size (or parent's for font-size). `rem` is relative to the root font size, which keeps spacing predictable and respects user font settings." },
+      { "q": "What is a stacking context?", "a": "An isolated z-index scope created by things like `position` with `z-index`, `opacity` below 1, `transform` or `isolation: isolate`. A child's z-index only competes inside its own context." }
+    ],
+    "trouble": [
+      { "q": "z-index has no effect on my element. Why?", "a": "z-index only applies to positioned elements (or flex/grid items), and the element may sit inside a lower stacking context. Add `position: relative`, or check ancestors with `transform`, `opacity` or `filter` that create a new context." },
+      { "q": "Page scrolls horizontally on mobile. How do you find the cause?", "a": "Some element is wider than the viewport. In DevTools, outline everything (`* { outline: 1px solid red }`) or bisect by hiding elements. Usual culprits: fixed widths, `100vw` with a scrollbar, unwrapped images, long unbroken text. Use `max-width: 100%` and `overflow-wrap`." },
+      { "q": "A flex child will not shrink and overflows its container.", "a": "Flex items have `min-width: auto`, so they will not shrink below their content size. Set `min-width: 0` (or `overflow: hidden`) on the item, which also fixes text ellipsis inside flex rows." },
+      { "q": "Margins between siblings collapse unexpectedly. What is happening?", "a": "Vertical margins of adjacent block elements (and parent/first child) collapse into the larger one. Prevent it with padding, a border, `display: flow-root`, or by using flex/grid, where margins do not collapse." },
+      { "q": "My CSS rule is not applying. How do you debug it?", "a": "Open DevTools Styles pane: see if the rule is struck through (overridden by specificity or order), check for typos or invalid values, and confirm the selector matches. Avoid fixing with `!important`; raise specificity or reorder instead." }
+    ],
+    "scenarios": [
+      { "q": "A design looks right in Chrome but broken in Safari. How do you approach it?", "a": "Reproduce in Safari, isolate the property with DevTools, and check caniuse or MDN for support. Prefer a fallback via `@supports` or a standard alternative. Known Safari quirks: flex gap in old versions, 100vh with the address bar (use `dvh`), and date inputs." },
+      { "q": "You must convert a fixed-width desktop page to responsive. What do you do?", "a": "Add the viewport meta tag, replace fixed widths with fluid units, max-width and flex/grid, make images `max-width: 100%`, then add breakpoints where the content breaks rather than at device sizes. Test on real devices and at 320px wide." },
+      { "q": "The same button styling is duplicated across the app and drifts. How do you fix it?", "a": "Extract design tokens as CSS custom properties (colors, spacing, radius) and one shared component class or component. Replace the copies, and document variants so new styles go through the shared piece, not new overrides." }
+    ]
+  },
+  "react": {
+    "terms": [
+      { "q": "What is JSX?", "a": "A syntax extension that looks like HTML and compiles to `React.createElement` or `jsx()` calls. Expressions go in braces, attributes use camelCase (`className`, `onClick`)." },
+      { "q": "What is the virtual DOM and reconciliation?", "a": "React keeps an in-memory tree of elements. On a state change it renders a new tree, diffs it against the previous one (reconciliation), and applies only the minimal real DOM updates." },
+      { "q": "Controlled vs uncontrolled components?", "a": "A controlled input takes its value from React state and updates through `onChange`. An uncontrolled input keeps its own DOM state and is read through a ref or on submit via `FormData`." },
+      { "q": "What is a custom hook?", "a": "A function whose name starts with `use` that calls other hooks to share stateful logic between components. Each call gets its own independent state." },
+      { "q": "What are refs and `useRef` used for?", "a": "A mutable `.current` box that survives renders without triggering one. Used for DOM node access, timers ids and previous values." },
+      { "q": "Client vs server components?", "a": "Server components render on the server, ship no JS for themselves and can read data directly. Client components (`'use client'`) hydrate in the browser and can use state, effects and event handlers." }
+    ],
+    "trouble": [
+      { "q": "Warning: Each child in a list should have a unique key prop.", "a": "React needs stable identity to reconcile lists. Pass a unique, stable id as `key` (not the array index when items can reorder or be inserted). Missing keys cause wrong state to stick to wrong rows." },
+      { "q": "Too many re-renders. React limits the number of renders.", "a": "State is being set during render, typically `onClick={setCount(1)}` instead of `onClick={() => setCount(1)}`, or a `setState` in the body without a guard. Move it into a handler or effect." },
+      { "q": "Infinite loop in useEffect. What causes it?", "a": "The effect sets state that is in its own dependency list, or depends on an object/function recreated each render. Fix by narrowing dependencies, using functional updates, or memoizing with `useMemo` / `useCallback`." },
+      { "q": "Cannot update a component while rendering a different component.", "a": "A render function triggers a parent's state update. Side effects must not run during render. Move the call into `useEffect` or an event handler." },
+      { "q": "Hydration mismatch between server and client HTML.", "a": "Server and first client render produced different markup, e.g. `Date.now()`, `Math.random()`, `window` checks or invalid nesting. Make initial render deterministic and move browser-only values into `useEffect`." }
+    ],
+    "scenarios": [
+      { "q": "A page with a big table feels slow when typing in a filter box. What do you do?", "a": "Profile with React DevTools Profiler to see what re-renders. Then debounce the input or use `useDeferredValue`, memoize rows with `React.memo`, virtualize the list, and keep the filter state as close as possible to the input." },
+      { "q": "Users report stale data after saving a form. How do you track it down?", "a": "Check whether state is copied from props once (so it never updates), a closure captures an old value in an effect, or a cache is not invalidated after the mutation. Fix the data flow rather than forcing refreshes." },
+      { "q": "You inherit a 600-line component. How do you refactor safely?", "a": "Add tests around current behavior first, then extract pure helpers, custom hooks for data logic and small presentational components. Move in small commits and keep the UI output identical at each step." }
+    ]
+  },
+  "angular": {
+    "terms": [
+      { "q": "What is the Angular CLI and what does `ng serve` do?", "a": "The CLI scaffolds, builds and tests projects (`ng new`, `ng generate`, `ng build`, `ng test`). `ng serve` runs a dev server with live reload." },
+      { "q": "Module vs standalone component?", "a": "An NgModule groups declarations and imports. Standalone components declare their own `imports` and need no module, which is the default in current Angular." },
+      { "q": "What is dependency injection in Angular?", "a": "Classes ask for dependencies via constructor or `inject()`, and the injector supplies instances based on providers. `providedIn: 'root'` makes a tree-shakable singleton service." },
+      { "q": "What are signals?", "a": "Reactive values (`signal()`, `computed()`, `effect()`) that track dependents, so Angular can update only what changed and reduce reliance on zone-based change detection." },
+      { "q": "What are RxJS operators like `switchMap` vs `mergeMap`?", "a": "`switchMap` cancels the previous inner observable when a new value arrives (good for search). `mergeMap` runs all inner observables concurrently. `concatMap` queues them in order." },
+      { "q": "What is AOT vs JIT compilation?", "a": "AOT compiles templates at build time, giving smaller bundles and earlier template errors. JIT compiles in the browser at runtime and is no longer the default." }
+    ],
+    "trouble": [
+      { "q": "ExpressionChangedAfterItHasBeenCheckedError.", "a": "A binding value changed during change detection, often when a child or lifecycle hook modifies parent state after the check. Restructure so the value is stable, or move the update into a later tick; do not just wrap it in `setTimeout` without understanding why." },
+      { "q": "NullInjectorError: No provider for X.", "a": "The injector cannot find a provider. Add `@Injectable({ providedIn: 'root' })`, or list it in the component, route or application `providers`. In standalone code confirm the right injector level." },
+      { "q": "Can't bind to 'ngModel' since it isn't a known property of 'input'.", "a": "`FormsModule` is not imported where the component is declared. Add it to the module imports, or to the standalone component's `imports` array. Same pattern applies for `ReactiveFormsModule`." },
+      { "q": "A subscription keeps firing after the component is destroyed.", "a": "It was never unsubscribed. Use the `async` pipe, `takeUntilDestroyed()`, or `takeUntil` with a destroy subject. HTTP calls complete on their own, long-lived streams do not." }
+    ],
+    "scenarios": [
+      { "q": "A large Angular app has a slow first load. What do you do?", "a": "Measure with the bundle analyzer, lazy load feature routes with `loadComponent` or `loadChildren`, use `@defer` for heavy parts, drop unused libraries, and enable production build optimizations and compression." },
+      { "q": "A list screen re-renders constantly and lags. How do you fix it?", "a": "Use `OnPush` or signals, add `trackBy` (or `track` in `@for`), avoid function calls in templates, and move heavy derivations into `computed` or pure pipes." },
+      { "q": "You need to share state between distant components. What are your options?", "a": "A root service holding signals or a `BehaviorSubject` is enough for most cases. For larger apps with many writers and debugging needs, use NgRx or a signal store. Avoid passing state through long input chains." }
+    ]
+  },
+  "browser-performance": {
+    "terms": [
+      { "q": "What is TTFB, FCP and LCP?", "a": "TTFB is time to the first response byte. FCP is when the first content paints. LCP is when the largest visible element (hero image or heading) finishes rendering; good is under 2.5s." },
+      { "q": "What is INP and CLS?", "a": "INP (Interaction to Next Paint) measures responsiveness to user input, good under 200ms. CLS (Cumulative Layout Shift) measures unexpected layout movement, good under 0.1." },
+      { "q": "What is a render-blocking resource?", "a": "CSS in the head and synchronous scripts that the browser must fetch and process before first paint. Fix with `defer` or `async` on scripts, inlining critical CSS and `media` attributes." },
+      { "q": "`async` vs `defer` on a script tag?", "a": "Both download without blocking parsing. `async` executes as soon as it arrives, in any order. `defer` executes after parsing, in document order." },
+      { "q": "`preload` vs `preconnect` vs `prefetch`?", "a": "`preload` fetches a needed current-page resource early. `preconnect` opens the connection (DNS, TCP, TLS) to an origin early. `prefetch` fetches a likely next-page resource at low priority." },
+      { "q": "Lab data vs field data?", "a": "Lab data (Lighthouse) is a synthetic test in a controlled environment. Field data (RUM, CrUX) comes from real users and real devices. Use lab to debug and field to decide what matters." }
+    ],
+    "trouble": [
+      { "q": "Lighthouse shows poor LCP. What do you check?", "a": "Identify the LCP element. Then look at slow server response, render-blocking CSS/JS, an unoptimized or lazy-loaded hero image (it should be preloaded with `fetchpriority=\"high\"`), and late client-side rendering." },
+      { "q": "Layout shifts when images and fonts load.", "a": "Reserve space: set `width` and `height` (or `aspect-ratio`) on images and embeds, avoid inserting content above existing content, and use `font-display` with size-adjusted fallback fonts." },
+      { "q": "Page is janky while scrolling or clicking.", "a": "Record in the DevTools Performance panel and look for long tasks over 50ms. Split work, move it to a web worker, debounce handlers, use passive listeners and animate only `transform` and `opacity`." },
+      { "q": "Users get stale assets after a deploy, or never cache at all.", "a": "Use content-hashed filenames with long `Cache-Control: max-age=31536000, immutable`, and keep the HTML on `no-cache` so it always points to the new hashes." }
+    ],
+    "scenarios": [
+      { "q": "Marketing wants more third-party scripts but the site is slow. What do you say?", "a": "Quantify the cost with a trace and budget (bytes, long tasks). Load them with `async` or after interaction, use a tag manager with governance, self-host where allowed, and drop any that do not show value." },
+      { "q": "How do you set up performance regression protection?", "a": "Define budgets for bundle size and Core Web Vitals, run Lighthouse CI or a bundle size check in the pipeline, and monitor real-user metrics so regressions fail a build or alert quickly." },
+      { "q": "An e-commerce product page must load fast on slow mobile networks. Where do you start?", "a": "Measure on throttled 4G with a mid-range device profile. Ship less JS, serve responsive modern-format images, preload the hero, server render the main content, cache with a CDN, and defer everything below the fold." }
+    ]
+  },
+  "accessibility": {
+    "terms": [
+      { "q": "What is the accessibility tree?", "a": "The browser's parallel representation of the page for assistive tech, built from the DOM with roles, names, states and values. Inspect it in DevTools to see what a screen reader gets." },
+      { "q": "What is an accessible name?", "a": "The text a control exposes to assistive tech, derived from content, `<label>`, `aria-labelledby` or `aria-label`, in that priority order. Controls without one are announced as just 'button' or 'edit text'." },
+      { "q": "What are ARIA roles, states and properties?", "a": "Attributes that add semantics HTML lacks: `role` defines what something is, `aria-expanded` and `aria-checked` are states, `aria-labelledby` is a property. The first rule of ARIA: use native elements when possible." },
+      { "q": "What is a live region?", "a": "An element with `aria-live` (polite or assertive) or `role=\"status\"` / `role=\"alert\"` whose content changes are announced by screen readers without moving focus." },
+      { "q": "What is a skip link?", "a": "A first-in-order link, such as 'Skip to main content', that lets keyboard users jump past repeated navigation. It can be visually hidden until focused." },
+      { "q": "WCAG conformance levels A, AA, AAA?", "a": "Increasing strictness levels of success criteria. AA is the usual legal and contractual target. AAA is not required as a whole because some criteria cannot be met for all content." }
+    ],
+    "trouble": [
+      { "q": "Keyboard focus is invisible on some elements.", "a": "A global `outline: none` removed the focus ring. Restore a visible style with `:focus-visible` and enough contrast; never remove outlines without a replacement." },
+      { "q": "Screen reader reads 'button' with no label for an icon button.", "a": "The control has no accessible name. Add visible text, or `aria-label` on the button, and mark the decorative icon `aria-hidden=\"true\"`." },
+      { "q": "A custom dropdown cannot be used with the keyboard.", "a": "It was built from divs. Prefer native `<select>` or `<button>`; otherwise add the role, tabindex, arrow/Enter/Escape handling, `aria-expanded` and focus management per the ARIA authoring pattern." },
+      { "q": "Axe reports insufficient color contrast.", "a": "Text must be at least 4.5:1 (3:1 for large text and UI components). Darken text or the background, check states like hover and disabled placeholders too, and verify with a contrast checker." },
+      { "q": "Focus is lost after route change in a single page app.", "a": "The page content changes but focus stays on a removed element. Move focus to the new page heading or main region, and announce the title change through a live region." }
+    ],
+    "scenarios": [
+      { "q": "You are asked to audit a checkout flow for accessibility. How do you proceed?", "a": "Run automated checks (axe, Lighthouse) for the easy wins, then test manually: keyboard only, a screen reader, zoom to 200 percent, and error handling. Report findings by severity mapped to WCAG criteria." },
+      { "q": "A form shows errors only with red borders. What is wrong and what do you change?", "a": "Colour alone is not enough. Add error text associated with the input via `aria-describedby`, set `aria-invalid=\"true\"`, announce errors in a live region and move focus to the first invalid field." },
+      { "q": "How do you keep accessibility from regressing over time?", "a": "Use semantic components in the design system, run linting (`eslint-plugin-jsx-a11y`) and axe in CI, include a11y in the definition of done, and do periodic manual screen reader passes." }
+    ]
+  },
+  "state-management": {
+    "terms": [
+      { "q": "What is a single source of truth?", "a": "Each piece of state lives in exactly one place and other parts derive from it. Duplicated state drifts out of sync and causes hard-to-trace bugs." },
+      { "q": "What is derived state?", "a": "A value computable from existing state (for example, filtered list or total). Compute it during render or with a selector instead of storing it separately." },
+      { "q": "What are actions, reducers and a store?", "a": "In Redux, an action describes what happened, a pure reducer takes the old state and action and returns the new state, and the store holds the state tree and dispatches actions." },
+      { "q": "What is a selector?", "a": "A function that reads and derives data from the store. Memoized selectors (like `createSelector`) avoid recomputing and unnecessary re-renders when inputs have not changed." },
+      { "q": "Server state vs client state?", "a": "Server state is remote data you do not own and which can go stale (needs caching, refetching, invalidation). Client state is UI-owned (modals, form drafts). Tools like React Query handle the first." },
+      { "q": "What does immutability mean for state updates?", "a": "You return new objects and arrays instead of mutating the existing ones, so change detection by reference works. Immer, used by Redux Toolkit, lets you write mutating-looking code safely." }
+    ],
+    "trouble": [
+      { "q": "State updated but the component did not re-render.", "a": "Most often the state object was mutated in place, so the reference is the same. Return a new object or array (`{...s, x}`, `[...list, item]`)." },
+      { "q": "Every component re-renders when any store value changes.", "a": "Subscribing to the whole store or to a fresh object created in the selector breaks equality. Select the narrowest slice, return primitives, or use a shallow equality comparison." },
+      { "q": "Stale state inside a callback or timer.", "a": "The closure captured the value from an older render. Use the functional updater (`setCount(c => c + 1)`), a ref for the latest value, or correct the dependency list." },
+      { "q": "Two screens show different values for the same data.", "a": "The data is duplicated in local state and the cache. Keep one source (the query cache or store) and derive the rest; invalidate or update it after the mutation." }
+    ],
+    "scenarios": [
+      { "q": "Your team debates adding Redux to a medium React app. What do you advise?", "a": "Start with local state, lifting state and context. Use a server-state library for fetching. Add Redux Toolkit or Zustand only when many distant components share complex client state or you need devtools and time travel." },
+      { "q": "A search page needs to keep filters in the URL and survive refresh. How?", "a": "Treat the URL query string as the source of truth: read it into the UI, update it on change (debounced for typing) and fetch from it. This gives shareable links and a working back button." },
+      { "q": "Users see flicker after toggling a like button. What do you do?", "a": "Apply an optimistic update, cancel in-flight queries, snapshot previous data, roll back on error and refetch on settle so the server result wins." }
+    ]
+  }
+}
