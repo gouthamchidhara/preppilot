@@ -181,6 +181,36 @@ One-time setup (Azure portal):
 
 ---
 
+## Custom domain (Cloudflare)
+
+The production site uses `https://preppilot.us`, with `www.preppilot.us` as an
+additional hostname. Both are bound to `swa-preppilot-cmncqy5swqngi` in Azure.
+
+Cloudflare DNS records:
+
+| Type | Name | Target | Proxy |
+|---|---|---|---|
+| CNAME | `@` | `lively-pond-0ad55040f.8.azurestaticapps.net` | DNS only |
+| CNAME | `www` | `lively-pond-0ad55040f.8.azurestaticapps.net` | DNS only |
+| TXT | `@` | Azure apex-domain validation token (separate from SPF) | Not applicable |
+
+Cloudflare flattens the apex CNAME. Preserve the Email Routing MX, SPF and DKIM
+records; they are independent of website routing. Keep DNS-only mode so Azure
+can validate and renew its managed HTTPS certificates directly.
+
+After adding records, wait for both Azure custom domains to report `Ready` and
+verify HTTPS and `/api/health` on each hostname. DNS resolving alone does not
+prove the certificate is ready.
+
+The existing web OAuth client's **Authorized JavaScript origins** include
+`https://preppilot.us` and `https://www.preppilot.us` in Google Cloud Console.
+Keep the existing Azure origin.
+Browser study data and sign-in sessions are origin-specific and do not transfer
+automatically from the Azure address.
+
+The Azure hostname remains available for existing native builds. Changing the
+native `webUrl` requires a separate app build; do not remove the old hostname.
+
 ## Phase 8: App Store Submission (Production)
 
 When ready to submit for App Review (not just TestFlight):
@@ -206,7 +236,8 @@ When ready to submit for App Review (not just TestFlight):
 | EAS Project ID | `2d0fc27c-f525-4610-895b-72c66b08815b` |
 | EAS Project Slug | `@gchid/preppilot` |
 | Apple Team ID | `KSD8FCH7C9` |
-| Web App URL | `https://lively-pond-0ad55040f.8.azurestaticapps.net` |
+| Web App URL | `https://preppilot.us` |
+| Azure/native fallback URL | `https://lively-pond-0ad55040f.8.azurestaticapps.net` |
 | GitHub Repo | `gouthamchidhara/preppilot` |
 | Azure Resource Group | `rg-preppilot` |
 | Google OAuth Web Client | `372383686135-jj1mv49jbskilvqk6qfiqguh4uqjkdl5.apps.googleusercontent.com` |

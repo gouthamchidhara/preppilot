@@ -6,20 +6,21 @@ Owner handles item 7. The assistant is handling the other items, with owner inpu
 
 ## Execution status (17 November 2026)
 
-- Working on `claude/eloquent-pasteur-wdc9yd`; local `main` contains the fetched upstream changes, but the latest launch work has not been published to `origin/main`.
+- Launch updates and the animated signed-out landing callout were published to `main` at `ff59390`; GitHub Actions deployment `44119581127` succeeded. The deployed JavaScript/CSS and API health were verified at the Azure hostname.
+- Cloudflare website CNAMEs for `preppilot.us` and `www.preppilot.us` point to Azure in DNS-only mode. Both Azure custom domains report `Ready`; the apex verification TXT is at `@`, separate from SPF. Both new Google OAuth JavaScript origins are saved; an interactive sign-in test is still needed. Existing native builds keep the Azure URL.
 - Native iOS icon/splash updated from the current paper-plane brand: 1024 x 1024 RGB PNGs, no alpha. A new native build/upload is still pending.
 - Privacy text now reflects role suggestions, guide submissions, audio streaming, fresh scenarios and actual account-deletion retention. App Store privacy answers still need checking.
 - Azure checks: OAuth audiences match the public app configuration; session secret is at least 32 characters; AI/storage settings exist; model deployments succeeded. This does not substitute for device sign-in or sandbox purchase testing.
 - Beta `ACCESS_CODE` is absent. Sweeper is Running, enabled on a one-minute schedule, and its storage/OpenAI settings match the API. Runtime timer state recorded Last `2026-11-17T15:16:00Z`, Next `2026-11-17T15:17:00Z`.
 - Missing Azure settings: `REVENUECAT_SECRET_KEY`, `ACS_EMAIL_ENDPOINT`, `ACS_EMAIL_KEY`, `ACS_EMAIL_SENDER`, `SUGGESTIONS_EMAIL`. `payments: true` in health only confirms webhook-auth configuration, not a working purchase/refresh.
 - Budget is configured at $20/month with actual-80% and forecast-100% alerts. Alert delivery and real per-session cost comparison are not yet verified.
-- Support domain/mailbox selection is pending; no domain or mailbox has been purchased. Store products, offering, webhook and agreements still require dashboard verification. Never paste secret keys into chat.
+- Owner purchased `preppilot.us` and configured Cloudflare Email Routing for `support@preppilot.us`. Destination verification and routing rule were checked; end-to-end email delivery is not yet confirmed. Store products, offering, webhook and agreements still require dashboard verification. Never paste secret keys into chat.
 - Spot-checked Go and JavaScript/TypeScript field cards and their lesson flow/Next hooks; reviewed all 26 analogies. Corrected Go loop capture, slice sharing, errgroup and scheduler explanations, plus TLS, Kubernetes, JVM, C# and TypeScript analogies. Validators pass: 924 field cards and 98 flow/meaning entries; 73 tests pass.
 
 ## Must do before launch
 
 ### 1. Merge the branch into `main`
-- [ ] Merge `claude/eloquent-pasteur-wdc9yd` into `main`.
+- [x] Merge `claude/eloquent-pasteur-wdc9yd` into `main`.
 - Why: Azure is serving the branch. Every push to `main` triggers `.github/workflows/deploy.yml`, so pushing anything to `main` before the merge puts the old app back live.
 - After the merge, all work happens on `main` (or short branches merged into it).
 
