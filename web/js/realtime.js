@@ -23,7 +23,7 @@ export class VoiceSession {
     this.audio.setAttribute('playsinline', '');
     pc.ontrack = e => { this.audio.srcObject = e.streams[0]; };
     pc.onconnectionstatechange = () => {
-      if (['failed', 'disconnected'].includes(pc.connectionState)) this.stop(this.mode === 'mock' ? 'Connection lost. Rejoin to continue: your session time is still running.' : 'Connection lost.');
+      if (['failed', 'disconnected'].includes(pc.connectionState)) this.stop('Connection lost.');
     };
 
     try {
@@ -52,15 +52,15 @@ export class VoiceSession {
     this.allowedSec = data.allowedSec;
     this.bump();
     if (data.account) setAccount(data.account);
-    // The server decides how long the call may run (plan minutes, or the 60-minute mock window) and hangs up at that point.
+    // The server decides how long the call may run and hangs up at that point.
     const capMs = (data.allowedSec || 900) * 1000;
     this.endsAt = Date.now() + capMs;
-    this.timers.push(setTimeout(() => this.stop(mode === 'mock' ? 'Your 60-minute mock interview has ended.' : 'Voice time for this session is used up.'), capMs));
+    this.timers.push(setTimeout(() => this.stop('Voice time for this session is used up.'), capMs));
   }
 
   bump() {
     clearTimeout(this.idle);
-    this.idle = setTimeout(() => this.stop(this.mode === 'mock' ? 'Paused after 3 minutes of silence. Rejoin any time before the hour is up.' : 'Ended after 3 minutes of silence.'), IDLE_MS);
+    this.idle = setTimeout(() => this.stop('Ended after 3 minutes of silence.'), IDLE_MS);
   }
 
   handle(e) {

@@ -204,7 +204,6 @@ details[open] summary::after { content: "–"; }
 .day.past { opacity: .5; }
 .day.cur { border-color: var(--accent); background: var(--accent-soft); }
 .day.cur .d { color: var(--accent); }
-.day.mock .t { color: var(--amber); }
 .sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 8px 2px 0; }
 .list { display: flex; flex-direction: column; gap: 8px; }
 .item { display: flex; align-items: center; gap: 12px; text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 13px 14px; cursor: pointer; transition: border-color .15s, transform .12s; width: 100%; }
@@ -220,12 +219,6 @@ details[open] summary::after { content: "–"; }
 .bar i { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width .4s; }
 .bar.low i { background: var(--bad); }
 
-.promo { position: relative; overflow: hidden; display: flex; gap: 16px; align-items: center; border-color: rgba(255, 200, 87, .3); background: linear-gradient(120deg, rgba(255, 200, 87, .10), transparent 60%), var(--card); }
-.promo .badge { flex: none; width: 54px; height: 54px; border-radius: 16px; background: var(--amber-soft); color: var(--amber); display: grid; place-items: center; }
-.promo .badge svg { width: 26px; height: 26px; }
-.promo .eyebrow { color: var(--amber); }
-.promo .btn.primary { background: var(--amber); }
-.promo .btn.primary:hover { background: #ffd67d; }
 
 /* ---------- learn / deck ---------- */
 .back { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-weight: 600; background: none; border: 0; padding: 4px 0; cursor: pointer; font-size: 14px; }
@@ -256,19 +249,16 @@ pre code { background: none; padding: 0; color: inherit; }
 .meters { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .meter-top { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--muted); margin-bottom: 6px; gap: 8px; }
 .meter-top b { color: var(--ink); white-space: nowrap; }
-.modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.modes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .mode { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 14px 12px; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 6px; transition: border-color .15s, transform .12s; min-width: 0; }
 .mode:hover { border-color: var(--line2); }
 .mode:active { transform: scale(.98); }
 .mode:disabled { opacity: .5; }
 .mode .ico { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
 .mode.listen .ico { background: var(--sky-soft); color: var(--sky); }
-.mode.mock { border-color: rgba(255, 200, 87, .3); background: linear-gradient(160deg, rgba(255, 200, 87, .09), transparent 60%), var(--card); }
-.mode.mock .ico { background: var(--amber-soft); color: var(--amber); }
 .mode .txt { display: contents; }
 .mode b { font: 650 15px var(--display); }
 .mode span { font-size: 12px; color: var(--muted); line-height: 1.35; }
-.mode .tag { font-size: 11.5px; font-weight: 700; color: var(--amber); }
 @media (max-width: 440px) {
   .modes { grid-template-columns: 1fr; }
   .mode { flex-direction: row; align-items: center; gap: 12px; padding: 12px 14px; }
@@ -332,12 +322,9 @@ pre code { background: none; padding: 0; color: inherit; }
 .plans-hero h1 em { font-style: normal; color: var(--accent); }
 .plans-hero p { color: var(--muted); font-size: 1.05rem; max-width: 30em; margin: 12px auto 0; }
 .plans-grid { display: grid; gap: 14px; grid-template-columns: 1fr; }
-@media (min-width: 680px) { .plans-grid { grid-template-columns: 1fr 1fr; } .plans-grid .free { grid-column: 1 / -1; } }
+@media (min-width: 680px) { .plans-grid { grid-template-columns: 1fr 1fr; } }
 .plan-card { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 24px 20px 20px; display: flex; flex-direction: column; gap: 14px; }
 .plan-card.pro { border: 1.5px solid var(--accent); background: linear-gradient(180deg, rgba(201, 247, 58, .10), transparent 45%), var(--card); box-shadow: 0 0 60px rgba(201, 247, 58, .08); }
-.plan-card.mockp { border-color: rgba(255, 200, 87, .4); background: linear-gradient(180deg, rgba(255, 200, 87, .08), transparent 45%), var(--card); }
-.plan-card.mockp .eyebrow { color: var(--amber); }
-.plan-card.mockp .ticks li svg { color: var(--amber); }
 .plan-card.free { background: none; }
 .plan-card .name { font: 700 1.3rem var(--display); }
 .plan-card .price { font: 750 2.7rem var(--display); letter-spacing: -.04em; line-height: 1; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
@@ -345,7 +332,6 @@ pre code { background: none; padding: 0; color: inherit; }
 .plan-card .sub { font-size: 13px; color: var(--muted); margin-top: -6px; }
 .plan-card .btn { margin-top: auto; }
 .plan-flag { position: absolute; top: -12px; left: 20px; background: var(--accent); color: var(--accent-ink); font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 99px; text-transform: uppercase; letter-spacing: .07em; }
-.plan-card.mockp .plan-flag { background: var(--amber); }
 .assure { display: flex; gap: 8px 18px; flex-wrap: wrap; justify-content: center; font-size: 13px; color: var(--muted); }
 .assure span { display: inline-flex; align-items: center; gap: 6px; }
 .assure svg { width: 15px; height: 15px; color: var(--accent); }

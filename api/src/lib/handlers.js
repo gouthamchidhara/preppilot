@@ -5,8 +5,8 @@ import { rateLimit, validateChat, validateGenerate, sanitizeGenerated } from './
 import { chatSystemPrompt, generateSystemPrompt, generateUserPrompt } from './prompts.js';
 import { realtimeConfigured, validateRealtime, startRealtime, hangupCall } from './realtime.js';
 import { identify, verifyIdToken, signSession } from './auth.js';
-import { upsertUser, status, consumeMsgs, refundMsgs, reserveVoice, refundVoice, recordCall, endCall, sweepCalls, deleteUser, startMockSession, cancelMockSession } from './account.js';
-import { COST, limits, proPriceLabel, mockPriceLabel } from './plans.js';
+import { upsertUser, status, consumeMsgs, refundMsgs, reserveVoice, refundVoice, recordCall, endCall, sweepCalls, deleteUser } from './account.js';
+import { COST, limits, proPriceLabel } from './plans.js';
 import { webhookAuthorized, applyWebhook, refreshFromRevenueCat } from './billing.js';
 import { getDb } from './db.js';
 import { createHash } from 'node:crypto';
@@ -110,20 +110,6 @@ export async function handleRealtime(req, log) {
   const now = Date.now();
   const L = limits();
 
-  // Mock interview: one credit buys a 60-minute window. Beta-code sessions have no account, so no credits.
-  if (v.mode === 'mock') {
-    const m = w.ident.viaCode ? { ok: true, allowedSec: L.mockCallSec, resumed: true } : await startMockSession(w.ident.key, now);
-    if (!m.ok) return json(402, { error: 'No mock interview credit. Buy a session to start.', code: 'no_credit' });
-    try {
-      const out = await startRealtime(v, log);
-      if (out.callId) await recordCall({ id: out.callId, key: w.ident.key, start: Date.now(), allowedSec: m.allowedSec, plan: 'mock', day: today(now) });
-      return json(200, { sdp: out.sdp, callId: out.callId, allowedSec: m.allowedSec, degraded: out.degraded, mock: true, resumed: m.resumed, account: await status(w.ident) });
-    } catch (e) {
-      if (!m.resumed) await cancelMockSession(w.ident.key);
-      return fail(e, log);
-    }
-  }
-
   const r = await reserveVoice(w.ident, now);
   if (!r.ok) return denied(r);
   try {
@@ -200,7 +186,6 @@ export function handleHealth() {
     plans: {
       free: { msgs: L.free.msgs, voiceMin: Math.floor(L.free.voiceSec / 60) },
       pro: { msgs: L.pro.msgs, voiceMin: Math.floor(L.pro.voiceSec / 60), price: proPriceLabel() },
-      mock: { minutes: Math.floor(L.mockCallSec / 60), price: mockPriceLabel() },
     },
   });
 }

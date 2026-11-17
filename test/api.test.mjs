@@ -12,7 +12,7 @@ Object.assign(process.env, {
 const { ROUTES } = await import('../api/src/lib/routes.js');
 const { setJwksFetcher } = await import('../api/src/lib/auth.js');
 const { useMemoryDb } = await import('../api/src/lib/db.js');
-const { reserveVoice, recordCall, endCall, sweepCalls, status, startMockSession, cancelMockSession } = await import('../api/src/lib/account.js');
+const { reserveVoice, recordCall, endCall, sweepCalls, status } = await import('../api/src/lib/account.js');
 const { rateLimit, resetRateLimits, sanitizeGenerated, validateChat } = await import('../api/src/lib/guard.js');
 const { validateRealtime, sessionConfigs } = await import('../api/src/lib/realtime.js');
 
@@ -123,47 +123,12 @@ test('voice: other users cannot end your call; sweeper hangs up overdue calls', 
   assert.equal(await sweepCalls(async () => {}), 0);
 });
 
-test('mock interview: a purchase counts once, one credit opens a resumable 60-minute window', async () => {
-  const h = await signIn('m@gmail.com', 'm');
-  const key = 'google:m';
-  const hook = { authorization: 'Bearer hook-secret' };
-  const ev = txn => ({ event: { type: 'NON_RENEWING_PURCHASE', app_user_id: key, product_ids: ['mock_session_60min'], transaction_id: txn } });
-  await call('POST billing/revenuecat', ev('t1'), hook);
-  await call('POST billing/revenuecat', ev('t1'), hook); // webhook retry
-  assert.equal((await call('GET me', null, h)).body.sessionCredits, 1);
-
-  const t0 = Date.now();
-  const first = await startMockSession(key, t0);
-  assert.deepEqual(first, { ok: true, allowedSec: 3600, resumed: false });
-  // Connection drops after 10 minutes: rejoining uses the same credit and only the time that is left.
-  const again = await startMockSession(key, t0 + 600000);
-  assert.deepEqual(again, { ok: true, allowedSec: 3000, resumed: true });
-  assert.equal((await status({ key }, t0 + 600000)).mockSecLeft, 3000);
-  assert.equal((await status({ key }, t0)).sessionCredits, 0);
-  assert.equal((await startMockSession(key, t0 + 3600000)).ok, false); // window over, no credit left
-
-  // Ending a mock call early must not hand back free-plan voice minutes.
-  await reserveVoice({ key }, t0);
-  await recordCall({ id: 'rtc_m', key, start: t0, allowedSec: 3600, plan: 'mock', day: '2026-01-01' });
-  await endCall('rtc_m', { key, now: t0 + 60000 });
-  assert.equal((await status({ key }, t0)).voiceSecLeft, 0);
-
-  // A session that never connected gives the credit back.
-  await call('POST billing/revenuecat', ev('t2'), hook);
-  await startMockSession(key, t0 + 4000000);
-  await cancelMockSession(key);
-  const me = await status({ key }, t0 + 4000000);
-  assert.equal(me.sessionCredits, 1);
-  assert.equal(me.mockSecLeft, 0);
-});
-
 test('quota messages quote the configured price and limits', async () => {
   const h = await signIn('q@gmail.com', 'q');
   for (let i = 0; i < 15; i++) await ask(h);
   const r = await ask(h);
   assert.equal(r.status, 402);
   assert.match(r.body.error, /\$11\.99\/month/);
-  assert.equal((await call('GET health')).body.plans.mock.price, '$10.99');
 });
 
 test('voice is refused once free minutes are gone', async () => {

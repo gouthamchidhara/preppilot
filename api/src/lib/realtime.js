@@ -14,7 +14,7 @@ export function validateRealtime(body) {
   if (!sdp.startsWith('v=0') || sdp.length > 30000) return { error: 'valid SDP offer required' };
   return {
     sdp,
-    mode: body.mode === 'listen' ? 'listen' : body.mode === 'mock' ? 'mock' : 'talk',
+    mode: body.mode === 'listen' ? 'listen' : 'talk',
     speak: body.speak !== false,
     voice: VOICES.has(body.voice) ? body.voice : 'marin',
     profile: typeof body.profileSummary === 'string' ? body.profileSummary.slice(0, 1500) : '',
@@ -24,9 +24,7 @@ export function validateRealtime(body) {
 
 export function voiceInstructions(v) {
   const base = chatSystemPrompt({ profile: v.profile, context: v.context, voice: true });
-  const mode = v.mode === 'mock'
-    ? 'MOCK INTERVIEW MODE: run a structured technical interview. Ask one question at a time, wait for the answer, give brief honest feedback (strong/ok/weak + one improvement), then move to the next question. Cover the candidate\'s core topics progressively from fundamentals to scenarios. Keep feedback concise (2-3 sentences). After ~8-10 questions, give an overall assessment.'
-    : v.mode === 'listen'
+  const mode = v.mode === 'listen'
     ? 'LISTENING MODE: the user is practicing an interview answer out loud. Do not interrupt. When asked to respond, grade the answer (strong / ok / weak), say the two most important missing points, and give one follow-up question an interviewer would ask.'
     : 'TALKING MODE: natural spoken conversation. Start answering immediately. Keep answers to 2-4 sentences unless asked for more; offer to go deeper.';
   return `${base}\n${mode}\nIf the user interrupts, stop and address what they said.`;

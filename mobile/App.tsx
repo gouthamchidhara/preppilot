@@ -20,9 +20,8 @@ if (extra.googleWebClientId) {
   GoogleSignin.configure({ webClientId: extra.googleWebClientId, iosClientId: extra.googleIosClientId || undefined });
 }
 if (rcKey) Purchases.configure({ apiKey: rcKey });
-const MOCK_PRODUCT = 'mock_session_60min';
 
-type FromWeb = { type: 'signin'; provider: 'google' | 'apple' } | { type: 'purchase' | 'restore'; userKey: string } | { type: 'buyMock'; userKey: string } | { type: 'signout' };
+type FromWeb = { type: 'signin'; provider: 'google' | 'apple' } | { type: 'purchase' | 'restore'; userKey: string } | { type: 'signout' };
 
 export default function App() {
   const web = useRef<WebView>(null);
@@ -64,30 +63,11 @@ export default function App() {
         await Purchases.restorePurchases();
       } else {
         const offerings = await Purchases.getOfferings();
-        // The subscription, never the mock-session consumable (which may sit in the same offering).
         const pkgs = offerings.current?.availablePackages ?? [];
-        const pkg = offerings.current?.monthly ?? pkgs.find(p => p.product.identifier.startsWith('pro_monthly')) ?? pkgs.find(p => p.product.identifier !== MOCK_PRODUCT);
+        const pkg = offerings.current?.monthly ?? pkgs.find(p => p.product.identifier.startsWith('pro_monthly')) ?? pkgs[0];
         if (!pkg) return fail('Pro is not available right now. Try again later.');
         await Purchases.purchasePackage(pkg);
       }
-      toWeb({ type: 'purchased' });
-    } catch (e) {
-      const err = e as PurchasesError & { userCancelled?: boolean };
-      if (err.userCancelled) return toWeb({ type: 'cancelled' });
-      fail(err.message || 'Purchase failed.');
-    }
-  }
-
-  async function buyMockSession(userKey: string) {
-    if (!rcKey) return fail('In-app purchases are not set up yet.');
-    try {
-      await Purchases.logIn(userKey);
-      const offerings = await Purchases.getOfferings();
-      // Find the mock_session_60min consumable across all offerings
-      const allPkgs = Object.values(offerings.all).flatMap(o => o.availablePackages);
-      const mockPkg = allPkgs.find(p => p.product.identifier === MOCK_PRODUCT);
-      if (!mockPkg) return fail('Mock interview session is not available right now.');
-      await Purchases.purchasePackage(mockPkg);
       toWeb({ type: 'purchased' });
     } catch (e) {
       const err = e as PurchasesError & { userCancelled?: boolean };
@@ -101,7 +81,6 @@ export default function App() {
     try { m = JSON.parse(e.nativeEvent.data); } catch { return; }
     if (m.type === 'signin') return signIn(m.provider);
     if (m.type === 'purchase') return purchase(m.userKey);
-    if (m.type === 'buyMock') return buyMockSession(m.userKey);
     if (m.type === 'restore') return purchase(m.userKey, true);
     if (m.type === 'signout') {
       GoogleSignin.signOut().catch(() => {});

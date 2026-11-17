@@ -121,7 +121,7 @@ export async function reserveVoice(ident, now = Date.now()) {
 }
 
 export async function refundVoice(key, sec, plan, poolDay, now = Date.now()) {
-  if (plan === 'admin' || plan === 'mock' || sec <= 0 || key === 'code:admin') return;
+  if (plan === 'admin' || sec <= 0 || key === 'code:admin') return;
   await (await getDb()).update('users', key, u => {
     if (!u) return undefined;
     rollPeriod(u, now);
@@ -162,54 +162,6 @@ export async function sweepCalls(hangup, now = Date.now()) {
     try { await hangup(c.id); } catch { /* already gone */ }
   }
   return overdue.length;
-}
-
-// Consumable session credits for extended mock interview voice sessions.
-// txnId (the store transaction id) makes grants idempotent: the webhook can be retried and
-// /billing/refresh reads the same purchases, so each purchase must count once.
-export async function addSessionCredits(key, count = 1, now = Date.now(), txnId = '') {
-  let added = false;
-  await (await getDb()).update('users', key, u => {
-    if (!u || u.deleted) return undefined;
-    if (txnId) {
-      u.creditTxns ||= [];
-      if (u.creditTxns.includes(txnId)) return undefined;
-      u.creditTxns.push(txnId);
-    }
-    u.sessionCredits = (u.sessionCredits || 0) + count;
-    u.sessionCreditLast = now;
-    added = true;
-    return u;
-  });
-  return added;
-}
-
-// One credit opens a mock-interview window of mockCallSec (wall clock). Reconnecting inside the window
-// (dropped connection, app switch) resumes the remaining time instead of burning another credit.
-export async function startMockSession(key, now = Date.now()) {
-  const L = limits();
-  let out = { ok: false };
-  await (await getDb()).update('users', key, u => {
-    if (!u || u.deleted) return undefined;
-    const left = Math.floor(((u.mockUntil || 0) - now) / 1000);
-    if (left >= L.minCallSec) { out = { ok: true, allowedSec: left, resumed: true }; return undefined; }
-    if (!u.sessionCredits) return undefined;
-    u.sessionCredits--;
-    u.mockUntil = now + L.mockCallSec * 1000;
-    out = { ok: true, allowedSec: L.mockCallSec, resumed: false };
-    return u;
-  });
-  return out;
-}
-
-// The voice connection could not be set up for a fresh session: give the credit back.
-export async function cancelMockSession(key) {
-  await (await getDb()).update('users', key, u => {
-    if (!u) return undefined;
-    u.sessionCredits = (u.sessionCredits || 0) + 1;
-    delete u.mockUntil;
-    return u;
-  });
 }
 
 export async function setProUntil(key, untilMs, now = Date.now()) {

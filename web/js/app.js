@@ -3,7 +3,7 @@ import { store } from './store.js';
 import { ai } from './ai.js';
 import { voice } from './voice.js';
 import { VoiceSession, realtimeSupported } from './realtime.js';
-import { native, signedIn, signOut, renderGoogleButton, refreshAccount, onAccountChange, nativeSignIn, nativePurchase, nativeBuyMock, nativeRestore, listenNative } from './auth.js';
+import { native, signedIn, signOut, renderGoogleButton, refreshAccount, onAccountChange, nativeSignIn, nativePurchase, nativeRestore, listenNative } from './auth.js';
 import { initContent, getCatalog, getManifest, roleById, topicMeta, ensureTopics, ensureForProfile, loadedTopics, reportUrl } from './content.js';
 
 const DAY = 86400000;
@@ -82,11 +82,9 @@ function offer() {
     freeMsgs: P?.free.msgs ?? 15, freeVoice: P?.free.voiceMin ?? 2,
     proMsgs: P?.pro.msgs ?? 500, proVoice: P?.pro.voiceMin ?? 30, proPrice: `${amount}/${per}`, proAmount: amount, proPer: per,
     perDay: amount.trim().startsWith('$') && n > 0 && per === 'month' ? `About ${Math.round((n / 30) * 100)}¢ a day` : '',
-    mockPrice: P?.mock?.price || '$10.99', mockMin: P?.mock?.minutes ?? 60,
   };
 }
 const storeName = () => (window.PP_PLATFORM === 'android' ? 'Google Play' : 'App Store');
-const mockState = () => { const a = store.account(); return { credits: a?.sessionCredits || 0, left: a?.mockSecLeft || 0 }; };
 
 /* ---------- onboarding ---------- */
 // The form re-renders when the role changes (role decides which extras and self-rating chips appear),
@@ -114,7 +112,7 @@ function welcome() {
     <div class="proof">
       <div><b>${cat.roles.length}</b><span>tech roles, mix and match</span></div>
       <div><b>${nTopics}</b><span>interview topics, by level</span></div>
-      <div><b>${offer().mockMin} min</b><span>spoken AI mock interviews</span></div>
+      <div><b>Voice</b><span>AI coach you can talk to</span></div>
     </div>
   </section>`;
 }
@@ -180,18 +178,6 @@ async function saveProfile() {
 }
 
 /* ---------- views ---------- */
-function mockPromo() {
-  const { credits, left } = mockState();
-  const o = offer();
-  const body = left >= 20
-    ? ['Session in progress', 'Your mock interview is still open', `${Math.ceil(left / 60)} minutes left. Rejoin and pick up where you stopped.`, `<button class="btn primary" data-act="gomock">Rejoin now</button>`]
-    : credits
-      ? ['Ready when you are', 'Your mock interview is waiting', `${credits} session${credits > 1 ? 's' : ''} available. ${o.mockMin} minutes, spoken, with feedback after every answer.`, `<button class="btn primary" data-act="gomock">Start the interview</button>`]
-      : ['Full mock interview', `${o.mockMin} minutes with an AI interviewer`, 'Spoken questions for your role, honest feedback after every answer, and an overall verdict at the end.', `<button class="btn primary" data-act="buymock" ${S.buyBusy ? 'disabled' : ''}>Get a session · ${esc(o.mockPrice)}</button>`];
-  return `<section class="card promo"><div class="badge">${ic('target')}</div>
-    <div class="stack tight grow"><div class="eyebrow">${body[0]}</div><h3>${esc(body[1])}</h3><p class="muted small">${esc(body[2])}</p><div class="row" style="margin-top:6px">${body[3]}</div></div></section>`;
-}
-
 function homeView() {
   const p = profile();
   const relevant = rankTopics(topics(), p);
@@ -203,9 +189,9 @@ function homeView() {
   const r = readiness(relevant, p, prog);
   const due = dueCards(topics(), p, prog, Date.now(), 999).length;
   const left = daysUntil(p.interviewDate);
-  const dayLabel = d => d.kind === 'mock' ? 'Mock interview + review' : d.kind === 'review' ? 'Mixed review' : d.topics.map(topicName).join(' + ');
-  const todayTitle = today.kind === 'mock' ? 'Mock interview day' : today.kind === 'review' ? 'Review what is due' : dayLabel(today);
-  const todayHint = today.kind === 'mock' ? 'Rehearse under real conditions, then clear the cards you missed.' : today.kind === 'review' ? `${due} card${due === 1 ? '' : 's'} due. Missed ones come first.` : 'Read the learn cards, then lock it in with flashcards.';
+  const dayLabel = d => d.kind === 'review' ? 'Mixed review' : d.topics.map(topicName).join(' + ');
+  const todayTitle = today.kind === 'review' ? 'Review what is due' : dayLabel(today);
+  const todayHint = today.kind === 'review' ? `${due} card${due === 1 ? '' : 's'} due. Missed ones come first.` : 'Read the learn cards, then lock it in with flashcards.';
   const mine = new Set(relevant.map(t => t.id));
   const others = getManifest().packs.map(pk => ({ ...pk, topics: pk.topics.filter(t => !mine.has(t.id)) })).filter(pk => pk.topics.length);
   const roleIds = migrateProfile(p).roleIds;
@@ -235,12 +221,10 @@ function homeView() {
       <div class="row">
         ${today.kind === 'learn' ? `<button class="btn primary grow" data-act="learn" data-id="${today.topics[0]}">${ic('book')}Start learning</button>` : ''}
         <button class="btn ${today.kind === 'learn' ? '' : 'primary'} grow" data-act="deck" data-id="${today.kind === 'learn' ? today.topics.join(',') : ''}">${ic('cards')}Flashcards</button>
-        ${today.kind === 'mock' ? `<button class="btn grow" data-act="mock">${ic('spark')}Chat mock interview</button>` : ''}
       </div>
     </section>
-    <div class="days" id="days">${plan.map((d, i) => `<button class="day ${i < ti ? 'past' : i === ti ? 'cur' : ''} ${d.kind === 'mock' ? 'mock' : ''}" ${d.kind === 'learn' ? `data-act="learn" data-id="${d.topics[0]}"` : d.kind === 'mock' ? 'data-act="mock"' : 'data-act="deck"'}>
+    <div class="days" id="days">${plan.map((d, i) => `<button class="day ${i < ti ? 'past' : i === ti ? 'cur' : ''}"${d.kind === 'learn' ? ` data-act="learn" data-id="${d.topics[0]}"` : ' data-act="deck"'}>
       <span class="d">${i === ti ? 'Today' : 'Day ' + (i + 1)} · ${esc(short(d.date))}</span><span class="t">${esc(dayLabel(d))}</span></button>`).join('')}</div>
-    ${mockPromo()}
     ${roleIds.length > 1 ? `<section class="card stack"><h3>Drill one role</h3><p class="muted small">Focused flashcards from a single role's topics.</p><div class="chips">${roleIds.map(id => `<button class="chip" data-act="roledeck" data-id="${esc(id)}">${esc(label(id))}</button>`).join('')}</div></section>` : ''}
     ${roleIds.includes('other') ? `<section class="card stack"><h3>Make it specific to ${esc(p.otherRole)}</h3>
       <p class="muted small">Your plan starts from the closest listed role. Let the AI write topics for your exact role (uses 5 AI messages).</p>
@@ -309,7 +293,7 @@ function deckView() {
 }
 
 const STATUS = { connecting: 'Connecting…', ready: 'Listening. Just talk.', listening: 'Listening. I won\'t interrupt.', you: 'You\'re speaking…', thinking: 'Thinking…', ai: 'Speaking. Talk to interrupt.' };
-const MODE_NAME = { talk: 'Talk', listen: 'Rehearse', mock: 'Mock interview' };
+const MODE_NAME = { talk: 'Talk', listen: 'Rehearse' };
 const clock = sec => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
 
 function voicePanel() {
@@ -329,14 +313,10 @@ function voicePanel() {
   if (!(S.voiceServer && realtimeSupported)) {
     return S.healthLoaded ? `<div class="note">Live voice isn't available ${S.voiceServer ? 'in this browser' : 'right now'}. You can still type, or use the mic button to dictate.</div>` : '';
   }
-  const { credits, left } = mockState();
-  const o = offer();
   const dis = S.rtStarting ? 'disabled' : '';
-  const mockTag = left >= 20 ? `Rejoin · ${Math.ceil(left / 60)} min left` : credits ? `${credits} session${credits > 1 ? 's' : ''} ready` : `${o.mockPrice} · one-time`;
   return `<div class="modes">
     <button class="mode talk" data-act="rtstart" data-mode="talk" ${dis}><span class="ico">${ic('mic')}</span><span class="txt"><b>Talk</b><span>Hands-free conversation. Interrupt any time.</span></span></button>
     <button class="mode listen" data-act="rtstart" data-mode="listen" ${dis}><span class="ico">${ic('ear')}</span><span class="txt"><b>Rehearse</b><span>Answer out loud without interruptions, then get graded.</span></span></button>
-    <button class="mode mock" data-act="${left >= 20 || credits ? 'gomock' : 'buymock'}" ${dis || (S.buyBusy ? 'disabled' : '')}><span class="ico">${ic('target')}</span><span class="txt"><b>Mock interview</b><span>${o.mockMin} minutes, full interview, scored.</span><span class="tag">${esc(mockTag)}</span></span></button>
   </div>`;
 }
 
@@ -373,7 +353,6 @@ function accountCard() {
   if (!signedIn()) return signInCard();
   if (!a) return `<section class="card row between small muted"><span>${store.accessCode() ? 'Using a beta access code.' : 'Loading account…'}</span><button class="link small" data-act="signout">Sign out</button></section>`;
   const o = offer();
-  const { credits, left } = mockState();
   const name = a.name || a.email || 'Signed in';
   const planPill = a.unlimited ? '<span class="pill">ADMIN</span>' : a.plan === 'pro' ? '<span class="pill pro">PRO</span>' : '<span class="pill">FREE</span>';
   const sub = a.unlimited ? 'Unlimited AI' : a.plan === 'pro' && a.periodEnds ? `Allowance resets ${new Date(a.periodEnds).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : `Free trial: ${o.freeMsgs} messages, ${o.freeVoice} voice minutes`;
@@ -381,7 +360,6 @@ function accountCard() {
     <div class="row"><div class="avatar">${esc(name[0].toUpperCase())}</div>
       <div class="grow"><div class="row" style="gap:8px"><b style="overflow:hidden;text-overflow:ellipsis">${esc(name)}</b>${planPill}</div><div class="small muted">${esc(sub)}</div></div></div>
     ${usageMeters(a)}
-    ${credits || left >= 20 ? `<div class="note">${left >= 20 ? `Mock interview in progress: ${Math.ceil(left / 60)} min left. ` : ''}${credits ? `${credits} mock interview session${credits > 1 ? 's' : ''} ready.` : ''} <button class="link small" data-act="gomock">${left >= 20 ? 'Rejoin' : 'Start'} →</button></div>` : ''}
     ${a.plan === 'free' ? `<button class="btn primary block" data-act="plans">${ic('bolt')}Upgrade to Pro · ${esc(o.proPrice)}</button>` : ''}
     <div class="row small" style="gap:16px">
       ${a.plan !== 'free' || a.unlimited ? '<button class="link quiet small" data-act="plans">Plans</button>' : ''}
@@ -398,8 +376,8 @@ function paywallCard() {
   const o = offer();
   if (a?.plan === 'pro') {
     return `<section class="card paywall stack"><div class="eyebrow">Monthly allowance used</div><h3>You've used this month's Pro allowance</h3>
-      <p class="muted small">It refills ${a.periodEnds ? 'on ' + new Date(a.periodEnds).toLocaleDateString(undefined, { month: 'long', day: 'numeric' }) : 'at your next billing period'}. A mock interview session is separate and works right now.</p>
-      ${usageMeters(a)}<div class="row"><button class="btn primary" data-act="plans">See mock interview</button><button class="btn ghost" data-act="unpaywall">Dismiss</button></div></section>`;
+      <p class="muted small">It refills ${a.periodEnds ? 'on ' + new Date(a.periodEnds).toLocaleDateString(undefined, { month: 'long', day: 'numeric' }) : 'at your next billing period'}. Your plan and flashcards keep working in the meantime.</p>
+      ${usageMeters(a)}<div class="row"><button class="btn" data-act="unpaywall">Got it</button></div></section>`;
   }
   return `<section class="card paywall stack"><div class="eyebrow">Free trial used up</div><h3>Keep your coach for the whole prep</h3>
     <p class="muted small">Pro gives you ${o.proMsgs} AI messages and ${o.proVoice} voice minutes every month. Your plan and flashcards stay free either way.</p>
@@ -414,7 +392,7 @@ function mountGoogleButton() {
 
 function chatView() {
   const msgs = store.chat();
-  const quick = ['Mock interview me on my weakest topic', 'Grade my answer to the last question', 'Explain the hardest topic in my plan simply', 'What would a senior panel ask about my background?'];
+  const quick = ['Quiz me on my weakest topic', 'Grade my answer to the last question', 'Explain the hardest topic in my plan simply', 'What would a senior panel ask about my background?'];
   const live = S.live ? `<div class="msg assistant" id="liveMsg">${md(S.live.text) || '<span class="dots"><i></i><i></i><i></i></span>'}</div>` : '';
   const canUse = signedIn();
   const a = store.account();
@@ -428,7 +406,7 @@ function chatView() {
     ${S.paywall ? paywallCard() : voicePanel()}
     ${lowFree && !S.rt ? `<div class="note row between"><span>${a.msgsLeft} message${a.msgsLeft === 1 ? '' : 's'} and ${mins(a.voiceSecLeft)} voice min left in your free trial.</span><button class="link small" data-act="plans">Upgrade →</button></div>` : ''}
     ${S.chatContext ? `<div class="note row between"><span>About: <b style="color:var(--ink)">${esc(S.chatContext.split('\n')[0])}</b></span><button class="link quiet small" data-act="dropctx">Remove</button></div>` : ''}
-    <div class="msgs" id="msgs">${msgs.length || live ? msgs.map(bubble).join('') : `<div class="empty"><h3>What do you want to work on?</h3><p class="muted">Ask about a concept, paste an answer to get it graded, or start a mock interview.</p>
+    <div class="msgs" id="msgs">${msgs.length || live ? msgs.map(bubble).join('') : `<div class="empty"><h3>What do you want to work on?</h3><p class="muted">Ask about a concept, paste an answer to get it graded, or ask to be quizzed.</p>
       <div class="chips">${quick.map(q => `<button class="chip" data-act="quick" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div></div>`}
     ${live}${S.busy ? '<div class="msg assistant"><span class="dots"><i></i><i></i><i></i></span></div>' : ''}</div>
     <form id="chatForm" class="composer">
@@ -480,11 +458,9 @@ function rtHandlers() {
       render();
     },
     end(reason) {
-      const wasMock = S.rtMode === 'mock';
       S.rt = null; S.rtMode = null; S.rtStatus = ''; S.live = null; S.pendingUser = false; S.muted = false;
       store.setChat(store.chat().filter(m => m.content !== '🎙 …'));
       if (reason) store.setChat([...store.chat(), { role: 'assistant', content: `ℹ️ ${reason}` }]);
-      if (wasMock) refreshAccount().catch(() => {}); // remaining session time for the "rejoin" button
       if (S.view === 'chat') render();
     },
   };
@@ -498,13 +474,12 @@ async function startVoice(mode) {
   const session = new VoiceSession(rtHandlers());
   S.rt = session; S.rtMode = mode; S.rtStatus = 'connecting'; S.rtStarting = true; S.paywall = false; render();
   try {
-    // Rehearse mode stays silent unless "read replies aloud" is on; talk and mock interviews are always spoken.
+    // Rehearse mode stays silent unless "read replies aloud" is on; talk mode is always spoken.
     await session.start({ mode, speak: mode !== 'listen' || store.speak(), profileSummary: summary(), context: S.chatContext });
   } catch (e) {
     S.rt = null; S.rtMode = null;
     if (e.code === 'quota') S.paywall = true;
-    if (e.code === 'no_credit') { refreshAccount().catch(() => {}); oops('No mock interview session on this account yet.'); }
-    else store.setChat([...store.chat(), { role: 'assistant', content: `⚠️ ${e.message}` }]);
+    store.setChat([...store.chat(), { role: 'assistant', content: `⚠️ ${e.message}` }]);
   } finally { S.rtStarting = false; render(); }
 }
 
@@ -534,7 +509,6 @@ function plansView() {
   const a = store.account();
   const o = offer();
   const isPro = a?.plan === 'pro';
-  const { credits } = mockState();
   const dis = S.buyBusy ? 'disabled' : '';
   return `<div class="stack" style="gap:20px">
     <div class="plans-top"><button class="iconbtn" data-act="pickfree" aria-label="Close">${ic('x')}</button></div>
@@ -548,16 +522,8 @@ function plansView() {
         <div><div class="eyebrow">Pro</div><div class="name">Your coach, all month</div></div>
         <div class="price">${esc(o.proAmount)}<span>/ ${esc(o.proPer)}</span></div>
         ${o.perDay ? `<div class="sub">${esc(o.perDay)}. Cancel any time.</div>` : ''}
-        ${ticks([`<b>${o.proMsgs} AI messages</b> every month`, `<b>${o.proVoice} voice minutes</b> every month: talk it through or rehearse out loud`, 'Answers graded, with the follow-ups a panel would ask', 'Chat mock interviews on your weakest topics', 'Custom card sets for any technology'])}
+        ${ticks([`<b>${o.proMsgs} AI messages</b> every month`, `<b>${o.proVoice} voice minutes</b> every month: talk it through or rehearse out loud`, 'Answers graded, with the follow-ups a panel would ask', 'Quizzes on your weakest topics, one question at a time', 'Custom card sets for any technology'])}
         ${isPro ? `<button class="btn block lg" disabled>${ic('check')}Your current plan</button>` : `<button class="btn primary block lg" data-act="buysub" ${dis}>${S.buyBusy === 'pro' ? `Opening the ${storeName()}…` : 'Start Pro'}</button>`}
-      </div>
-      <div class="plan-card mockp">
-        <div class="plan-flag">Interview this week?</div>
-        <div><div class="eyebrow">One-time</div><div class="name">Full mock interview</div></div>
-        <div class="price">${esc(o.mockPrice)}<span>/ session</span></div>
-        <div class="sub">${o.mockMin} minutes of voice. No subscription.</div>
-        ${ticks(['A spoken interview built for your role and level', 'One question at a time, honest feedback after each answer', 'Overall assessment at the end', 'Dropped call? Rejoin within the hour, same session', 'Works with Free or Pro'])}
-        <button class="btn block lg" data-act="buymock" ${dis}>${S.buyBusy === 'mock' ? `Opening the ${storeName()}…` : credits ? `Buy another (you have ${credits})` : 'Buy a session'}</button>
       </div>
       <div class="plan-card free">
         <div class="row between"><div><div class="eyebrow" style="color:var(--muted)">Free</div><div class="name">Study guide</div></div><div class="price" style="font-size:1.8rem">$0</div></div>
@@ -568,7 +534,6 @@ function plansView() {
     <div class="assure"><span>${ic('shield')}Billed by ${native() ? storeName() : 'Apple or Google'}</span><span>${ic('refresh')}Cancel any time</span><span>${ic('lock')}Study data stays on your device</span></div>
     <div class="faq">
       <details><summary>What counts as an AI message?</summary><p>Each question you send the coach is one message. Generating a custom card set uses five. Voice is counted in minutes, only while a session is live.</p></details>
-      <details><summary>Do I need Pro for the full mock interview?</summary><p>No. A mock interview session is a separate one-time purchase and works on the free plan. It does not use your monthly voice minutes.</p></details>
       <details><summary>How do I cancel Pro?</summary><p>In your ${window.PP_PLATFORM === 'android' ? 'Google Play' : 'Apple ID'} subscription settings, any time. You keep Pro until the end of the period you paid for.</p></details>
       <details><summary>What happens to my progress if I stay free?</summary><p>Nothing changes. Your plan, cards and progress are yours and stay on this device.</p></details>
     </div>
@@ -620,44 +585,39 @@ function needSignIn() {
   toast('Sign in first. It takes a few seconds, then pick your plan.');
 }
 function storeSheet() {
-  sheet(`<h2>Upgrades live in the iPhone app</h2>
-    <p class="muted">Pro and mock interview sessions are bought through the App Store. Sign in there with this same account and everything unlocks here too, on any device.</p>
+  sheet(`<h2>Pro lives in the iPhone app</h2>
+    <p class="muted">Pro is bought through the App Store. Sign in there with this same account and everything unlocks here too, on any device.</p>
     <button class="btn primary block" data-act="closesheet">Got it</button>`);
 }
 let buyTimer;
-function buy(kind) { // 'pro' | 'mock' | 'restore'
+function buy(kind) { // 'pro' | 'restore'
   if (!store.session()) return needSignIn(); // beta-code sessions have no account to attach a purchase to
   if (!native()) return storeSheet();
   const acc = store.account();
   if (!acc?.key) return oops('Still loading your account. Try again in a moment.');
-  S.buying = { kind, credits: acc.sessionCredits || 0 };
+  S.buying = { kind };
   S.buyBusy = kind; render();
   // Older app builds don't report a cancelled purchase sheet, so never leave the buttons locked.
   clearTimeout(buyTimer);
   buyTimer = setTimeout(() => { S.buyBusy = false; render(); }, 8000);
-  if (kind === 'pro') nativePurchase(acc.key); else if (kind === 'mock') nativeBuyMock(acc.key); else nativeRestore(acc.key);
+  if (kind === 'pro') nativePurchase(acc.key); else nativeRestore(acc.key);
 }
 function buyDone() { clearTimeout(buyTimer); const b = S.buying; S.buying = null; S.buyBusy = false; return b; }
 // The store confirms a purchase before our server has heard about it; check again a few times.
-function pollPurchase(before, tries = [3000, 8000, 20000]) {
+function pollPurchase(tries = [3000, 8000, 20000]) {
   if (!tries.length) return;
   setTimeout(async () => {
     try { await ai.post('/api/billing/refresh', {}); } catch { /* try again below */ }
-    const a = store.account();
-    if ((a?.sessionCredits || 0) > before.credits) { S.showPlans = false; render(); return toast('Mock interview added. Start it from the Coach tab.'); }
-    if (before.kind === 'pro' && a?.plan === 'pro') { S.showPlans = false; render(); return toast('You\'re on Pro. Thank you!'); }
-    pollPurchase(before, tries.slice(1));
+    if (store.account()?.plan === 'pro') { S.showPlans = false; render(); return toast('You\'re on Pro. Thank you!'); }
+    pollPurchase(tries.slice(1));
   }, tries[0]);
 }
 function onPurchased(acc) {
   const b = buyDone();
   S.paywall = false;
-  if (b?.kind === 'mock') {
-    if ((acc?.sessionCredits || 0) > b.credits) { S.showPlans = false; toast('Mock interview added. Start it from the Coach tab.'); }
-    else { toast('Payment received. Your session will show up in a moment.'); pollPurchase(b); }
-  } else if (acc?.plan === 'pro') { S.showPlans = false; toast(b?.kind === 'restore' ? 'Pro restored.' : 'You\'re on Pro. Thank you!'); }
+  if (acc?.plan === 'pro') { S.showPlans = false; toast(b?.kind === 'restore' ? 'Pro restored.' : 'You\'re on Pro. Thank you!'); }
   else if (b?.kind === 'restore') oops('No active subscription found for this account.');
-  else { toast('Payment received. Pro will unlock in a moment.'); pollPurchase(b || { kind: 'pro', credits: 0 }); }
+  else { toast('Payment received. Pro will unlock in a moment.'); pollPurchase(); }
   render();
 }
 
@@ -833,23 +793,12 @@ document.addEventListener('click', async e => {
     S.view = 'chat'; render();
     if (signedIn()) sendChat('Go deeper on this question: what follow-ups would an interviewer ask, and what would a strong answer add?');
   }
-  else if (a === 'mock') {
-    const weak = profile().weak?.[0];
-    S.chatContext = ''; S.view = 'chat'; render();
-    if (signedIn()) sendChat(`Run a mock interview for my target role${weak ? `, starting with ${topicById(weak)?.name || weak}` : ''}. Ask one question at a time and grade each answer honestly.`);
-  }
   else if (a === 'quick') sendChat(b.dataset.q);
   else if (a === 'rtstart') startVoice(b.dataset.mode);
-  else if (a === 'gomock') {
-    if (!signedIn()) return needSignIn();
-    S.showPlans = false; S.chatContext = ''; S.view = 'chat'; render();
-    startVoice('mock');
-  }
   else if (a === 'plans') { S.showPlans = true; render(); }
   else if (a === 'pickfree') { S.showPlans = false; render(); }
   else if (a === 'unpaywall') { S.paywall = false; render(); }
   else if (a === 'buysub') buy('pro');
-  else if (a === 'buymock') buy('mock');
   else if (a === 'restore') buy('restore');
   else if (a === 'rtrespond') S.rt?.respond();
   else if (a === 'rtinterrupt') S.rt?.interrupt();
@@ -859,7 +808,7 @@ document.addEventListener('click', async e => {
   else if (a === 'signout') { S.rt?.stop(); store.setAccessCode(''); signOut(); S.paywall = false; render(); }
   else if (a === 'delacct') {
     sheet(`<h2>Delete your account?</h2>
-      <p class="muted">This removes your email, plan and AI usage from our servers right away. It does not cancel a Pro subscription: do that in your ${window.PP_PLATFORM === 'android' ? 'Google Play' : 'Apple ID'} subscription settings. Unused mock interview sessions are lost.</p>
+      <p class="muted">This removes your email, plan and AI usage from our servers right away. It does not cancel a Pro subscription: do that in your ${window.PP_PLATFORM === 'android' ? 'Google Play' : 'Apple ID'} subscription settings.</p>
       <div class="row"><button class="btn grow" data-act="closesheet">Keep my account</button><button class="btn again" data-act="delacct-yes">Delete permanently</button></div>`);
   }
   else if (a === 'delacct-yes') {

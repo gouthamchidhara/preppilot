@@ -17,11 +17,11 @@ test('ranking follows target role, and self-rated weak topics move up', () => {
   assert.notEqual(rankTopics(TOPICS, { role: 'infra', strong: ['linux'] })[0].id, 'linux');
 });
 
-test('plan fits the days until the interview and ends with a mock day', () => {
+test('plan fits the days until the interview and ends with a review day', () => {
   const p = { role: 'infra', interviewDate: new Date(NOW + 10 * DAY).toISOString().slice(0, 10) };
   const plan = buildPlan(TOPICS, p, NOW);
   assert.equal(plan.length, daysUntil(p.interviewDate, NOW));
-  assert.equal(plan.at(-1).kind, 'mock');
+  assert.equal(plan.at(-1).kind, 'review');
   const covered = new Set(plan.flatMap(d => d.topics));
   for (const t of TOPICS) assert.ok(covered.has(t.id), `${t.id} missing from plan`);
 });

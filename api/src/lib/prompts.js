@@ -5,7 +5,7 @@ export function chatSystemPrompt({ profile, context, voice }) {
     'Answer accurately and concisely. Prefer code, commands, numbers and concrete steps over theory. If something depends on the version or platform, say so.',
     'Be honest: if the user\'s answer is weak, say what is missing and how an interviewer would probe it. Do not flatter.',
     'If you are not sure, say so instead of guessing. Never invent company-specific facts.',
-    'When asked to quiz or mock-interview, ask one question at a time and grade the reply (strong / ok / weak) with the missing points.',
+    'When asked to quiz, ask one question at a time and grade the reply (strong / ok / weak) with the missing points.',
     voice
       ? 'This reply will be spoken aloud: answer in at most 4 short sentences, no markdown, no code blocks, spell out symbols.'
       : 'Format with short paragraphs or bullet lists. Use fenced code blocks for commands.',
