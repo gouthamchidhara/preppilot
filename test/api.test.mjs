@@ -331,3 +331,28 @@ test('guide suggestions are rate-limited to 5 per hour per user', async () => {
   for (let i = 0; i < 5; i++) assert.equal((await call('POST suggestions', { text: `Suggestion number ${i} please` }, h)).status, 200);
   assert.equal((await call('POST suggestions', { text: 'One more suggestion please' }, h)).status, 429);
 });
+
+test('fresh scenarios: one AI call per role per 6 hours, previous one kept if the AI fails', async () => {
+  const { freshFor, sanitizeFresh, FRESH_TTL_MS } = await import('../api/src/lib/fresh.js');
+  let calls = 0;
+  const gen = async () => { calls++; return JSON.stringify({ title: `Disk full at 2 a.m. #${calls}`, situation: 'A node pages at night.', question: 'What do you check first?', points: ['df -h and du', 'find the writer', 'rotate logs'], analogy: 'A cupboard that keeps filling.' }); };
+  const t0 = Date.now();
+  const a = await freshFor('sre', t0, gen);
+  assert.equal(a.title, 'Disk full at 2 a.m. #1');
+  await freshFor('sre', t0 + 1000, gen);
+  assert.equal(calls, 1); // cached
+  const b = await freshFor('sre', t0 + FRESH_TTL_MS + 1, gen);
+  assert.equal(b.title, 'Disk full at 2 a.m. #2');
+  const c = await freshFor('sre', t0 + 2 * FRESH_TTL_MS + 2, async () => { throw new Error('down'); });
+  assert.equal(c.title, 'Disk full at 2 a.m. #2'); // stale beats nothing
+  assert.equal(await freshFor('not-a-role', t0, gen), null);
+  assert.equal(sanitizeFresh('{"title":"x"}'), null);
+  assert.equal((await call('POST fresh', { role: '../etc' })).status, 400);
+});
+
+test('the API copy of the role list matches the app', async () => {
+  const { readFileSync } = await import('node:fs');
+  const app = JSON.parse(readFileSync(new URL('../web/content/roles.json', import.meta.url))).roles.map(r => r.id).sort();
+  const api = JSON.parse(readFileSync(new URL('../api/src/lib/roles.json', import.meta.url))).roles.map(r => r.id).sort();
+  assert.deepEqual(api, app);
+});

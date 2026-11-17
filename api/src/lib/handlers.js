@@ -9,6 +9,7 @@ import { upsertUser, status, consumeMsgs, refundMsgs, reserveVoice, refundVoice,
 import { COST, limits, proPriceLabel, livePriceLabel, planOf } from './plans.js';
 import { webhookAuthorized, applyWebhook, refreshFromRevenueCat } from './billing.js';
 import { getDb } from './db.js';
+import { freshFor } from './fresh.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { sendSuggestionEmail } from './email.js';
 
@@ -111,10 +112,10 @@ export async function handleRealtime(req, log) {
   const now = Date.now();
   const L = limits();
 
-  // Live coach: one credit buys a 60-minute window. Beta-code sessions have no account, so no credits.
+  // Live AI: one credit buys a 60-minute window. Beta-code sessions have no account, so no credits.
   if (v.mode === 'live') {
     const m = w.ident.viaCode ? { ok: true, allowedSec: L.liveCallSec, resumed: true } : await startLiveSession(w.ident.key, now);
-    if (!m.ok) return json(402, { error: 'No Live coach session on this account yet. Buy a session to start.', code: 'no_credit' });
+    if (!m.ok) return json(402, { error: 'No Live AI session on this account yet. Buy a session to start.', code: 'no_credit' });
     // The user can pick a shorter session; the window stays open for rejoining either way.
     const allowedSec = v.live?.lengthMin ? Math.min(m.allowedSec, v.live.lengthMin * 60) : m.allowedSec;
     try {
@@ -152,8 +153,8 @@ export async function handleRealtimeEnd(req) {
   return json(200, { ended: !!ended, usedSec: ended?.usedSec ?? null, account: await status(w.ident) });
 }
 
-// Live coach hint: a short hint for the question the coach just asked, plus what a strong
-// answer would add. Practice only: hints are served only while a Live coach window is open
+// Live AI hint: a short hint for the question the coach just asked, plus what a strong
+// answer would add. Practice only: hints are served only while a Live AI window is open
 // (or to an admin), and are part of the paid session, so they do not consume chat quota.
 export async function handleLiveHint(req, log) {
   const v = validateLiveHint(req.body);
@@ -165,7 +166,7 @@ export async function handleLiveHint(req, log) {
   const user = await loadUser(w.ident);
   const now = Date.now();
   const inWindow = user && (planOf(user, now) === 'admin' || (user.mockUntil || 0) > now);
-  if (!inWindow) return json(402, { error: 'Hints are part of a Live coach session. Start one to get hints.', code: 'no_live_session' });
+  if (!inWindow) return json(402, { error: 'Hints are part of a Live AI session. Start one to get hints.', code: 'no_live_session' });
   const system = 'You are PrepPilot\'s practice helper. The user is in a timed practice test. '
     + 'Given the coach\'s question and the user\'s answer so far (if any), reply with ONLY a JSON object: '
     + '{"hint": "one short hint for answering, 1-2 sentences", "strong": "2-3 things a strong answer would add, concise"}. No markdown.';
@@ -267,4 +268,14 @@ export function handleHealth() {
       live: { minutes: Math.floor(L.liveCallSec / 60), price: livePriceLabel() },
     },
   });
+}
+
+/* ---------- fresh scenario (public, cached, rewritten every 6 hours) ---------- */
+export async function handleFresh(req, log) {
+  const role = String(req.body?.role || '');
+  if (!/^[a-z0-9-]{2,40}$/.test(role)) return json(400, { error: 'role required' });
+  try {
+    const item = await freshFor(role);
+    return item ? json(200, item, { 'cache-control': 'public, max-age=600' }) : json(404, { error: 'No scenario yet.' });
+  } catch (e) { log?.(`fresh: ${e.message}`); return json(503, { error: 'Try again later.' }); }
 }

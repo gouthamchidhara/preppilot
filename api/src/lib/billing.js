@@ -4,7 +4,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { setProUntil, addSessionCredits } from './account.js';
 
 const ENTITLEMENT = () => process.env.REVENUECAT_ENTITLEMENT || 'pro';
-// Store product id for the Live coach session. The product keeps its App Store Connect id.
+// Store product id for the Live AI session. The product keeps its App Store Connect id.
 const LIVE_PRODUCT = () => process.env.REVENUECAT_LIVE_PRODUCT || 'mock_session_60min';
 const GRANT = new Set(['INITIAL_PURCHASE', 'RENEWAL', 'PRODUCT_CHANGE', 'UNCANCELLATION', 'NON_RENEWING_PURCHASE', 'SUBSCRIPTION_EXTENDED', 'TEMPORARY_ENTITLEMENT_GRANT']);
 
@@ -23,7 +23,7 @@ export async function applyWebhook(body, now = Date.now()) {
   if (!isLive && Array.isArray(e.entitlement_ids) && !e.entitlement_ids.includes(ENTITLEMENT())) return { ignored: true };
   const keys = [...new Set([e.app_user_id, e.original_app_user_id, ...(e.aliases || [])].filter(k => typeof k === 'string' && k.includes(':')))];
   if (!keys.length) return { ignored: true };
-  // Consumable: Live coach session credit
+  // Consumable: Live AI session credit
   if (isLive && GRANT.has(e.type)) {
     const txn = String(e.transaction_id || e.id || '');
     for (const k of keys) await addSessionCredits(k, 1, now, txn);

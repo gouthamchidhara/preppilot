@@ -21,7 +21,7 @@ if (extra.googleWebClientId) {
   GoogleSignin.configure({ webClientId: extra.googleWebClientId, iosClientId: extra.googleIosClientId || undefined });
 }
 if (rcKey) Purchases.configure({ apiKey: rcKey });
-const LIVE_PRODUCT = 'mock_session_60min'; // store product id for a Live coach session
+const LIVE_PRODUCT = 'mock_session_60min'; // store product id for a Live AI session
 
 type FromWeb = { type: 'signin'; provider: 'google' | 'apple' } | { type: 'purchase' | 'restore'; userKey: string } | { type: 'buyLive'; userKey: string } | { type: 'signout' } | { type: 'badge'; count: number } | { type: 'daily'; title: string; body: string } | { type: 'promptNotifications' };
 
@@ -69,7 +69,7 @@ export default function App() {
         await Purchases.restorePurchases();
       } else {
         const offerings = await Purchases.getOfferings();
-        // The subscription, never the Live coach consumable (which may sit in the same offering).
+        // The subscription, never the Live AI consumable (which may sit in the same offering).
         const pkgs = offerings.current?.availablePackages ?? [];
         const pkg = offerings.current?.monthly ?? pkgs.find(p => p.product.identifier.startsWith('pro_monthly')) ?? pkgs.find(p => p.product.identifier !== LIVE_PRODUCT);
         if (!pkg) return fail('Pro is not available right now. Try again later.');
@@ -88,10 +88,10 @@ export default function App() {
     try {
       await Purchases.logIn(userKey);
       const offerings = await Purchases.getOfferings();
-      // Find the Live coach consumable across all offerings
+      // Find the Live AI consumable across all offerings
       const allPkgs = Object.values(offerings.all).flatMap(o => o.availablePackages);
       const livePkg = allPkgs.find(p => p.product.identifier === LIVE_PRODUCT);
-      if (!livePkg) return fail('A Live coach session is not available right now.');
+      if (!livePkg) return fail('A Live AI session is not available right now.');
       await Purchases.purchasePackage(livePkg);
       toWeb({ type: 'purchased' });
     } catch (e) {

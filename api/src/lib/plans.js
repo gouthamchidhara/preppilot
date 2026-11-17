@@ -45,7 +45,7 @@ export function usageStatus(user, now = Date.now()) {
   const plan = planOf(user, now);
   const L = limits();
   // Stored under the original field names (sessionCredits / mockUntil) so credits bought
-  // before the rename keep working; the user-facing name is "Live coach".
+  // before the rename keep working; the user-facing name is "Live AI".
   const liveSecLeft = Math.max(0, Math.floor(((user.mockUntil || 0) - now) / 1000));
   if (plan === 'admin') return { plan, unlimited: true, sessionCredits: user.sessionCredits || 0, liveSecLeft };
   if (plan === 'anon') return { plan, msgsLeft: 0, voiceSecLeft: 0, sessionCredits: 0 };

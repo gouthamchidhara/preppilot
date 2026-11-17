@@ -164,11 +164,11 @@ export async function sweepCalls(hangup, now = Date.now()) {
   return overdue.length;
 }
 
-// Consumable session credits for Live coach practice tests.
+// Consumable session credits for Live AI practice tests.
 // txnId (the store transaction id) makes grants idempotent: the webhook can be retried and
 // /billing/refresh reads the same purchases, so each purchase must count once.
 // Storage fields keep the original names (sessionCredits / mockUntil) so credits bought
-// before the rename keep working; the user-facing name is "Live coach".
+// before the rename keep working; the user-facing name is "Live AI".
 export async function addSessionCredits(key, count = 1, now = Date.now(), txnId = '') {
   let added = false;
   await (await getDb()).update('users', key, u => {
@@ -186,7 +186,7 @@ export async function addSessionCredits(key, count = 1, now = Date.now(), txnId 
   return added;
 }
 
-// One credit opens a Live coach window of liveCallSec (wall clock). Reconnecting inside the window
+// One credit opens a Live AI window of liveCallSec (wall clock). Reconnecting inside the window
 // (dropped connection, app switch) resumes the remaining time instead of burning another credit.
 export async function startLiveSession(key, now = Date.now()) {
   const L = limits();

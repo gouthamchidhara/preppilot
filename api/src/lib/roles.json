@@ -1,0 +1,96 @@
+{
+ "roles": [
+  {
+   "id": "backend-java",
+   "name": "Backend developer (Java)"
+  },
+  {
+   "id": "backend-python",
+   "name": "Backend developer (Python)"
+  },
+  {
+   "id": "backend-dotnet",
+   "name": "Backend developer (.NET / C#)"
+  },
+  {
+   "id": "backend-node",
+   "name": "Backend developer (Node.js)"
+  },
+  {
+   "id": "backend-go",
+   "name": "Backend developer (Go)"
+  },
+  {
+   "id": "frontend-react",
+   "name": "Frontend developer (React)"
+  },
+  {
+   "id": "frontend-angular",
+   "name": "Frontend developer (Angular)"
+  },
+  {
+   "id": "fullstack-js",
+   "name": "Full-stack developer (JavaScript)"
+  },
+  {
+   "id": "mobile-ios",
+   "name": "iOS developer (Swift)"
+  },
+  {
+   "id": "mobile-android",
+   "name": "Android developer (Kotlin)"
+  },
+  {
+   "id": "mobile-cross",
+   "name": "Mobile developer (React Native / Flutter)"
+  },
+  {
+   "id": "data-engineer",
+   "name": "Data engineer"
+  },
+  {
+   "id": "data-analyst",
+   "name": "Data / BI analyst"
+  },
+  {
+   "id": "data-scientist",
+   "name": "Data scientist"
+  },
+  {
+   "id": "ml-engineer",
+   "name": "ML / AI engineer"
+  },
+  {
+   "id": "infra",
+   "name": "Infrastructure / Systems engineer"
+  },
+  {
+   "id": "sre",
+   "name": "SRE / Production engineering"
+  },
+  {
+   "id": "cloud",
+   "name": "Cloud engineer / architect"
+  },
+  {
+   "id": "devops",
+   "name": "DevOps / Platform engineer"
+  },
+  {
+   "id": "network",
+   "name": "Network engineer"
+  },
+  {
+   "id": "support",
+   "name": "IT support / Operations"
+  },
+  {
+   "id": "qa-automation",
+   "name": "QA / Test automation engineer"
+  },
+  {
+   "id": "security-engineer",
+   "name": "Security engineer"
+  }
+ ]
+}

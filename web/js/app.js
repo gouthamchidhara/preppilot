@@ -104,6 +104,29 @@ function diagramTeaser(id, html) {
     <div class="teaser-over"><b>${ic('lock')}This picture draws itself, step by step</b><span class="muted small">Animated diagrams for every topic come with Pro.</span><button class="btn primary" data-act="plans">See pricing</button></div></div>`;
 }
 
+/* ---------- fresh from the field: a new scenario for the role every 6 hours ---------- */
+async function loadFresh() {
+  const p = profile();
+  const role = p && migrateProfile(p).roleIds.find(id => id !== 'other') || p?.baseRoleId;
+  if (!role || S.freshRole === role) return;
+  S.freshRole = role;
+  try { const d = await ai.post('/api/fresh', { role }); S.fresh = d; if (S.view === 'home' && !S.showPlans) render(); } catch { S.fresh = null; }
+}
+function freshCard() {
+  const f = S.fresh;
+  if (!f?.title) return '';
+  const hrs = Math.max(0, Math.round((Date.now() - (f.at || Date.now())) / 3600000));
+  const pts = `<ol class="fresh-points">${f.points.map(x => `<li>${esc(x)}</li>`).join('')}</ol>${f.analogy ? `<p class="say" style="margin-top:12px">${esc(f.analogy)}</p>` : ''}`;
+  return `<section class="panel stack fresh">
+    <div class="row between small muted"><span>Fresh from the field</span><span>${hrs ? `${hrs}h ago` : 'just now'}, new every 6 hours</span></div>
+    <h3 style="font:500 1.3rem/1.3 var(--serif)">${esc(f.title)}</h3>
+    <p class="muted">${esc(f.situation)}</p>
+    <p><b>${esc(f.question)}</b></p>
+    ${hasPro() ? `<details><summary>What a strong answer covers</summary>${pts}</details>`
+      : `<div class="teaser" style="min-height:140px"><div class="teaser-blur" aria-hidden="true" inert>${pts}</div><div class="teaser-over"><b>${ic('lock')}What a strong answer covers</b><span class="muted small">A new scenario for your role every 6 hours, answered, with Pro.</span><button class="btn primary" data-act="plans">See pricing</button></div></div>`}
+  </section>`;
+}
+
 /* ---------- pricing facts (server-provided, with offline fallbacks) ---------- */
 function offer() {
   const P = S.plans;
@@ -151,7 +174,7 @@ function dailyReminder() {
   const prog = store.progress();
   const due = dueCards(topics(), p, prog, Date.now(), 999);
   const topic = day.kind === 'learn' ? topicName(day.topics[0]) : due[0] ? topicName(due[0].topic) : 'practice';
-  const line = day.kind === 'live' ? 'Live coach practice test today'
+  const line = day.kind === 'live' ? '60 minutes with Live AI today'
     : day.kind === 'review' ? (due.length ? `${due.length} card${due.length === 1 ? '' : 's'} due for review` : 'Nothing due — pick any topic')
     : `Today: ${topic}`;
   const n = pickNudge(topic, due.length);
@@ -256,10 +279,10 @@ function livePromo() {
   const [head, title, text, cta] = left >= 20
     ? ['Session in progress', 'Your practice test is still open', `${Math.ceil(left / 60)} minutes left. Rejoin and pick up where you stopped.`, '<button class="btn invert lg" data-act="livesetup">Rejoin the session</button>']
     : credits
-      ? [`${credits} session${credits > 1 ? 's' : ''} ready`, 'Your live coach is waiting', 'Use it for a spoken practice test, or keep it listening during your real interview for talking points on screen.', '<button class="btn invert lg" data-act="livesetup">Start the practice test</button>']
-      : [`${o.liveMin} minutes, one-time`, 'An hour with a live coach', 'Run a spoken practice test the day before. Then, in the interview itself, leave it listening: a few talking points appear on screen as each question is asked.', '<button class="btn invert lg" data-act="plans">See pricing</button>'];
-  return `<section class="card stacked live-hero" aria-label="Live coach">
-    <div class="card-head"><span>Live coach: practice test</span><span>${esc(head)}</span></div>
+      ? [`${credits} session${credits > 1 ? 's' : ''} ready`, 'Live AI is ready when you are', 'Use it for a spoken practice test, or keep it listening during your real interview for talking points on screen.', '<button class="btn invert lg" data-act="livesetup">Start the practice test</button>']
+      : [`${o.liveMin} minutes, one-time`, 'Live AI for 60 minutes', 'Run a spoken practice test the day before. Then, in the interview itself, leave it listening: a few talking points appear on screen as each question is asked.', '<button class="btn invert lg" data-act="plans">See pricing</button>'];
+  return `<section class="card stacked live-hero" aria-label="Live AI">
+    <div class="card-head"><span>Live AI, 60 minutes</span><span>${esc(head)}</span></div>
     <h2>${esc(title)}</h2>
     <p style="margin-top:8px">${esc(text)}</p>
     <ul class="live-points"><li>Practice test with a verdict</li><li>Talking points during your interview</li><li>Continuous for the full hour</li></ul>
@@ -283,7 +306,7 @@ function homeView() {
   const cardsTotal = map.topics.reduce((n, t) => n + t.total, 0);
   const due = dueCards(topics(), p, prog, Date.now(), 999).length;
   const left = daysUntil(p.interviewDate);
-  const dayLabel = d => d.kind === 'live' ? 'Live coach: practice test' : d.kind === 'review' ? 'Mixed review' : d.topics.map(topicName).join(', ');
+  const dayLabel = d => d.kind === 'live' ? 'Live AI, 60 minutes' : d.kind === 'review' ? 'Mixed review' : d.topics.map(topicName).join(', ');
   const mine = new Set(relevant.map(t => t.id));
   const others = getManifest().packs.map(pk => ({ ...pk, topics: pk.topics.filter(t => !mine.has(t.id)) })).filter(pk => pk.topics.length);
   const roleIds = migrateProfile(p).roleIds;
@@ -293,7 +316,7 @@ function homeView() {
   const nLearn = todayTopics.reduce((n, t) => n + t.concepts.length, 0);
   const nQs = todayTopics.reduce((n, t) => n + t.qa.length, 0);
   const todayHint = today.kind === 'live'
-    ? 'A full practice test with the live coach: spoken questions for your role, hints as you go, and honest feedback after every answer.'
+    ? '60 minutes with Live AI: spoken questions for your role, hints as you go, and honest feedback after every answer.'
     : today.kind === 'review'
     ? (due ? `${due} card${due === 1 ? '' : 's'} due. The ones you missed come first.` : 'Nothing is due. Pick any topic below to get ahead.')
     : `${nLearn} short lesson${nLearn === 1 ? '' : 's'}, then ${nQs} question${nQs === 1 ? '' : 's'} to check it stuck.`;
@@ -316,7 +339,7 @@ function homeView() {
     ${livePromo()}
     <section class="card stacked">
       <div class="card-head"><span>Today, day ${ti + 1} of ${plan.length}</span>${due ? `<span>${due} due</span>` : ''}</div>
-      <h2>${esc(today.kind === 'review' ? 'Review what is due' : today.kind === 'live' ? 'Live coach: practice test' : dayLabel(today))}</h2>
+      <h2>${esc(today.kind === 'review' ? 'Review what is due' : today.kind === 'live' ? 'Live AI, 60 minutes' : dayLabel(today))}</h2>
       <p class="muted" style="margin-top:8px">${esc(todayHint)}</p>
       <div class="row" style="margin-top:20px">
         ${today.kind === 'learn' ? `<button class="btn primary" data-act="learn" data-id="${today.topics[0]}">Start today's lesson</button>` : ''}
@@ -324,6 +347,7 @@ function homeView() {
         <button class="btn ${today.kind === 'learn' || today.kind === 'live' ? '' : 'primary'}" data-act="deck" data-id="${today.kind === 'learn' ? today.topics.join(',') : ''}">Practice flashcards</button>
       </div>
     </section>
+    ${freshCard()}
     <section class="knowmap" aria-label="What you know">
       <div class="nums"><span><b>What you know</b></span><span><b data-countup="${knownTotal}">${knownTotal}</b> of ${cardsTotal} cards known</span></div>
       <div class="tiles">${map.topics.map((t, i) => {
@@ -397,6 +421,7 @@ function learnView() {
     <div class="segs">${t.concepts.map((_, i) => `<i class="${i <= S.ci ? 'on' : ''}"></i>`).join('')}</div>
     ${story ? `${scene}${diagramTeaser(t.id, story.html)}` : scene}
     <article class="lesson" style="padding:14px 0 6px">
+      ${c.basic ? `<span class="tag" style="margin-bottom:8px">Basics${profile()?.level === 'senior' ? ', you may know this' : ''}</span>` : ''}
       <h1>${esc(c.t)}</h1>
       <div class="part body" style="margin-top:16px"><p class="lede" style="max-width:none">${fmt(c.what)}</p></div>
       ${c.why ? `<div class="part"><div class="label">Why interviewers ask</div><p style="font:400 1.05rem/1.6 var(--serif);color:var(--ink-soft)">${fmt(c.why)}</p></div>` : ''}
@@ -409,7 +434,8 @@ function learnView() {
       <button class="btn" data-act="askcard">Ask the coach</button>
       ${last ? `<button class="btn primary grow" data-act="deck" data-id="${t.id}">Test yourself</button>` : '<button class="btn primary grow" data-act="cnext">Next lesson</button>'}
     </div>
-    ${last ? `<p class="muted small" style="margin-top:2px">That's the whole story — the picture is finished. Test yourself while it's fresh.</p>` : ''}
+    ${!last && c.hook ? `<button class="hook" data-act="cnext"><span class="label">Next</span><span>${esc(c.hook)}</span>${ic('right')}</button>` : ''}
+    ${last ? `<p class="muted small" style="margin-top:2px">That's the whole story, and the picture is finished. Test yourself while it's fresh.</p>${t.upNext ? `<div class="hook static"><span class="label">After this</span><span>${esc(t.upNext)}</span></div>` : ''}` : ''}
   </div>`;
 }
 
@@ -452,7 +478,7 @@ function deckView() {
 }
 
 const STATUS = { connecting: 'Connecting…', ready: 'Listening. Just talk.', listening: 'Listening. I won\'t interrupt.', you: 'You\'re speaking…', thinking: 'Thinking…', ai: 'Speaking. Talk to interrupt.' };
-const MODE_NAME = { talk: 'Talk', listen: 'Rehearse', live: 'Live coach' };
+const MODE_NAME = { talk: 'Talk', listen: 'Rehearse', live: 'Live AI' };
 const clock = sec => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
 
 function voicePanel() {
@@ -519,7 +545,7 @@ function accountCard() {
     <div class="row"><div class="avatar">${esc(name[0].toUpperCase())}</div>
       <div class="grow"><div class="row" style="gap:8px"><b style="overflow:hidden;text-overflow:ellipsis">${esc(name)}</b>${planTag}</div><div class="small muted">${esc(sub)}</div></div></div>
     ${usageMeters(a)}
-    ${(() => { const { credits, left } = liveState(); return credits || left >= 20 ? `<p class="note">${left >= 20 ? `Live coach session in progress: ${Math.ceil(left / 60)} min left. ` : ''}${credits ? `${credits} Live coach session${credits > 1 ? 's' : ''} ready.` : ''} <button class="link" data-act="livesetup">${left >= 20 ? 'Rejoin' : 'Start'} →</button></p>` : ''; })()}
+    ${(() => { const { credits, left } = liveState(); return credits || left >= 20 ? `<p class="note">${left >= 20 ? `Live AI session in progress: ${Math.ceil(left / 60)} min left. ` : ''}${credits ? `${credits} Live AI session${credits > 1 ? 's' : ''} ready.` : ''} <button class="link" data-act="livesetup">${left >= 20 ? 'Rejoin' : 'Start'} →</button></p>` : ''; })()}
     ${a.plan === 'free' ? '<button class="btn primary block" data-act="plans">See pricing</button>' : ''}
     <div class="links">
       <button class="link quiet" data-act="plans">Pricing</button>
@@ -536,8 +562,8 @@ function paywallCard() {
   const o = offer();
   if (a?.plan === 'pro') {
     return `<section class="panel stack"><h3>This month's Pro allowance is used up</h3>
-      <p class="muted">It refills ${a.periodEnds ? 'on ' + new Date(a.periodEnds).toLocaleDateString(undefined, { month: 'long', day: 'numeric' }) : 'at your next billing period'}. A Live coach session is separate and works right now.</p>
-      ${usageMeters(a)}<div class="row"><button class="btn primary" data-act="plans">See the Live coach</button><button class="btn" data-act="unpaywall">Close</button></div></section>`;
+      <p class="muted">It refills ${a.periodEnds ? 'on ' + new Date(a.periodEnds).toLocaleDateString(undefined, { month: 'long', day: 'numeric' }) : 'at your next billing period'}. A Live AI session is separate and works right now.</p>
+      ${usageMeters(a)}<div class="row"><button class="btn primary" data-act="plans">See Live AI</button><button class="btn" data-act="unpaywall">Close</button></div></section>`;
   }
   return `<section class="panel stack"><h3>Your free trial is used up</h3>
     <p class="muted">Pro gives you ${o.proMsgs} messages and ${o.proVoice} voice minutes every month. Your plan and flashcards stay free either way.</p>
@@ -578,7 +604,7 @@ function chatView() {
   </div>`;
 }
 
-/* ---------- live coach ---------- */
+/* ---------- Live AI ---------- */
 function liveSettings() {
   const p = profile();
   const saved = store.liveSettings() || {};
@@ -597,10 +623,10 @@ function liveSetupSheet() {
   const p = profile();
   const relevant = rankTopics(topics(), p);
   const { credits, left } = liveState();
-  const state = left >= 20 ? `Your session is still open with ${Math.ceil(left / 60)} minutes left.` : credits ? `You have ${credits} session${credits > 1 ? 's' : ''} ready.` : 'You need a Live coach session to start. See pricing for the options.';
+  const state = left >= 20 ? `Your session is still open with ${Math.ceil(left / 60)} minutes left.` : credits ? `You have ${credits} session${credits > 1 ? 's' : ''} ready.` : 'You need a Live AI session to start. See pricing for the options.';
   const opt = (v, t, d) => `<label class="use-opt"><input type="radio" name="use" value="${v}" ${s.use === v ? 'checked' : ''}><span><b>${t}</b><span class="muted small">${d}</span></span></label>`;
   sheet(`<form id="liveSetupForm" class="stack">
-    <h2>Live coach</h2>
+    <h2>Live AI, 60 minutes</h2>
     <p class="muted">${esc(state)}</p>
     <fieldset class="stack tight"><legend class="small" style="font:600 14px var(--sans);margin-bottom:6px">How will you use it?</legend>
       ${opt('practice', 'Practice test', 'The coach asks the questions out loud. Hints as each question lands, feedback after every answer.')}
@@ -750,14 +776,14 @@ async function startVoice(mode) {
   S.rt = session; S.rtMode = mode; S.rtStatus = 'connecting'; S.rtStarting = true; S.paywall = false; render();
   try {
     // Rehearse mode stays silent unless "read replies aloud" is on; talk mode is always spoken.
-    // Live coach uses its own settings: voice on/off, length, style, topic focus, difficulty.
+    // Live AI uses its own settings: voice on/off, length, style, topic focus, difficulty.
     const live = mode === 'live' ? liveSettings() : null;
     S.liveUse = live?.use || null;
     await session.start({ mode, speak: mode === 'live' ? live.voice && live.use !== 'interview' : mode !== 'listen' || store.speak(), profileSummary: summary(), context: S.chatContext, live });
   } catch (e) {
     S.rt = null; S.rtMode = null;
     if (e.code === 'quota') S.paywall = true;
-    if (e.code === 'no_credit') { refreshAccount().catch(() => {}); oops('No Live coach session on this account yet.'); }
+    if (e.code === 'no_credit') { refreshAccount().catch(() => {}); oops('No Live AI session on this account yet.'); }
     else store.setChat([...store.chat(), { role: 'assistant', content: `⚠️ ${e.message}` }]);
   } finally { S.rtStarting = false; render(); }
 }
@@ -923,7 +949,7 @@ function plansView() {
         ${isPro ? '<button class="btn block" disabled>Your plan</button>' : `<button class="btn primary block" data-act="buysub" ${dis}>${S.buyBusy === 'pro' ? `Opening the ${storeName()}…` : 'Start Pro'}</button>`}
       </section>
       <section class="tier card live-hero">
-        <div class="tier-name">Live coach <span class="tier-flag">One-time</span></div>
+        <div class="tier-name">Live AI <span class="tier-flag">One-time</span></div>
         <div class="price">${esc(o.livePrice)}<span>/ session</span></div>
         <p class="small">${o.liveMin} minutes in one go: a spoken practice test, or talking points on screen during your real interview.</p>
         ${liveBtn}
@@ -933,26 +959,26 @@ function plansView() {
     <section>
       <div class="sec-head"><h3>What each one includes</h3></div>
       <div class="compare" role="table" aria-label="What each option includes">
-        <div class="crow chead" role="row"><span role="columnheader"></span><span role="columnheader">Free</span><span role="columnheader">Pro</span><span role="columnheader">Live coach</span></div>
+        <div class="crow chead" role="row"><span role="columnheader"></span><span role="columnheader">Free</span><span role="columnheader">Pro</span><span role="columnheader">Live AI</span></div>
         ${rows.map(([f, a1, a2, a3]) => `<div class="crow" role="row"><span role="rowheader">${f}</span><span role="cell">${a1}</span><span role="cell">${a2}</span><span role="cell">${a3}</span></div>`).join('')}
       </div>
-      <p class="muted small" style="margin-top:10px">A Live coach session is billed separately and works on Free or Pro. It does not use Pro's monthly minutes.</p>
+      <p class="muted small" style="margin-top:10px">A Live AI session is billed separately and works on Free or Pro. It does not use Pro's monthly minutes.</p>
     </section>
 
     <section class="stack">
-      <div class="sec-head"><h3>Live coach in your interview</h3></div>
+      <div class="sec-head"><h3>Live AI in your interview</h3></div>
       <p>Open a session before the call and leave this device where it can hear your interviewer. When a question is asked, three to five talking points appear on screen within seconds, built from your role and background. It never speaks, and nothing is stored.</p>
       <p class="muted small">Check that transcribing the call is allowed by the company and where you live; some places require everyone on a call to agree.</p>
     </section>
 
     <div class="faq">
       <details><summary>What counts as a message?</summary><p>Each question you send the coach is one message. Writing a custom card set uses five. Voice is counted in minutes, only while a session is open.</p></details>
-      <details><summary>What if my connection drops during a Live coach session?</summary><p>Rejoin within the hour and you pick up the same session with the time that is left. You are not charged again.</p></details>
-      <details><summary>Can I use Live coach for a practice test first and the interview later?</summary><p>Each session is one block of time. Buy two if you want one for practice and one for the day.</p></details>
+      <details><summary>What if my connection drops during a Live AI session?</summary><p>Rejoin within the hour and you pick up the same session with the time that is left. You are not charged again.</p></details>
+      <details><summary>Can I use Live AI for a practice test first and the interview later?</summary><p>Each session is one block of time. Buy two if you want one for practice and one for the day.</p></details>
       <details><summary>How do I cancel Pro?</summary><p>In your ${manage} subscription settings, at any time. You keep Pro until the end of the period you paid for.</p></details>
       <details><summary>What happens to my progress on Free?</summary><p>Nothing changes. Your plan, cards and progress stay on this device and stay yours.</p></details>
     </div>
-    <p class="legal">Pro costs ${esc(o.proPrice)} and renews automatically until you cancel in your ${manage} subscription settings, at least 24 hours before the renewal date. A Live coach session is a one-time purchase of ${esc(o.livePrice)}. Payment is charged to your ${storeName()} account when you confirm the purchase.
+    <p class="legal">Pro costs ${esc(o.proPrice)} and renews automatically until you cancel in your ${manage} subscription settings, at least 24 hours before the renewal date. A Live AI session is a one-time purchase of ${esc(o.livePrice)}. Payment is charged to your ${storeName()} account when you confirm the purchase.
       <a class="link quiet" href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener">Terms of Use</a>, <a class="link quiet" href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>${native() ? ', <button class="link quiet" data-act="restore">Restore purchases</button>' : ''}</p>
   </div>`;
 }
@@ -1051,6 +1077,7 @@ function render() {
   }
   // Native app: keep the icon badge and the daily reminder in step with the plan.
   if (native() && key === 'home' && profile()) syncNativeHome();
+  if (key === 'home' && profile()) loadFresh();
   // The plans-screen diagram plays itself when the screen opens; anywhere
   // else the player stops so timers never outlive their screen.
   if (key === 'plans' && changed) startDgAutoplay();
@@ -1065,7 +1092,7 @@ function needSignIn() {
 }
 function storeSheet() {
   sheet(`<h2>Upgrades live in the iPhone app</h2>
-    <p class="muted">Pro and Live coach sessions are bought through the App Store. Sign in there with this same account and everything unlocks here too, on any device.</p>
+    <p class="muted">Pro and Live AI sessions are bought through the App Store. Sign in there with this same account and everything unlocks here too, on any device.</p>
     <button class="btn primary block" data-act="closesheet">Got it</button>`);
 }
 let buyTimer;
@@ -1088,7 +1115,7 @@ function pollPurchase(before, tries = [3000, 8000, 20000]) {
   setTimeout(async () => {
     try { await ai.post('/api/billing/refresh', {}); } catch { /* try again below */ }
     const a = store.account();
-    if ((a?.sessionCredits || 0) > before.credits) { S.showPlans = false; render(); return toast('Live coach session added. Start it from the Coach tab.'); }
+    if ((a?.sessionCredits || 0) > before.credits) { S.showPlans = false; render(); return toast('Live AI session added. Start it from the Coach tab.'); }
     if (before.kind === 'pro' && a?.plan === 'pro') { S.showPlans = false; render(); return toast('You\'re on Pro. Thank you!'); }
     pollPurchase(before, tries.slice(1));
   }, tries[0]);
@@ -1098,7 +1125,7 @@ function onPurchased(acc) {
   S.paywall = false;
   if (acc?.plan === 'pro') { S.showPlans = false; toast(b?.kind === 'restore' ? 'Pro restored.' : 'You\'re on Pro. Thank you!'); }
   else if (b?.kind === 'restore') oops('No active subscription found for this account.');
-  else if (b?.kind === 'live') { toast('Payment received. Your Live coach session will unlock in a moment.'); pollPurchase(b); }
+  else if (b?.kind === 'live') { toast('Payment received. Your Live AI session will unlock in a moment.'); pollPurchase(b); }
   else { toast('Payment received. Pro will unlock in a moment.'); pollPurchase(b); }
   render();
 }
@@ -1120,7 +1147,10 @@ function startRoleDeck(id) {
 }
 
 async function openTopic(id) {
-  S.topic = id; S.ci = 0; S.view = 'learn'; render();
+  S.topic = id; S.ci = 0; S.view = 'learn';
+  const firstReal = t => (profile()?.level === 'senior' ? Math.max(0, t.concepts.findIndex(c => !c.basic)) : 0);
+  if (topicById(id)) S.ci = firstReal(topicById(id));
+  render();
   if (!topicById(id)) {
     try { await ensureTopics([id]); } catch { oops('Could not download this topic. Check your connection.'); }
     render();

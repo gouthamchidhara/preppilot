@@ -1,6 +1,18 @@
 // Study content: role catalog, pack manifest, and on-demand pack loading.
 // Only the packs a user's role needs are downloaded; the service worker keeps them for offline use.
 import { attachWeights, effectiveRoles } from './plan.js';
+import { registerDiagramMeaning } from './diagrams.js';
+
+// Lesson flow (web/content/flow/<pack>.json): the order cards are met in, a line on each card
+// pulling the reader to the next one, a teaser for the next topic, and which cards are basics.
+// Only concepts are reordered; flashcard questions (and the progress keyed on them) never move.
+export function applyFlow(t, f) {
+  const n = t.concepts.length;
+  if (!f || !Array.isArray(f.order) || f.order.length !== n || new Set(f.order).size !== n || f.order.some(i => !(i >= 0 && i < n))) return t;
+  const basics = new Set(f.basics || []);
+  const concepts = f.order.map((i, k) => ({ ...t.concepts[i], hook: f.hooks?.[k] || '', basic: basics.has(i) }));
+  return { ...t, concepts, upNext: f.upNext || '' };
+}
 
 let catalog = { families: [], roles: [] };
 let manifest = { packs: [] };
@@ -33,8 +45,13 @@ export async function ensureTopics(ids) {
   const packs = new Set([...ids].map(id => meta.get(id)?.pack).filter(Boolean));
   await Promise.all([...packs].filter(id => !loaded.has(id)).map(async id => {
     const p = manifest.packs.find(x => x.id === id);
-    const data = await getJson(`content/packs/${id}.json?v=${p.version}`);
-    loaded.set(id, attachWeights(data.topics, catalog));
+    const [data, flow, meaning] = await Promise.all([
+      getJson(`content/packs/${id}.json?v=${p.version}`),
+      getJson(`content/flow/${id}.json?v=${p.version}`).catch(() => ({})),
+      getJson(`content/meaning/${id}.json?v=${p.version}`).catch(() => ({})),
+    ]);
+    for (const [tid, m] of Object.entries(meaning)) registerDiagramMeaning(tid, m);
+    loaded.set(id, attachWeights(data.topics.map(t => applyFlow(t, flow[t.id])), catalog));
   }));
 }
 

@@ -77,7 +77,7 @@ export function daysUntil(dateStr, now = Date.now()) {
 }
 
 // Spread ranked topics over the available days, weighting by card count,
-// and reserve the last ~15% of days (min 1) for mixed review; the final day is a Live coach practice test.
+// and reserve the last ~15% of days (min 1) for mixed review; the final day is a Live AI practice test.
 export function buildPlan(topics, profile, now = Date.now()) {
   const ranked = rankTopics(topics, profile).filter(t => t.score > 0);
   const until = daysUntil(profile?.interviewDate, now);

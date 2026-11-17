@@ -2,7 +2,7 @@
 // Prod: Azure Table Storage (STORAGE_CONNECTION_STRING). Tests/local dev: in-memory.
 // Each entity stores its JSON in one `data` column; updates use ETags with retry so
 // concurrent requests can't double-spend quota.
-const TABLES = { users: 'ppusers', daily: 'ppdaily', calls: 'ppcalls', roles: 'pproles', suggestions: 'ppsuggestions' };
+const TABLES = { users: 'ppusers', daily: 'ppdaily', calls: 'ppcalls', roles: 'pproles', suggestions: 'ppsuggestions', fresh: 'ppfresh' };
 
 function memoryDb() {
   const t = Object.fromEntries(Object.keys(TABLES).map(k => [k, new Map()]));
@@ -24,6 +24,8 @@ function memoryDb() {
 async function tableDb(conn) {
   const { TableClient } = await import('@azure/data-tables');
   const clients = Object.fromEntries(Object.entries(TABLES).map(([k, name]) => [k, TableClient.fromConnectionString(conn, name)]));
+  // Tables added after the first deploy are created on first use (409 = already there).
+  await Promise.all(Object.values(clients).map(c => c.createTable().catch(() => {})));
   const PK = 'p';
   const read = async (table, key) => {
     try {

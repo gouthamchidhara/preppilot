@@ -58,7 +58,7 @@ export function validateGenerate(body) {
   return { topic, profile: str(body?.profileSummary, 1500), count };
 }
 
-// A Live coach hint: the coach's question, plus the user's answer once given.
+// A Live AI hint: the coach's question, plus the user's answer once given.
 // Returns the validated pair; the caller decides whether the user may ask for one.
 export function validateLiveHint(body) {
   const question = str(body?.question, 600).trim();

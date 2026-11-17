@@ -487,3 +487,15 @@ pre code { background: none; border: 0; padding: 0; }
 .tile .lockmark { margin-left: 4px; }
 .unlock-strip { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 14px 16px; border: 1px dashed var(--line-strong); border-radius: 10px; }
 .unlock-strip > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 220px; }
+
+.fresh-points { margin: 10px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+
+/* lesson flow: the line that pulls you to the next card */
+.hook { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: var(--paper); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 10px; padding: 12px 14px; cursor: pointer; font: 400 1rem/1.45 var(--serif); color: var(--ink); }
+.hook .label { flex: none; font: 600 12px var(--sans); color: var(--accent); }
+.hook > span:nth-child(2) { flex: 1; }
+.hook svg { color: var(--muted); }
+.hook.static { cursor: default; }
+.hook:not(.static):hover { border-color: var(--line-strong); border-left-color: var(--accent); }
+.analogy { margin: 6px 0 10px; font: 400 .98rem/1.5 var(--serif); color: var(--ink-soft); }
+.analogy b { font-weight: 600; color: var(--ink); }

@@ -36,8 +36,17 @@ export function isValidDiagramSpec(spec) {
 export function registerDiagramSpec(topicId, spec) {
   if (isValidDiagramSpec(spec)) customSpecs.set(topicId, spec);
 }
+// Plain-meaning overlays (web/content/meaning/<pack>.json): an everyday analogy plus captions
+// rewritten around it. The boxes and stages stay those of the spec; only the words change.
+const meanings = new Map();
+export function registerDiagramMeaning(topicId, m) {
+  const base = SPECS[topicId];
+  if (base && m && Array.isArray(m.steps) && m.steps.length === base.steps.length) meanings.set(topicId, m);
+}
 export function specFor(topicId) {
-  return SPECS[topicId] || customSpecs.get(topicId) || null;
+  const base = SPECS[topicId] || customSpecs.get(topicId) || null;
+  const m = meanings.get(topicId);
+  return base && m ? { ...base, caption: m.caption || base.caption, steps: m.steps, analogy: m.analogy } : base;
 }
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -340,7 +349,10 @@ function figureHtml(topicId, d, opts = {}) {
   const cap = focus === null || focus === undefined ? d.caption : (d.steps[focus] || d.caption);
   const n = d.steps.length;
   const controls = opts.controls === undefined || opts.controls;
-  return `<figure class="diagram${opts.compact ? ' compact' : ''}" data-dg="${esc(topicId)}"${opts.autoplay ? ' data-autoplay="1"' : ''}><div class="label">${esc(d.title)}</div>${d.svg}`
+  const an = specFor(topicId)?.analogy;
+  return `<figure class="diagram${opts.compact ? ' compact' : ''}" data-dg="${esc(topicId)}"${opts.autoplay ? ' data-autoplay="1"' : ''}><div class="label">${esc(d.title)}</div>`
+    + (an ? `<p class="analogy"><b>Think of it as ${esc(an.name.replace(/^(a|an|the) /i, m => m.toLowerCase()))}.</b> ${esc(an.line)}</p>` : '')
+    + d.svg
     + `<figcaption>${esc(cap)}</figcaption>`
     + (controls ? `<div class="dg-controls">`
     + `<button class="btn quiet small" type="button" data-act="dgprev" data-id="${esc(topicId)}" ${focus === null || focus === undefined ? 'disabled' : ''}>‹ Back</button>`

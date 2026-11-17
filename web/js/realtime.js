@@ -17,7 +17,7 @@ export class VoiceSession {
 
   async start({ mode, speak, profileSummary, context, live }) {
     this.mode = mode;
-    // A Live coach session runs continuously for the full session: no silence cut-off.
+    // A Live AI session runs continuously for the full session: no silence cut-off.
     this.noIdle = mode === 'live';
     this.on.status('connecting');
     const pc = this.pc = new RTCPeerConnection();
@@ -61,7 +61,7 @@ export class VoiceSession {
   }
 
   bump() {
-    if (this.noIdle) return; // Live coach: the session runs until its time is up, however quiet it gets.
+    if (this.noIdle) return; // Live AI: the session runs until its time is up, however quiet it gets.
     clearTimeout(this.idle);
     this.idle = setTimeout(() => this.stop('Ended after 3 minutes of silence.'), IDLE_MS);
   }
