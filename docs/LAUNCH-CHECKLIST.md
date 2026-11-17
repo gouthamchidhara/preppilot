@@ -24,19 +24,15 @@ Owner handles item 7. The assistant is handling the other items, with owner inpu
 
 | Area | Result |
 | --- | --- |
-| Cloudflare DNS | Correct and public. Nameservers are Cloudflare; `preppilot.us` resolves to Azure (flattened CNAME); `www` is a CNAME to `lively-pond-0ad55040f.8.azurestaticapps.net`; MX, SPF and DKIM for Email Routing are present. If a change does not show for you, it is your local DNS cache (records have a 5-minute TTL): flush it or try mobile data. |
+| Cloudflare DNS | Correct and public. (Owner's work network had not picked up the change; that is local.) Nameservers are Cloudflare; `preppilot.us` resolves to Azure (flattened CNAME); `www` is a CNAME to `lively-pond-0ad55040f.8.azurestaticapps.net`; MX, SPF and DKIM for Email Routing are present. If a change does not show for you, it is your local DNS cache (records have a 5-minute TTL): flush it or try mobile data. |
 | HTTPS | Valid Azure certificates on `preppilot.us` and `www.preppilot.us` (issued 17 Nov, auto-renewed by Azure). |
 | App and API | Load with no errors on all three addresses; `/api/health` answers on each. |
-| **Google sign-in** | **Broken on every address, including the Azure one.** Google answers "The given origin is not allowed for the given client ID" for web client `372383686135-jj1mv49jbskilvqk6qfiqguh4uqjkdl5`. This is why the app "does not work in the browser": everything that needs an account fails. |
+| **Google sign-in** | Fixed in code. The site sent `referrer-policy: no-referrer`, so Google could not see which site the sign-in button was on and refused it ("origin not allowed") on every address. Now `strict-origin-when-cross-origin` (sends only the site address to other sites). Verified: with that header Google returns the button normally. |
 | Support email (`support@preppilot.us`) | DNS is right. Delivery not confirmed. |
 | App emails (guide suggestions) | Not configured: the `ACS_EMAIL_*` settings are empty, so suggestions are stored but never emailed. |
 
-### Fix Google sign-in (owner, Google Cloud Console)
-1. APIs & Services → Credentials → OAuth 2.0 Client IDs → open the **Web** client whose id starts `372383686135-jj1mv49j` (the one `/api/health` reports; a newly created client does nothing unless the Azure settings point at it).
-2. Authorized JavaScript origins must contain exactly these three, no trailing slash, no path:
-   `https://preppilot.us`, `https://www.preppilot.us`, `https://lively-pond-0ad55040f.8.azurestaticapps.net`
-3. Save, then allow up to an hour for Google to apply it. Test in a private window.
-4. If the agent created new clients instead: either add the origins above to the old client (simplest), or set `GOOGLE_WEB_CLIENT_ID` and `GOOGLE_CLIENT_IDS` in Azure to the new client id (keep the iOS client id in `GOOGLE_CLIENT_IDS`).
+### Google sign-in origins (keep as they are)
+The Google web client `372383686135-jj1mv49j…` must keep these Authorized JavaScript origins: `https://preppilot.us`, `https://www.preppilot.us`, `https://lively-pond-0ad55040f.8.azurestaticapps.net`. Do not set the site's referrer policy back to `no-referrer`; it breaks the sign-in button.
 
 ### Fix support@ email (owner, Cloudflare)
 1. Email → Email Routing → Routing rules: `support@preppilot.us` → your Gmail, status Active; Destination addresses: that Gmail shows Verified.
