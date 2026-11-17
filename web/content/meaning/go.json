@@ -1,0 +1,27 @@
+{
+ "go-core": {
+  "analogy": {
+   "name": "A relay baton hand-off",
+   "line": "Error handling in Go is like a relay: each runner checks the baton, tags it with a note about where it was dropped, and passes it up to the one who knows what to do."
+  },
+  "caption": "Go has no exceptions. Errors are values: check them where they happen, wrap them with context, return them to someone who can decide.",
+  "steps": [
+   "The runner starts the leg. Real name: any function that can fail returns an error as a value beside its result.",
+   "He checks the baton at once. Real name: if err != nil, right there, before touching the result.",
+   "He tags it with a note. Real name: wrapping with %w adds what you were doing, so the message means something upstairs.",
+   "He passes it on. Real name: return the error. The caller has the context, so it decides to log, retry or show it."
+  ]
+ },
+ "go-concurrency": {
+  "analogy": {
+   "name": "A kitchen order rail",
+   "line": "A worker pool is like a kitchen: orders hang on a rail (jobs channel), several cooks take the next one when free (workers), and finished plates go on a pass (results channel)."
+  },
+  "caption": "A channel is the queue and goroutines are the workers. Add workers to go faster, until the work itself is the limit.",
+  "steps": [
+   "The order rail is the jobs channel. Real name: work goes in one job at a time. A buffered channel holds a queue, an unbuffered one hands off directly.",
+   "The cooks are the worker pool. Real name: N goroutines pull jobs as they finish, with no shared state or locks, since the channel coordinates them.",
+   "The pass is the results channel. Real name: finished work comes out in whatever order it completed, and order is not promised unless you add it."
+  ]
+ }
+}

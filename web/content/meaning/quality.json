@@ -1,0 +1,81 @@
+{
+ "test-strategy": {
+  "analogy": {
+   "name": "A hospital triage desk",
+   "line": "Test strategy is like hospital triage: assess who is most at risk, treat the serious cases first, run the right checks, keep monitoring, and decide openly who waits or goes home."
+  },
+  "caption": "You cannot test everything. Test the riskiest parts first, automate what repeats, and handle what is left deliberately.",
+  "steps": [
+   "Triage starts by asking who is in danger. Risk assessment asks what would hurt most if it broke: the payment flow, or a settings page? Your answer decides where effort goes.",
+   "The sickest patients are seen first. Prioritise the riskiest areas for testing. High coverage of safe code is not the goal, and saying so shows judgement in an interview.",
+   "The right checks for each patient: boundary values, equivalence partitions and decision tables. Aim for one test per idea, not one per line of code.",
+   "Monitors run all the time. Automated tests run in CI on every change. A check that only runs by hand eventually does not run at all.",
+   "Some patients wait, some go home, a few are escalated, always by a named person. Defects are fixed, deferred or accepted on purpose. Ignored failures equal no tests."
+  ]
+ },
+ "selenium-playwright": {
+  "analogy": {
+   "name": "A courier at a door",
+   "line": "A UI test is like a courier: find the right door by its number (locator), wait until someone answers (auto-wait), deliver the parcel (act), check the signature (assert), and try once more if no one came."
+  },
+  "caption": "Flaky tests are usually timing, not bugs. Locate robustly, wait for ready, assert state, and retry once before trusting a failure.",
+  "steps": [
+   "A courier follows the house number, not the colour of the door. A resilient locator uses a role, label or test id. Generated class names change and break the test.",
+   "The courier waits until someone opens, not for a fixed time. Auto-wait checks the element is ready. A fixed sleep is slow when things are fast and fails when slow.",
+   "Hand over the parcel only when the door is open. Playwright acts only when the element is visible and able to receive the click or typing, which removes a whole class of flakes.",
+   "Check the signature: assert what should now be true, such as text, URL or state. Assert behaviour a user sees, not internal implementation, so refactors do not break tests.",
+   "If no one answered, try once more. A single retry absorbs a one-off hiccup. If it still fails, the failure is real, so read it instead of rerunning until it goes green."
+  ]
+ },
+ "api-testing": {
+  "analogy": {
+   "name": "A signed agreement between neighbours",
+   "line": "A contract test is like a written agreement between neighbours: the consumer states what it needs, the agreement is written down (pact), the provider proves it can keep it, and then both can renovate separately."
+  },
+  "caption": "Contract tests let two teams deploy independently. The consumer writes what it expects, and the provider proves it can deliver it.",
+  "steps": [
+   "The consumer is the neighbour stating what they need, in their own terms. Its tests define the exact request and response shape it relies on, no more.",
+   "The pact is the agreement on paper. It is a file both sides can read and neither can silently change, which makes expectations reviewable instead of tribal knowledge.",
+   "The provider is the other neighbour proving they can keep the deal. It replays the pact against the real service on every change, so breaking a consumer fails the build early.",
+   "Green means both can deploy apart. Consumer and provider ship without waiting for each other or running a slow shared environment. This is the pitch for contract tests."
+  ]
+ },
+ "performance-testing": {
+  "analogy": {
+   "name": "Tuning a race car",
+   "line": "Performance work is like tuning a race car: practise on the real circuit (model), do timed laps (run), read the telemetry (measure), then fix the slowest part and go again."
+  },
+  "caption": "Performance work is a loop: model the real workload, run it, measure where time goes, fix the slowest part, and run it again.",
+  "steps": [
+   "Practise on the real circuit, not an empty car park. A realistic workload uses real paths, data shapes and concurrency. A fake workload measures a fake system.",
+   "Do timed laps while watching the whole car, not only the stopwatch. Drive the load and watch CPU, memory, database and queues, because the symptom is rarely where the cause is.",
+   "Telemetry tells you which part is slow. APM shows where time goes across services and queries. Guessing the bottleneck is how people optimise the wrong thing.",
+   "Fix the slowest part first, then do another lap. One bottleneck at a time, re-measured, shows the effect of each change and stops you chasing noise."
+  ]
+ },
+ "appsec": {
+  "analogy": {
+   "name": "Securing a castle",
+   "line": "Defense in depth is like a castle: inspect the plans (code), vet the suppliers (dependencies), test the gates with a mock attack (running app), and keep guards on the walls (runtime)."
+  },
+  "caption": "No single check catches everything. Read the code, scan dependencies, probe the running app and watch production.",
+  "steps": [
+   "Inspecting the plans is SAST: a scanner reads your source for patterns such as injection and unsafe calls. It runs early, before anything is deployed, but cannot see runtime behaviour.",
+   "Vetting suppliers is SCA: knowing which libraries you ship and which have known flaws. Most vulnerabilities arrive through a dependency, not code you wrote.",
+   "A mock attack on the gates is DAST: probing the live app from outside, as an attacker would. It finds what is exposed and misconfigured, but not why.",
+   "Guards on the walls are runtime monitoring in production. The earlier layers are predictions. Logs, alerts and anomaly detection tell you what is really happening."
+  ]
+ },
+ "threat-modeling": {
+  "analogy": {
+   "name": "Planning a house security review",
+   "line": "Threat modeling is like securing a house: sketch the floor plan (data flow), mark which rooms are public and which private (trust boundary), then ask at each door how a burglar might get through (STRIDE)."
+  },
+  "caption": "Threat modeling starts with a drawing: who talks to what, and where trust changes. STRIDE comes after the drawing, never before.",
+  "steps": [
+   "Sketch the floor plan: who talks to what, honestly and completely. No threats yet. A good picture of the system is what makes the later questions useful.",
+   "Mark which rooms are public and which are private. The trust boundary separates what you control from what you do not. The database sits deepest inside, so protect it most.",
+   "At each door in the boundary, ask STRIDE: spoofing, tampering, repudiation, information disclosure, denial of service, elevation of privilege. Work one threat at a time."
+  ]
+ }
+}

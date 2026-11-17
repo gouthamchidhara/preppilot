@@ -1,0 +1,107 @@
+{
+ "js-core": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   8,
+   5,
+   6,
+   7
+  ],
+  "hooks": [
+   "Variables have scope rules. How does a function remember the variables around it?",
+   "Closures remember. But what does this point to when a function is called?",
+   "You can predict this. How do objects inherit, and what is a class really?",
+   "Objects share behavior. Why does 0 == '' behave so oddly?",
+   "Comparisons make sense. How do you change data without mutating it?",
+   "Your data stays safe. How do you wait for slow work without freezing?",
+   "Promises read cleanly. What really decides which code runs next?",
+   "The loop is clear. How do files import each other, and why are there two systems?"
+  ],
+  "upNext": "Core JavaScript is solid. Next: add types with TypeScript so mistakes surface before you run.",
+  "basics": [
+   0,
+   1,
+   4
+  ]
+ },
+ "typescript": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7
+  ],
+  "hooks": [
+   "Types match by shape. When do you reach for interface and when for type?",
+   "You can name shapes. How do you let a value be one of several shapes safely?",
+   "Unions are narrowed. How do you write code that works for many types at once?",
+   "Generics are flexible. Which built-in helpers transform types for you?",
+   "You can reshape types. What do you do when you truly do not know a type?",
+   "Unknown is safe. Which compiler settings keep the whole project honest?",
+   "Strict mode is on. Types vanish at runtime, so how do you trust data from outside?"
+  ],
+  "upNext": "TypeScript is solid. Next: take it to the server with the Node.js runtime.",
+  "basics": [
+   0,
+   1
+  ]
+ },
+ "node-runtime": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   5,
+   4,
+   6,
+   7
+  ],
+  "hooks": [
+   "The loop has phases. What happens if one callback takes too long?",
+   "Blocking stalls everyone. How do you move big data without loading it all?",
+   "Streams keep memory flat. What if the work is simply CPU heavy?",
+   "You can use more cores. What should happen when one process fails or stops?",
+   "Errors are handled. Why does memory still grow over days?",
+   "Leaks are found. What risks hide inside the packages you install?",
+   "Dependencies are safe. Where do keys and settings live in each environment?"
+  ],
+  "upNext": "The runtime is clear. Next: build real APIs with Express and NestJS on top of it.",
+  "basics": [
+   0
+  ]
+ },
+ "express-nest": {
+  "order": [
+   0,
+   1,
+   7,
+   6,
+   3,
+   4,
+   2,
+   5
+  ],
+  "hooks": [
+   "Middleware runs in order. How do routes use it, and how is input checked?",
+   "Express handles validation by hand. How does NestJS do it with pipes?",
+   "Input is safe. What do you add around the app before it goes live?",
+   "The API is hardened. How do you tell who is calling?",
+   "Users are known. How do you read data without firing a query per row?",
+   "Data access is lean. How does Nest organize all of this into modules?",
+   "The structure is clear. How do you test the endpoints end to end?"
+  ],
+  "upNext": "You can build and test an API. Next: package it, and learn the Java or .NET way of doing the same.",
+  "basics": [
+   0
+  ]
+ }
+}

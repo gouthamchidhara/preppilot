@@ -1,0 +1,158 @@
+{
+ "html-css": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   7,
+   6,
+   8
+  ],
+  "hooks": [
+   "The page has meaning now. But every tag is still a box, and who decides how big it really is?",
+   "You know what a box is made of. Now, where does it sit: in the flow, or lifted out of it?",
+   "Boxes can sit anywhere. How do you line a few of them up in one row without hacks?",
+   "One direction is easy. What about rows and columns at the same time?",
+   "Layouts are in place. So why does your style rule lose to someone else's?",
+   "You know who wins. How do you keep one color or size in a single place instead of fifty?",
+   "Values are shared. Now, how does the whole layout bend for a phone screen?",
+   "The page fits every screen. Last piece: how do users send data back, and who checks it?"
+  ],
+  "upNext": "Your page is built and styled. Next: make it come alive with a component framework like React.",
+  "basics": [
+   0,
+   1
+  ]
+ },
+ "react": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7
+  ],
+  "hooks": [
+   "You can build components with state. How do hooks give a plain function memory?",
+   "State changes trigger renders. What does React actually do with the old and new output?",
+   "Rendering is cheap but effects are not. When do they run, and why do they loop?",
+   "Effects work. How do you hand data to a deep child without passing it down ten levels?",
+   "The tree is wired up. What do you do when it gets slow?",
+   "The client app is fast. What changes when the server renders components too?",
+   "You can build it all. How do you prove it still works after the next change?"
+  ],
+  "upNext": "React is clear. Next: how apps share and cache data across many components with state management.",
+  "basics": [
+   0
+  ]
+ },
+ "angular": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   5,
+   4,
+   6,
+   8,
+   7
+  ],
+  "hooks": [
+   "You can bind data to a template. Where does the logic live, and how does it get shared?",
+   "Services are injected. Many of them return streams. How do you read those without leaks?",
+   "Streams push values. How does Angular decide when to redraw the screen?",
+   "Change detection is tuned. Now, how does the user move between pages safely?",
+   "Pages navigate. How do you collect and validate what the user types?",
+   "Forms are done. How does the app talk to a real server, and who adds the token?",
+   "Data comes over HTTP. Is there a lighter way than RxJS to track state?",
+   "Signals simplify state. How do you test all of this in isolation?"
+  ],
+  "upNext": "Angular's core is covered. Next: pick a state management approach for data shared across the whole app.",
+  "basics": [
+   0
+  ]
+ },
+ "browser-performance": {
+  "order": [
+   0,
+   1,
+   3,
+   4,
+   2,
+   5,
+   6
+  ],
+  "hooks": [
+   "The browser has built the page. What happens when your code changes a width mid-way?",
+   "Layout work is costly. What else makes the first load heavy, and how do you ship less code?",
+   "Less JavaScript helps. Images and fonts are usually the biggest bytes left, so how do you trim them?",
+   "Assets are lean. How do you measure whether users actually feel the speed?",
+   "You have the metrics. How do you avoid downloading the same bytes twice?",
+   "Caching is set. When something is still slow, how do you find the real cause?"
+  ],
+  "upNext": "You can now speed up one page. Next: make sure everyone can use it, with web accessibility.",
+  "basics": [
+   0
+  ]
+ },
+ "accessibility": {
+  "order": [
+   0,
+   1,
+   7,
+   2,
+   3,
+   4,
+   5,
+   6
+  ],
+  "hooks": [
+   "Four principles guide everything. What is the first, simplest way to follow them in HTML?",
+   "Native elements do most of it. When they are not enough, what does ARIA add?",
+   "Roles describe widgets. But can someone using only a keyboard reach and use them?",
+   "Keyboard users can move. Is the page still readable with low vision or motion sensitivity?",
+   "Contrast and motion are handled. How do you hear what a screen reader user hears?",
+   "Manual checks work. What can automated tools catch, and what can they not?",
+   "You know the tests. How do you say how accessible you are in contract terms?"
+  ],
+  "upNext": "Accessibility is covered. Next: how to manage the state that makes interfaces dynamic.",
+  "basics": [
+   0,
+   1
+  ]
+ },
+ "state-management": {
+  "order": [
+   0,
+   6,
+   1,
+   2,
+   7,
+   3,
+   8,
+   5,
+   4
+  ],
+  "hooks": [
+   "You can name the three kinds of state. How do you decide which tool fits which?",
+   "You have a way to choose. What does Redux's strict pattern give you?",
+   "Redux is heavy for some apps. What are the lighter options?",
+   "Light tools exist. What do you give up by choosing one over Redux?",
+   "Server data behaves differently from UI state. What tool is built for it?",
+   "React Query handles server state. Does it make Redux unnecessary for that job?",
+   "Cached data goes stale. How and when do you throw it away?",
+   "Fresh data is cheap to ask for. How do you make the UI feel instant before the server answers?"
+  ],
+  "upNext": "State is handled. Next: connect it to the platform, with testing and delivery of frontend code.",
+  "basics": [
+   0
+  ]
+ }
+}

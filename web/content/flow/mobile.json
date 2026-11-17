@@ -1,0 +1,102 @@
+{
+ "ios-swift": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8
+  ],
+  "hooks": [
+   "Value types copy and classes share. What do optionals and protocols add to the way you model data?",
+   "Models are safe. But when classes share, who frees them, and what happens in a cycle?",
+   "Memory is handled. How does SwiftUI decide when to redraw, compared with UIKit?",
+   "The UI reacts to state. How do you do slow work without blocking it?",
+   "Async work is easy. But what happens to it when the user leaves the app?",
+   "The app survives the background. How does it fetch and save data?",
+   "Data comes and goes. How do you test it without a device?",
+   "Tests pass. What stands between you and the App Store?"
+  ],
+  "upNext": "You can build and ship an iOS app. Next: the Android side, with Kotlin and its lifecycle.",
+  "basics": [
+   0
+  ]
+ },
+ "android-kotlin": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7
+  ],
+  "hooks": [
+   "Null safety is built in. What else makes Kotlin shorter than Java for your models?",
+   "Your models are tidy. Now, where does that code actually live, and why is it destroyed on rotation?",
+   "You know the lifecycle. How does Compose redraw when state changes?",
+   "The UI reacts to state. How do you run slow work off the main thread?",
+   "Work runs in scopes. Where do you put it so it survives a rotation?",
+   "The structure is clean. How do you store data and run tasks reliably in the background?",
+   "It works and persists. Why does it still feel slow, and why do ANR dialogs appear?"
+  ],
+  "upNext": "Android is covered. Next: write one codebase for both platforms with React Native or Flutter.",
+  "basics": []
+ },
+ "react-native": {
+  "order": [
+   0,
+   7,
+   1,
+   8,
+   2,
+   6,
+   3,
+   4,
+   5
+  ],
+  "hooks": [
+   "You know how JS and native talk. What does Fabric change for the UI itself?",
+   "The renderer is clear. How do you start a project without touching native code?",
+   "Expo speeds you up. What does it manage for permissions and updates?",
+   "Updates are managed. How does the user move between screens?",
+   "Screens connect. How do links from outside the app land on the right one?",
+   "Deep links work. When Expo is not enough, how do you call native code?",
+   "Native code is reachable. What makes long lists stutter, and how do you fix it?",
+   "The app is smooth. Which fixes can ship over the air, and which need a store review?"
+  ],
+  "upNext": "React Native is covered. Next: how Flutter takes a different route with its own rendering engine.",
+  "basics": []
+ },
+ "flutter": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7
+  ],
+  "hooks": [
+   "Null safety is on. How does async code avoid freezing the UI?",
+   "Async code runs smoothly. What is the building block of every screen?",
+   "Widgets can hold state. What happens each time build runs?",
+   "Build is called often. Why is that cheap, and what is really drawing the pixels?",
+   "You know the three trees. How do you share state between far-apart widgets?",
+   "State is shared. How do you reach camera or sensors from Dart?",
+   "Native features work. Why do frames still drop, and how do you find out?"
+  ],
+  "upNext": "Flutter is covered. Next: mobile apps need a backend, so learn Node.js or another server stack.",
+  "basics": [
+   0
+  ]
+ }
+}

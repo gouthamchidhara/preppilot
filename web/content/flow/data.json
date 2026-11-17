@@ -1,0 +1,202 @@
+{
+ "sql-advanced": {
+  "order": [
+   0,
+   1,
+   3,
+   4,
+   2,
+   5,
+   6,
+   7
+  ],
+  "hooks": [
+   "Each row can now see its group. What if it needs the row just before it, like yesterday's value?",
+   "You can compare neighbours. Can the same trick keep only the top row per group, or remove duplicates?",
+   "You can pick one row per group. What if you need groups turned into columns instead?",
+   "Flat data is easy. How do you walk a hierarchy of unknown depth, like an org chart?",
+   "The query is correct. Why does it take ten minutes, and how do you read the plan to find out?",
+   "The plan shows a full scan. How do you make the engine skip most of the table?",
+   "Fast reads are half the job. How do you update changing data without duplicates, using MERGE?"
+  ],
+  "upNext": "Queries are sharp. Next: shape the tables so those queries stay simple, with fact tables, dimensions and layers.",
+  "basics": [
+   0,
+   1
+  ]
+ },
+ "data-modeling": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7
+  ],
+  "hooks": [
+   "Two workloads want opposite designs. Should tables be normalized or dimensional?",
+   "Dimensional modeling wins for analytics. What goes in a fact table, and what is its grain?",
+   "You know facts and dimensions. Do you lay them out as a flat star or a snowflake of sub-tables?",
+   "The schema is set. What happens when a customer moves city and the history must survive?",
+   "SCDs keep history in dimensions. What if many sources and constant change need a Data Vault core?",
+   "Models differ by team. How do you layer raw to clean to business-ready, bronze to gold?",
+   "Layers are the plan. How do you build and test them as code with dbt?"
+  ],
+  "upNext": "Next: how data reaches those models. ETL and ELT pipelines, incremental loads and safe reruns.",
+  "basics": [
+   0
+  ]
+ },
+ "etl-elt": {
+  "order": [
+   0,
+   5,
+   1,
+   2,
+   3,
+   4,
+   6,
+   7
+  ],
+  "hooks": [
+   "In ELT the raw data lands first. In what format should it sit: CSV, Parquet, Delta?",
+   "Files are stored. Do you reload everything each night, or only what changed?",
+   "Incremental means knowing what changed. How do watermarks and CDC find it?",
+   "The job will fail and rerun. How do you make a rerun safe, with no duplicates?",
+   "Reruns are safe. What about records that arrive hours after their window closed?",
+   "The data has settled. How do you transform and test it inside the warehouse with dbt?",
+   "The models run today. What breaks when upstream adds, renames or drops a column?"
+  ],
+  "upNext": "Next: when one machine is not enough, how Spark spreads the transform work across a cluster.",
+  "basics": [
+   0,
+   1
+  ]
+ },
+ "spark": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7
+  ],
+  "hooks": [
+   "You know who does the work. Why does nothing run until you call an action?",
+   "Spark builds a plan first. Which steps are cheap, and which force data across the network?",
+   "Shuffles depend on how data is split. How do you control partitions and fight skew?",
+   "Partitions decide where rows live. How do you join two big tables without moving everything?",
+   "The join is planned. When is it worth keeping a result in memory for reuse?",
+   "The job is slow anyway. Where in the Spark UI do you look first?",
+   "Batch jobs are understood. What changes when the data never stops arriving?"
+  ],
+  "upNext": "Next: who runs these jobs on a schedule, in order, with retries? Orchestration with Airflow.",
+  "basics": []
+ },
+ "airflow": {
+  "order": [
+   0,
+   1,
+   5,
+   2,
+   3,
+   4,
+   6
+  ],
+  "hooks": [
+   "A DAG is a graph of tasks. When does it run, and what time slice does each run own?",
+   "Backfills rerun old intervals. What must a task look like to survive being run twice?",
+   "Safe reruns make retries cheap. How do you set up retries, SLAs and alerts?",
+   "Tasks fail and recover. How do they hand data to each other without a shared disk?",
+   "Tasks pass small values. What if one must wait for a file or an upstream system?",
+   "That is Airflow's model. How do Dagster, Prefect and cloud orchestrators differ?"
+  ],
+  "upNext": "Next: not every pipeline runs on a schedule. Streaming and Kafka handle data that never stops arriving.",
+  "basics": [
+   0
+  ]
+ },
+ "streaming": {
+  "order": [
+   6,
+   0,
+   8,
+   1,
+   2,
+   7,
+   3,
+   5,
+   4
+  ],
+  "hooks": [
+   "You need data in motion. How does Kafka store it: topics, partitions, offsets, brokers?",
+   "Data is split and replicated. What happens when a broker dies mid-write?",
+   "The cluster survives a failure. How do producers pick a partition and keep messages in order?",
+   "Messages are written safely. Who reads them, and how is work split among readers?",
+   "Consumers share partitions. How do they remember where they stopped?",
+   "Offsets are the bookmark. When you commit them decides: lost, duplicated, or exactly once?",
+   "Delivery is settled. What happens when a producer changes the shape of a message?",
+   "The schema is safe. How do you count and join events over time with windows and state?"
+  ],
+  "upNext": "Next: where all this data lives and gets queried, in cloud warehouses and lakehouses.",
+  "basics": [
+   0
+  ]
+ },
+ "warehouses": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6
+  ],
+  "hooks": [
+   "Three kinds of platform. What shared idea lets storage and compute scale separately?",
+   "Compute and storage are apart. How does Snowflake package that with warehouses and micro-partitions?",
+   "Snowflake rents you a warehouse. How does BigQuery charge, by slots or bytes scanned?",
+   "Two warehouse designs seen. How do Delta tables add ACID and time travel to plain files?",
+   "The platforms work. Why is the bill growing, and how do you bring it down?",
+   "Cost is under control. Who may see what, and how do you share data safely?"
+  ],
+  "upNext": "Next: how do you know the data in the warehouse is right? Data quality, lineage and governance.",
+  "basics": [
+   0
+  ]
+ },
+ "data-quality": {
+  "order": [
+   0,
+   1,
+   7,
+   8,
+   2,
+   3,
+   5,
+   4,
+   6
+  ],
+  "hooks": [
+   "You can name what good data means. How do you turn those rules into automatic tests?",
+   "Tests catch known rules. What if a source silently adds or changes a column?",
+   "Columns look the same but values may shift. How do you spot a change in distribution?",
+   "Checks are scattered. How does observability watch freshness, volume and shape everywhere?",
+   "An alert fired. How do you find which upstream table broke and who depends on it?",
+   "You can trace the damage. How do producers and consumers agree up front with a data contract?",
+   "Contracts cover shape. What rules apply to personal data: masking, GDPR, deletion?",
+   "Controls exist. What do you do in the first hour when bad data reaches a dashboard anyway?"
+  ],
+  "upNext": "Next: the data is trusted. Move on to machine learning, statistics and models that learn from it.",
+  "basics": [
+   0
+  ]
+ }
+}

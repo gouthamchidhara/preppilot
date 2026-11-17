@@ -1,0 +1,127 @@
+{
+ "statistics": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8
+  ],
+  "hooks": [
+   "You can describe data with a mean and a spread. How likely is an event, and how does new evidence change it?",
+   "Probability rules are set. How can a small sample tell you about a whole population?",
+   "Samples vary. How do you say how far off your estimate might be?",
+   "An interval gives a range. How do you decide whether a difference is real or just noise?",
+   "Tests can be wrong in two ways. How do you design an A/B test that avoids the common traps?",
+   "The test shows a lift. Does that prove the change caused it?",
+   "Correlation is not cause. How do you read a line fitted through data, and its coefficients?",
+   "Linear regression predicts a number. What changes when the answer is yes or no?"
+  ],
+  "upNext": "Next: ML fundamentals. Use these ideas to train models, split data honestly and measure how well they work.",
+  "basics": [
+   0
+  ]
+ },
+ "ml-fundamentals": {
+  "order": [
+   0,
+   2,
+   6,
+   5,
+   1,
+   3,
+   4,
+   7
+  ],
+  "hooks": [
+   "You know the kinds of learning. How do you split data so your score is honest?",
+   "The split is safe. What do you do to raw columns before a model sees them?",
+   "Features are ready. Which models handle tabular data well: trees, forests, boosting?",
+   "A deep tree memorizes the training data. How do bias, variance and regularization explain that?",
+   "You can tune the fit. Which number tells you whether the model is actually good?",
+   "Accuracy can look great and still be useless. What if one class is rare?",
+   "Tabular models are covered. How do neural networks learn their own features?"
+  ],
+  "upNext": "Next: the code behind the models. Python data tools, pandas and NumPy, for cleaning and shaping data.",
+  "basics": [
+   0
+  ]
+ },
+ "python-data": {
+  "order": [
+   0,
+   1,
+   4,
+   2,
+   3,
+   5,
+   6
+  ],
+  "hooks": [
+   "Arrays are fast and uniform. How does pandas add labels and mixed types on top?",
+   "You can select rows and columns. What do you do with the gaps, the NaN values?",
+   "The data is clean enough. How do you split it by key and summarize each group?",
+   "One table is summarized. What goes wrong when you join two tables on a key?",
+   "The code is correct but slow. Why is apply a trap, and where do dtypes and Polars help?",
+   "Fast and right. How do you plot it and keep the notebook tidy enough to trust?"
+  ],
+  "upNext": "Next: a model in a notebook is a draft. MLOps covers tracking, deploying and monitoring it in production.",
+  "basics": [
+   0
+  ]
+ },
+ "ml-ops": {
+  "order": [
+   0,
+   1,
+   8,
+   7,
+   2,
+   4,
+   3,
+   6,
+   5
+  ],
+  "hooks": [
+   "The lifecycle has many steps. How do you record every experiment so none is lost?",
+   "Runs are logged. Can anyone rerun one and get the same result?",
+   "Pipelines are reproducible. How do you version models, data and code together?",
+   "Versions are tracked. How do training and serving use the same features without drift?",
+   "Features are shared. How do you test and release a model like any other software?",
+   "The model ships. Should it answer in batch, or online within milliseconds?",
+   "It is serving. How do you try a new model on real traffic without risking users?",
+   "A new model is live. How do you notice when the data or accuracy slowly drifts?"
+  ],
+  "upNext": "Next: models that generate text. LLM applications cover tokens, retrieval, agents and evaluation.",
+  "basics": []
+ },
+ "llm-apps": {
+  "order": [
+   0,
+   1,
+   2,
+   8,
+   3,
+   4,
+   5,
+   7,
+   6
+  ],
+  "hooks": [
+   "The model reads tokens in a limited context. How do you ask it so the answer has a reliable shape?",
+   "Prompts only know what you tell them. How do you find the right text among thousands of documents?",
+   "Vectors find similar text. How do you cut documents into chunks and rerank what comes back?",
+   "Good chunks and ranking exist. How do you put them together so answers come from your data?",
+   "RAG answers questions. How does a model call tools and act, not just talk?",
+   "The app can act. How do you measure whether its answers are right and not made up?",
+   "You can score quality. What stops a malicious prompt or leaked personal data?",
+   "It is safe enough. Why are the bill and latency high, and how do you cut both?"
+  ],
+  "upNext": "Next: the language underneath it all. Core Python, from types and generators to decorators and exceptions.",
+  "basics": []
+ }
+}

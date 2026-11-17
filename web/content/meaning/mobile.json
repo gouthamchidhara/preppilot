@@ -1,0 +1,53 @@
+{
+ "ios-swift": {
+  "analogy": {
+   "name": "A hotel room",
+   "line": "An iOS app is like a hotel guest: in the room awake (active), dozing with the TV off (background), asleep (suspended), or checked out (not running). The hotel can evict sleepers."
+  },
+  "caption": "iOS freezes what you cannot see. Work that must finish goes in the background; everything else waits to be woken.",
+  "steps": [
+   "Not running is a guest who has not arrived or was evicted. Real name: not launched, or killed. Launching is the only way back in.",
+   "Active is the guest awake at the desk. Real name: on screen and in use, and the only state that runs freely.",
+   "Background is a guest in the lobby with a short errand left. Real name: alive but unseen, with brief time to finish work.",
+   "Suspended is a guest asleep. Real name: frozen with no CPU time. The system can kill a suspended app without warning, so save state early."
+  ]
+ },
+ "android-kotlin": {
+  "analogy": {
+   "name": "A stage actor",
+   "line": "An Activity is like an actor: in the wings (created), visible but not yet speaking (started), center stage (resumed), dimmed by a spotlight change (paused), offstage (stopped), then gone (destroyed)."
+  },
+  "caption": "Six states, one rule: save what matters by onPause, because after that the system can kill the process without asking.",
+  "steps": [
+   "Created is the actor getting dressed. Real name: onCreate. Build the UI and restore saved state here.",
+   "Started is the actor visible in the wings. Real name: onStart. The user can see the screen but cannot touch it yet.",
+   "Resumed is center stage. Real name: onResume. The screen is in front and interactive, which is where the user really is.",
+   "Paused is a spotlight dim, such as a dialog or split screen. Real name: onPause. Save what matters now, since a stop can follow.",
+   "Stopped is the actor offstage. Real name: onStop. Not visible, and the system can kill the process at any time without a callback.",
+   "Destroyed is the actor leaving the theater. Real name: onDestroy. Anything not saved is lost, which is why ViewModels exist."
+  ]
+ },
+ "react-native": {
+  "analogy": {
+   "name": "A translator between two offices",
+   "line": "The old bridge is like a translator passing notes between two offices; the new architecture lets the offices talk directly on a shared phone line."
+  },
+  "caption": "The bridge was a queue between two worlds. The new architecture lets JavaScript call native code directly and render without waiting.",
+  "steps": [
+   "Old bridge: every request is a note handed to the translator. Real name: an async, batched JSON queue that lags a frame under load.",
+   "New architecture: both offices share a direct line. Real name: Fabric renders via C++ and TurboModules call native directly, synchronously where needed."
+  ]
+ },
+ "flutter": {
+  "analogy": {
+   "name": "An architect, a builder and a painter",
+   "line": "Flutter is like building a house: the widget is the blueprint, the element is the site manager who keeps the project going, and the render object is the painter doing the walls."
+  },
+  "caption": "Flutter keeps three trees: widgets describe, elements manage, render objects draw. Rebuilds are cheap because only blueprints are thrown away.",
+  "steps": [
+   "The blueprint is the widget. Real name: an immutable description of the UI. It is cheap and disposable, rebuilt on every setState.",
+   "The site manager is the element. Real name: it holds the widget, survives rebuilds and owns the state. It diffs old blueprint against new.",
+   "The painter is the render object. Real name: it does layout and paint, the tree that really draws pixels. It is only touched when needed."
+  ]
+ }
+}

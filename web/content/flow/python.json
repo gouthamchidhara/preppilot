@@ -1,0 +1,107 @@
+{
+ "python-core": {
+  "order": [
+   0,
+   1,
+   5,
+   2,
+   3,
+   4,
+   6,
+   7,
+   8
+  ],
+  "hooks": [
+   "Some objects change in place and some do not. Which built-in containers should you reach for?",
+   "You have lists and dicts. How do functions take arguments, and why does a mutable default bite?",
+   "Functions are covered. How do you loop lazily, with comprehensions and yield?",
+   "Functions are values too. How does a decorator wrap one without changing it?",
+   "Wrapping adds behaviour around a call. How does with guarantee cleanup of a resource?",
+   "Cleanup is handled. How do you bundle data and behaviour in classes and dataclasses?",
+   "Objects can fail. How do you raise and catch errors, and define your own?",
+   "The code works. How do type hints and mypy check it, and what does the GIL limit?"
+  ],
+  "upNext": "Next: put Python to work on the web with FastAPI, Django and Flask, from routes to deployment.",
+  "basics": [
+   0,
+   1
+  ]
+ },
+ "python-web": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8
+  ],
+  "hooks": [
+   "Three frameworks, three styles. How does FastAPI map a route to validated input?",
+   "Requests are validated. How does FastAPI hand your handler a DB session or current user?",
+   "That is the light end. What does Django give you out of the box: models, views, migrations?",
+   "The ORM hides SQL. Why does a page suddenly run hundreds of queries?",
+   "Queries are fast. How do you know who is calling: sessions or JWT?",
+   "Users are known. What server actually runs your app: WSGI, ASGI, Gunicorn, Uvicorn?",
+   "The app serves requests. How do you test it with pytest and fixtures?",
+   "Tests pass. How do you package and run it in a container?"
+  ],
+  "upNext": "Next: async and concurrency, the reason ASGI exists, and what happens when you block the event loop.",
+  "basics": [
+   0
+  ]
+ },
+ "python-async": {
+  "order": [
+   0,
+   1,
+   2,
+   5,
+   6,
+   3,
+   4,
+   7
+  ],
+  "hooks": [
+   "One loop runs many tasks. How do you start several at once, with timeouts and cancellation?",
+   "Tasks run side by side. What happens when one of them makes a blocking call?",
+   "Blocking freezes the loop. Which database and HTTP clients are built to be awaited?",
+   "Everything is awaited. What are the classic async bugs, like forgotten awaits and lost tasks?",
+   "Async suits waiting on I/O. What if the work is CPU heavy: threads or processes?",
+   "Threads often do not speed up Python. What is the GIL, and is free-threaded Python changing that?",
+   "You know each tool. Which pattern fits which problem: pools, queues, semaphores?"
+  ],
+  "upNext": "Next: packaging and tooling, how to ship Python code with environments, lock files, linting and tests.",
+  "basics": []
+ },
+ "python-packaging": {
+  "order": [
+   0,
+   1,
+   4,
+   2,
+   3,
+   5,
+   6,
+   7,
+   8
+  ],
+  "hooks": [
+   "Every project needs its own isolated Python. How do you install and record packages inside it?",
+   "Installs work today. Why do two packages demand different versions of a third?",
+   "Conflicts need pinning. How do Poetry and uv resolve and lock dependencies for you?",
+   "The tools read one file. What belongs in pyproject.toml?",
+   "The project is declared. How do linting and formatting keep the code consistent?",
+   "Style is automatic. How does a type checker catch bugs before you run the code?",
+   "Static checks pass. How do you structure pytest tests and fixtures?",
+   "Tests are organized. How do parametrize and coverage show the edge cases are covered?"
+  ],
+  "upNext": "Next: use these tools in a real project, such as Python for data or the web, with tests and a lock file.",
+  "basics": [
+   0
+  ]
+ }
+}

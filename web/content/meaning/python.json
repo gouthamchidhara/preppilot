@@ -1,0 +1,56 @@
+{
+ "python-core": {
+  "analogy": {
+   "name": "A bookmark in a long book",
+   "line": "A generator is like reading with a bookmark: calling it hands you the book, next() reads to the next marked passage, the bookmark keeps your place, and the last page ends the loop."
+  },
+  "caption": "A generator does no work until you ask. Each next() runs it to the next yield, then it freezes with its state intact.",
+  "steps": [
+   "Call is picking up the book and not opening it. Calling a generator function runs nothing and returns an iterator, frozen at the first line, which is why generators cost almost no memory up front.",
+   "Yield is reading to the next marked passage and handing it over. next() runs until a yield, passes a value out and freezes the local state, so you only compute what you ask for.",
+   "Resume is opening the book at the bookmark. The next next() carries on exactly where it stopped, with locals and loop position intact, which is what makes generators handy for big or endless streams.",
+   "StopIteration is the last page. When the function returns, the iterator raises StopIteration and the for loop ends quietly. You rarely see it, but it is the protocol behind every loop."
+  ]
+ },
+ "python-web": {
+  "analogy": {
+   "name": "A hotel front desk",
+   "line": "A FastAPI request is like checking in at a hotel: the desk finds your booking, checks your ID, fetches your key, and only then does the porter do the job."
+  },
+  "caption": "FastAPI checks the request before your code runs: the route matches, Pydantic validates, dependencies inject. Your handler only sees good data.",
+  "steps": [
+   "Route is the front desk finding your booking. The path and method match a handler, and no match means a 404 with no further work done.",
+   "Validate is checking your ID. Pydantic checks the body against the declared model and rejects bad data here, with a clear 422 error, before any of your logic runs.",
+   "Dependency is being handed a room key. The DB session or current user is injected from a function your handler declares, which keeps handlers simple and easy to replace in tests.",
+   "Handler is the porter doing the job. The logic runs and only ever sees valid, typed data, so it does not need defensive checks for malformed input.",
+   "Response is the receipt. The return value is serialised through the response model, which is the contract and filters out fields you did not mean to expose."
+  ]
+ },
+ "python-async": {
+  "analogy": {
+   "name": "One waiter, many tables",
+   "line": "asyncio is like one waiter serving many tables: the loop is the waiter, tasks are tables, and while one table waits for food the waiter serves another. A waiter who stops stalls the room."
+  },
+  "caption": "Async is not parallel: one loop, many tasks, each yielding while it waits. Block the loop and everything waits with it.",
+  "steps": [
+   "Loop is the single waiter. One event loop runs many tasks and only works on whatever is ready, so everything shares one thread and one point of attention.",
+   "Task A is a table that has ordered and now waits. At an await on I/O it yields control back to the loop instead of blocking, which is the whole point of async.",
+   "Task B is another table served while A waits. This is where async wins back time: many slow network calls overlap instead of queueing behind each other.",
+   "Resume A is the food arriving at table A. The I/O finished, so the loop schedules the task again. Nothing ran in parallel, work was only interleaved, so CPU-heavy code still blocks."
+  ]
+ },
+ "python-packaging": {
+  "analogy": {
+   "name": "Shipping a flat-pack kit",
+   "line": "Packaging is like shipping flat-pack furniture: pyproject is the spec sheet, the build boxes it as a wheel, and pip install unpacks it into one room, the venv."
+  },
+  "caption": "A wheel is the installable thing; a venv is where it lives. Pin what you install, or the next install is a different app.",
+  "steps": [
+   "pyproject is the spec sheet. Name, version and dependencies are declared in one file, pyproject.toml, which every modern build and install tool reads.",
+   "Build is boxing the kit. The build tool turns your source tree into a distributable package, and what users install is that output, not your folder of files.",
+   "Wheel is the finished box, one versioned file that installs anywhere without running your setup code. A source distribution is a weaker promise, since it must be built on install.",
+   "pip install is unpacking the kit into one room. Install into a virtual environment, never the system Python, so projects cannot overwrite each other's packages.",
+   "Import is using the furniture. If the import works in a fresh venv, the packaging is right, and that clean-environment test is the best check before release."
+  ]
+ }
+}

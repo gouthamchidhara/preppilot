@@ -1,0 +1,104 @@
+{
+ "java-core": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   6,
+   5,
+   7
+  ],
+  "hooks": [
+   "You know what runs your code. How do objects prove they are equal, and why does it matter?",
+   "Equality is defined. How do collections use it to store and find things?",
+   "Collections hold objects. How does the compiler keep their types safe?",
+   "Types are safe. How do you process these collections in a modern style?",
+   "Streams read well. How do you design the types they work on, with interfaces or abstract classes?",
+   "The design is set. What happens when something goes wrong?",
+   "Errors are handled. How do you run all of this on many threads?"
+  ],
+  "upNext": "Core Java is covered. Next: what the JVM does with your code, memory, garbage collection and tuning.",
+  "basics": [
+   0,
+   6
+  ]
+ },
+ "jvm": {
+  "order": [
+   0,
+   1,
+   5,
+   2,
+   3,
+   4,
+   6,
+   7
+  ],
+  "hooks": [
+   "You know where objects live. How does the collector decide what to clean up?",
+   "Garbage is collected. Classes have to get into memory first, so how are they found?",
+   "Classes load. When memory runs out anyway, how do you find the cause?",
+   "Memory errors are diagnosed. What if the CPU is pinned instead?",
+   "The hot code is found. Why is the app slow right after it starts?",
+   "The JIT warms up. How does the JVM behave inside a container?",
+   "Limits are respected. Which flags do you actually set in production?"
+  ],
+  "upNext": "JVM internals are covered. Next: Spring, the framework that runs on top of all this.",
+  "basics": [
+   0
+  ]
+ },
+ "spring": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7
+  ],
+  "hooks": [
+   "Spring wires objects for you. What does Boot configure on top of that?",
+   "Boot sets things up. How do you expose it as a REST API?",
+   "The API takes requests. How does the data get stored and read?",
+   "Repositories save entities. When do several saves have to succeed together?",
+   "Transactions protect data. Who is allowed to call all this?",
+   "Security is in place. How do you see what is happening in production?",
+   "You can observe it. How do you prove it all works before release?"
+  ],
+  "upNext": "Spring is covered. Next: how Maven and Gradle build and package it into something deployable.",
+  "basics": [
+   0
+  ]
+ },
+ "java-build": {
+  "order": [
+   1,
+   0,
+   3,
+   4,
+   2,
+   5,
+   6,
+   7
+  ],
+  "hooks": [
+   "The POM describes the project. What do the lifecycle phases do with it?",
+   "You know the phases. Which libraries come along, and with what scope?",
+   "Transitive jars pile up. What happens when two versions of one clash?",
+   "Conflicts are resolved. How does Gradle model the same problem differently?",
+   "You know both tools. How do you split a big project into modules?",
+   "Modules build together. How do you make the output identical every time?",
+   "Builds are reproducible. How do you know your dependencies are safe?"
+  ],
+  "upNext": "Builds are clear. Next: the same ideas in other ecosystems, or deploy what you built.",
+  "basics": [
+   0,
+   1
+  ]
+ }
+}

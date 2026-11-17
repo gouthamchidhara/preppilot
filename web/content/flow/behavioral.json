@@ -1,0 +1,21 @@
+{
+ "behavioral": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   4
+  ],
+  "hooks": [
+   "You have an opening. Now, how do you answer 'tell me about a time when...'?",
+   "Your stories need real experience. What do you say when you have only a little?",
+   "You can answer honestly. What do you ask them at the end?",
+   "Good answers can still be undone. Which small habits make interviewers say no?"
+  ],
+  "upNext": "Next, take it to a mock interview: practise these answers out loud and against a timer.",
+  "basics": [
+   0
+  ]
+ }
+}

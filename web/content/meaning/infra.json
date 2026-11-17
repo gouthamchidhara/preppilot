@@ -1,0 +1,152 @@
+{
+"linux": {
+ "analogy": {"name": "Opening a restaurant for the day", "line": "Booting is like opening a restaurant: the landlord unlocks the building, the manager picks the plan, staff arrive, then the host seats you."},
+ "caption": "A Linux boot is five handoffs in a row. If the box will not start, find the last handoff that worked and the next one is your suspect.",
+ "steps": [
+  "The landlord unlocks the door. Firmware (UEFI) finds the boot disk and starts the bootloader. If it cannot find a disk, nothing else can begin.",
+  "The manager picks the day's plan. GRUB chooses a kernel, and you can pick an older one. That is your escape hatch after a bad update.",
+  "The kitchen crew arrives and the pantry opens. The kernel loads drivers and mounts the root filesystem. No root mount means no boot.",
+  "The manager hands out jobs. systemd is PID 1 and starts every service in dependency order. A failed unit here explains most half-booted boxes.",
+  "The host seats you. getty offers a login prompt and your shell starts. If you can type here, the other four handoffs worked."
+ ]
+},
+"scripting": {
+ "analogy": {"name": "A pre-flight checklist", "line": "A safe script is like a pilot's checklist: check the plane, rehearse, fly and log it, and raise the alarm the moment something is wrong."},
+ "caption": "A production script checks its inputs, can dry-run, logs what it did and fails loudly. Silence is the bug.",
+ "steps": [
+  "The walk-around before takeoff. You validate arguments, files and the target host first. A script that guesses can delete the wrong thing in prod.",
+  "The simulator run. A dry run prints what would change and changes nothing. Operators trust a script more when they can preview it.",
+  "The flight with a logbook. The script does the work and records what ran, what changed and what was skipped. That log is your audit trail.",
+  "The alarm. A non-zero exit code and a clear message say what failed. Silent failure lets a broken script run for weeks unnoticed."
+ ]
+},
+"windows": {
+ "analogy": {"name": "A theme park wristband", "line": "Kerberos is like a park wristband: you prove who you are once at the gate, then show the band at each ride. The ride checks if you may enter."},
+ "caption": "Kerberos is the proof. The client shows a ticket, the server trusts the domain controller that signed it, and no password crosses the wire.",
+ "steps": [
+  "You walk up to a ride. The client asks for a resource such as a share, a server or an app. Everything in a logon starts with a request like this.",
+  "You find the ticket booth. DNS tells the client which domain controller to use. When AD logons fail, broken DNS is a very common cause.",
+  "The booth checks your ID. The domain controller confirms who you are and issues the ticket. It is the authority every server in the domain trusts.",
+  "The wristband is the proof. The Kerberos ticket shows who you are without sending your password. This is why it is safer than sending credentials each time.",
+  "The ride checks the rules. The resource decides access from its own permissions. Being authenticated does not mean being authorised."
+ ]
+},
+"network": {
+ "analogy": {"name": "Sending a parcel by post", "line": "A network is like the post: you write the letter, a courier makes sure it arrives intact, the sorting office routes it, and the van drives it."},
+ "caption": "Four layers, each with one job. When something breaks, name the layer first and the search space halves.",
+ "steps": [
+  "The letter itself. The application layer carries what you care about, such as HTTP or DNS. Errors like 404 live here, not in the network.",
+  "The courier who checks delivery. TCP numbers the pieces, resends lost ones and keeps order. UDP skips that, which is why it is faster but less careful.",
+  "The sorting office. IP addresses and routing decide how a packet finds the far side. Ping and traceroute test this layer.",
+  "The delivery van and the road. Ethernet and Wi-Fi move frames to the next hop. An unplugged cable breaks every layer above it."
+ ]
+},
+"lb": {
+ "analogy": {"name": "A restaurant host", "line": "A load balancer is like a host at the door: guests ask for one restaurant, and the host seats them at open tables and skips any closed section."},
+ "caption": "The load balancer's real job is not spreading load. It is noticing a dead backend before your users do.",
+ "steps": [
+  "The guest arrives. The client uses one name and one address and never chooses a server. That makes adding or removing backends invisible to users.",
+  "The host at the door. The load balancer spreads requests and, more importantly, health-checks every backend. Tuning those checks is most of the real work.",
+  "The open tables. Only backends that pass the health check get traffic, and a failed one is removed quietly. This is how one server can die unnoticed.",
+  "The meal arrives. The client gets its answer without knowing which backend served it. That is also why you check LB logs to find which one did."
+ ]
+},
+"docker": {
+ "analogy": {"name": "A recipe, frozen meal and served plate", "line": "A Dockerfile is the recipe, the image is the frozen meal made from it, and a container is that meal heated and served."},
+ "caption": "A Dockerfile is a recipe, an image is the frozen meal, a container is the meal served. Same image, same behaviour, anywhere.",
+ "steps": [
+  "The recipe card. A Dockerfile lists the base image, files and commands in order. It is text you can version and review like any code.",
+  "Cooking step by step. Each instruction builds a cached layer, so a small change rebuilds only the end. Put rarely changing steps first for fast builds.",
+  "The frozen meal. The image is the finished, versioned result, identical on every machine. That is what you push to a registry and promote between environments.",
+  "The meal served. A container is an image running in isolation. The same image behaves the same on a laptop and in prod, which ends works-on-my-machine."
+ ]
+},
+"k8s": {
+ "analogy": {"name": "A hotel with a front desk", "line": "Kubernetes is like a hotel: the management office decides who works where, guests call the front desk, and staff are swapped without guests noticing."},
+ "caption": "You talk to the Service, never to a pod directly. If a pod dies, the ReplicaSet starts another and the Service keeps pointing at the healthy set.",
+ "steps": [
+  "The management office. The control plane (API server, scheduler, etcd) holds the desired state and decides what runs where. It does not serve your traffic itself.",
+  "The front desk number. A Service is a stable address that routes to matching pods. Because pod IPs change, callers must use the Service, never a pod.",
+  "The staff on shift. Pods come and go, and the ReplicaSet keeps three running. Replacing a dead pod automatically is the self-healing interviewers ask about."
+ ]
+},
+"cicd": {
+ "analogy": {"name": "A factory conveyor belt", "line": "A pipeline is like a conveyor belt: parts go in at one end, are inspected and packed once, then shipped with a way to recall them quickly."},
+ "caption": "CI proves the change works. CD proves it works in production, by deploying in a way you can undo in seconds.",
+ "steps": [
+  "A part lands on the belt. A commit to main starts the pipeline by itself. Automatic triggering means no step depends on someone remembering to run it.",
+  "The inspection station. Build and test run here, and a failure stops the belt before anything reaches users. Fast feedback keeps fixes cheap.",
+  "One sealed box. The artifact is built once and deployed to every environment. Rebuilding per environment lets differences creep in, which is drift.",
+  "The shipment with a recall. Blue-green or similar sends traffic to the new version while the old stays ready. Rollback becomes a switch, not a rebuild."
+ ]
+},
+"monitoring": {
+ "analogy": {"name": "A hospital patient monitor", "line": "Monitoring is like a hospital monitor: sensors read vitals, a station gathers them, an alarm trips on danger, and the right nurse responds."},
+ "caption": "Monitoring is a pipeline: instrument, collect, alert, respond. An alert nobody acts on is just noise with a pager attached.",
+ "steps": [
+  "The sensors on the patient. The app emits metrics and logs. If something is not measured, you cannot alert on it or prove it was healthy.",
+  "The nurses' station. Prometheus scrapes targets on a schedule and stores the numbers. Pull means the server controls its own load.",
+  "The alarm threshold. A rule fires when a symptom such as latency or errors crosses a line. Alert on what users feel, not on every internal blip.",
+  "The nurse on call. The page goes to the owner with a runbook link, so one person acts with context. Everyone else gets to sleep."
+ ]
+},
+"cloud": {
+ "analogy": {"name": "A shop with a counter and a vault", "line": "A 3-tier app is like a shop: customers meet the counter, staff on the floor do the work, and the stock sits in a vault only staff can reach."},
+ "caption": "Three tiers, one rule: the client only ever talks to the load balancer, and the database only ever talks to the app.",
+ "steps": [
+  "The customer at the street door. The client sees one public address and nothing behind it. Hiding the inside keeps the attack surface small.",
+  "The counter and the shop floor. The load balancer spreads traffic across identical app servers, so one can fail unnoticed. Identical servers are what make that safe.",
+  "The vault. A managed database that only the app can reach, never the client. Keeping the data tier private is a standard security answer."
+ ]
+},
+"onboarding": {
+ "analogy": {"name": "Opening a new shop branch", "line": "Onboarding is like opening a shop branch: ask what it needs, size the premises, fit it out, connect utilities, open the doors, then hand over the keys."},
+ "caption": "Onboarding is a pipeline with a checklist at each gate. The failures are almost always the boring bits: DNS, TLS and who owns the app afterwards.",
+ "steps": [
+  "The planning meeting. Intake means asking about ports, data, secrets and owners before you build. Missing answers here turn into delays at go-live.",
+  "Choosing the premises. You decide size and where it runs. This is the choice that is costly to undo, so it gets the most thought.",
+  "Fitting out the shop. You build a VM or containers, whichever suits how the app is operated. Both are valid, so choose on operations, not fashion.",
+  "Connecting water and power. DNS, the load balancer and TLS are the unglamorous bits that most often sink a go-live. Check them early.",
+  "Opening day and the handover. You cut over, watch it, then give support a runbook. A written handover beats a phone call every time."
+ ]
+},
+"troubleshoot": {
+ "analogy": {"name": "A doctor's diagnosis", "line": "Troubleshooting is like a doctor's visit: see the symptom, narrow down the system, form one theory, try one treatment, then check the patient."},
+ "caption": "Troubleshooting is not guessing. Reproduce, isolate, hypothesize, fix one thing, verify. Skip a step and you fix the wrong thing twice.",
+ "steps": [
+  "Seeing the symptom. You make the failure happen yourself. If you cannot reproduce it, you cannot show later that you fixed it.",
+  "Narrowing to one system. Find which phase is slow: DNS, connect, send, wait or receive. The phase points at the suspect.",
+  "One theory at a time. You form a single cause and a single test for it. Changing two things at once teaches you nothing.",
+  "One treatment. Make a small, reversible change and log it. If it makes things worse, you know exactly what to undo.",
+  "The follow-up check. Prove it works under the same conditions, then close it with a note for next time. A fix you never verified is only a hope."
+ ]
+},
+"virt": {
+ "analogy": {"name": "A bookmark and a photocopy", "line": "A snapshot is like a bookmark in a book, a backup is like a photocopy kept in another building. Lose the book and the bookmark goes with it."},
+ "caption": "A snapshot is a bookmark that dies with the disk it points at. A backup is a copy somewhere else. Only one survives a dead host.",
+ "steps": [
+  "The bookmark. A snapshot marks a point in time on the same storage. It is quick to take and revert, but long-lived ones slow the VM and share its fate.",
+  "The photocopy in another building. A backup lives elsewhere, so it survives the host, the array and the site. It is slower to restore, but it is the real protection."
+ ]
+},
+"security": {
+ "analogy": {"name": "A building with a guard at every door", "line": "Zero trust is like a building where every door has its own guard: showing a badge at the front gate does not open the server room."},
+ "caption": "Zero trust means no layer vouches for another. Identity, device, network and data each prove themselves every time.",
+ "steps": [
+  "The badge check. Identity asks who you are, with more than a password, such as MFA. It is the first control because stolen passwords are so common.",
+  "The health check at the door. The device must be managed, patched and healthy. A good user on a bad laptop is still a risk.",
+  "Locked doors between rooms. The network is segmented, so a breach in one corner cannot walk everywhere. This limits the blast radius.",
+  "The safe in the room. Data is encrypted at rest and in transit, with keys you can rotate. If everything else fails, it is still unreadable."
+ ]
+},
+"scenarios": {
+ "analogy": {"name": "A chess player's plan", "line": "Answering a scenario is like playing chess: read the board, choose a plan, make moves in order, and check the position before you finish."},
+ "caption": "Senior scenarios are not knowledge tests. They are structure tests: listen, pick a shape, answer in order, then check you landed it.",
+ "steps": [
+  "Reading the board. Listen for what is really being asked, and restate it if unsure. Answering the wrong question loses marks however good the answer.",
+  "Choosing a plan. Pick a shape before you speak, such as STAR for stories or pros and cons for decisions. Structure signals seniority.",
+  "Making moves in order. Cover one point at a time in the order you promised. Wandering makes a correct answer sound unsure.",
+  "Checking the position. Ask if that answered it and close in one line. It leaves room for the follow-up and shows you are listening."
+ ]
+}
+}

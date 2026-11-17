@@ -1,0 +1,104 @@
+{
+ "sql-advanced": {
+  "analogy": {
+   "name": "A class photo with rankings",
+   "line": "A window function is like ranking each pupil within their own class: groups are classes, order is the sort, the frame is who you compare with, and everyone stays in the photo."
+  },
+  "caption": "A window function never collapses rows. Each row looks at a frame of neighbours and gets an answer written beside it.",
+  "steps": [
+   "Partition is the classes. Rows are split into groups, and each group gets its own window computed separately. In SQL this is PARTITION BY, and leaving it out means one big group.",
+   "Order is lining pupils up by height inside each class. Rank, lag and running totals only mean something once rows are ordered, so ORDER BY inside the window is the part interviewers check.",
+   "Frame is how far each pupil looks along the line: only the one ahead, or everyone so far. It is the set of rows the function can see, set with ROWS or RANGE.",
+   "Compute is writing each pupil's answer beside their name. The function runs once per row and the row count never changes, which is what separates it from GROUP BY."
+  ]
+ },
+ "data-modeling": {
+  "analogy": {
+   "name": "A receipt with lookup cards",
+   "line": "A star schema is like a pile of till receipts with lookup cards: the fact is the receipt line, and each dimension is a card that says who, what, when and where."
+  },
+  "caption": "One fact table in the middle, dimensions around it. Questions start at the fact and join outward, never the other way round.",
+  "steps": [
+   "The fact table is the stack of receipts, one line per sale, with the amounts you add up. Its grain, one row per event, must be decided first, because every number depends on it.",
+   "Product is the card describing what was sold. A dimension answers a descriptive question about the fact, so you can filter or group by product name or category.",
+   "Customer is the card saying who bought. Dimensions are the filters and group-bys in a query, which is why they are wide and descriptive while the fact stays narrow.",
+   "Time is the calendar card saying when. Nearly every analytics question is about time, so a date dimension with week, month and quarter is in almost every warehouse.",
+   "Store is the card saying where. When a new question needs a new way to slice the facts, you add a dimension. The fact table stays the same."
+  ]
+ },
+ "etl-elt": {
+  "analogy": {
+   "name": "Washing veg before or after storing",
+   "line": "ETL is like washing and chopping vegetables before they go in the fridge. ELT puts them in whole and prepares them in the kitchen later, so you can still cook something else."
+  },
+  "caption": "The letters only swap one step. ETL cleans before loading; ELT loads raw data and cleans it where it sits.",
+  "steps": [
+   "ETL transforms first and loads second. Only the prepared vegetables reach the fridge, so the raw copy is gone and a new question may mean going back to the source. Common with strict or legacy targets.",
+   "ELT loads raw data first and transforms it inside the warehouse. The raw copy stays, so you can re-derive anything with SQL. That is why modern cloud stacks with dbt favour ELT."
+  ]
+ },
+ "spark": {
+  "analogy": {
+   "name": "A kitchen brigade",
+   "line": "A Spark job is like a head chef and cooks: the driver writes the plan, stages are courses, executors are the cooks, and the plated dishes come back to the pass."
+  },
+  "caption": "The driver plans and the executors do the work. A shuffle is the expensive moment, when data moves between executors.",
+  "steps": [
+   "The driver is the head chef writing the plan. Your transformations become a DAG of stages. The driver coordinates and holds no bulk data, so it should not be overloaded.",
+   "A stage is one course, a set of tasks that can all be cooked without passing ingredients between stations. A new stage starts at each shuffle, so counting stages shows you where data moves.",
+   "Executors are the cooks, each working on partitions, one task per partition. More partitions give more parallelism, but too many make tiny tasks that cost more to schedule than to run.",
+   "Results come back to the pass. Collecting everything to the driver can crash it, so collect only what fits in memory and write large outputs to storage instead."
+  ]
+ },
+ "airflow": {
+  "analogy": {
+   "name": "A bus timetable",
+   "line": "A DAG is like a bus route run on a timetable: each departure is a run, the stops are tasks in order, and every day the same route runs again for a new day."
+  },
+  "caption": "A DAG is a schedule that repeats. Each run is the same graph on a new slice of time.",
+  "steps": [
+   "Trigger is the timetable saying a bus leaves. The scheduler starts a new DAG run for a data interval, which is the slice of time that run owns, not the moment it started.",
+   "Run tasks is the bus visiting stops in order. Each task waits for the ones it depends on and then runs. Order comes from dependencies you declare, not from the order in the file.",
+   "Check SLAs is asking whether the bus arrived on time. A missed SLA means data is late for someone downstream, which is the alert worth waking a person for.",
+   "Next interval is the next bus on the same route. The run ends and the same graph runs again on fresh data, which is why tasks must be safe to rerun for any interval."
+  ]
+ },
+ "streaming": {
+  "analogy": {
+   "name": "A post office with sorted lanes",
+   "line": "Kafka is like a post office with numbered lanes: producers post letters, the key picks the lane, each lane keeps its order, and each clerk in a team owns whole lanes."
+  },
+  "caption": "Order lives inside a partition, not across the topic. The offset is the consumer's bookmark; commit it only after the work is done.",
+  "steps": [
+   "Producer is the sender posting a letter with an address, the key. The key picks the partition, so the same key always goes to the same lane and keeps its order.",
+   "Topic is the whole post office, split into lanes called partitions and copied across brokers. Partitions are the unit of scale, and order exists only within one lane.",
+   "Consumer group is a team of clerks. Each lane is read by exactly one clerk in the team, so adding clerks speeds things up until you run out of lanes.",
+   "Process is the clerk handling letters, with windows and state to build answers. The offset is the bookmark, and committing it only after the work is done avoids losing messages."
+  ]
+ },
+ "warehouses": {
+  "analogy": {
+   "name": "A shared library and reading rooms",
+   "line": "Separating storage from compute is like one big library with temporary reading rooms: the books sit once in the stacks, rooms open for a reader, and the front desk decides who may enter."
+  },
+  "caption": "Storage is cheap and shared. Compute scales to the question, then switches off, so you pay for the work and not the idle time.",
+  "steps": [
+   "Access is the front desk, who may read which shelf. Permissions, masking and sharing are governed in one place, instead of being rebuilt separately in every tool.",
+   "Compute is the reading rooms, opened to fit the question and closed afterwards. Warehouses scale up or out for heavy queries, and you pay for run time, not for idle capacity.",
+   "Storage is the stacks, one copy of the books in open formats such as Parquet. Every engine reads the same files, so you do not duplicate data to give each team a copy."
+  ]
+ },
+ "data-quality": {
+  "analogy": {
+   "name": "Goods-in at a warehouse",
+   "line": "Data quality is like a goods-in dock: deliveries are logged, checked against the order, a named manager is told about faults, and the bad batch is sent back and replaced."
+  },
+  "caption": "Quality is a pipeline, not a hope. Test on arrival, alert a named owner, then fix, backfill and re-test.",
+  "steps": [
+   "Ingest is the delivery arriving at the dock. Raw data is in the building but not on the shelves, so nothing downstream should trust it yet.",
+   "Validate is checking the delivery against the order. Tests run on arrival for freshness, completeness, range and uniqueness, so bad data is caught before anyone uses it.",
+   "Alert is telling the named manager. A failed test should page a person who owns the source, not a channel nobody reads, or the fault sits unnoticed.",
+   "Remediate is returning the faulty batch and restocking. Fix the source, backfill what was wrong and re-test, then add the test that would have caught it the first time."
+  ]
+ }
+}

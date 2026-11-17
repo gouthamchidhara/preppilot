@@ -1,0 +1,102 @@
+{
+ "csharp-core": {
+  "order": [
+   0,
+   1,
+   5,
+   2,
+   3,
+   4,
+   6,
+   7
+  ],
+  "hooks": [
+   "You know copy vs share. How do generics reuse one piece of code across types?",
+   "Generics are flexible. How does C# stop null from surprising you?",
+   "Null is tracked. How do you query collections without running everything eagerly?",
+   "Queries are deferred. How do you wait for slow work without blocking?",
+   "Async code flows. How do you pass behavior around as a value?",
+   "Callbacks are tidy. What cleans up when things fail or hold resources?",
+   "Resources are released. What newer syntax makes all this shorter?"
+  ],
+  "upNext": "Core C# is covered. Next: ASP.NET Core, where these language features meet real web requests.",
+  "basics": [
+   0
+  ]
+ },
+ "aspnet-core": {
+  "order": [
+   7,
+   0,
+   1,
+   3,
+   2,
+   5,
+   4,
+   6
+  ],
+  "hooks": [
+   "The server hosts your app. What happens to a request inside it, step by step?",
+   "The pipeline runs in order. How do services get created for each handler?",
+   "Services have lifetimes. Where do their settings come from?",
+   "Config is bound. How do you shape the endpoints themselves?",
+   "Endpoints take requests. How does the data in them become C# objects?",
+   "Input is bound and checked. Now, who is allowed in?",
+   "Access is controlled. How do you know it is healthy in production?"
+  ],
+  "upNext": "ASP.NET Core is covered. Next: how it stores data with Entity Framework Core.",
+  "basics": [
+   7
+  ]
+ },
+ "efcore": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6
+  ],
+  "hooks": [
+   "The context is a unit of work. What does it keep track of while it lives?",
+   "Tracking has a cost. How does the schema get created and changed?",
+   "The schema evolves. How do related rows get loaded, and what goes wrong?",
+   "Loading is under control. When LINQ is not enough, what are the options?",
+   "You can drop to SQL. What if two users edit the same row?",
+   "Conflicts are caught. How do you find out why a query is slow?"
+  ],
+  "upNext": "EF Core is covered. Next: how the .NET runtime itself behaves under load, memory and threads.",
+  "basics": [
+   0
+  ]
+ },
+ "dotnet-runtime": {
+  "order": [
+   0,
+   1,
+   7,
+   2,
+   3,
+   4,
+   5,
+   6,
+   8
+  ],
+  "hooks": [
+   "You know which .NET to pick. How does your code get turned into machine code?",
+   "Code is compiled on demand. How does tiering make it faster over time?",
+   "The runtime gets faster. Where does memory go, and who cleans it?",
+   "Generations are clear. Which GC mode suits a server vs a desktop?",
+   "The mode is chosen. How do you allocate even less?",
+   "Allocations are low. Why does the app still stall under load?",
+   "Starvation is understood. Which tools show you what is happening live?",
+   "Counters and traces exist. How do you use them to profile a whole app?"
+  ],
+  "upNext": "The runtime is covered. Next: containers and cloud deployment of a .NET service.",
+  "basics": [
+   0
+  ]
+ }
+}

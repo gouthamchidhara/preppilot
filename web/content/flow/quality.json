@@ -1,0 +1,148 @@
+{
+ "test-strategy": {
+  "order": [
+   0,
+   1,
+   2,
+   5,
+   8,
+   4,
+   3,
+   7,
+   6
+  ],
+  "hooks": [
+   "You have a plan. Where do you spend limited time first: what could hurt most?",
+   "Risks are ranked. How do you turn them into a small set of sharp test cases?",
+   "Scripted cases miss surprises. What does a skilled tester find just by exploring?",
+   "Exploring finds new problems. Which repeated checks should a machine run instead?",
+   "Automation is only useful when it runs. Where in the pipeline should it fire?",
+   "Bugs will still turn up. How is one tracked from report to closed?",
+   "Lots of bugs, little time. Who decides which to fix now?",
+   "Triage works. How do you know the whole process is actually improving?"
+  ],
+  "upNext": "Next, UI Automation: turning the repeated checks into reliable browser tests.",
+  "basics": [
+   3
+  ]
+ },
+ "selenium-playwright": {
+  "order": [
+   0,
+   1,
+   2,
+   4,
+   3,
+   5,
+   6
+  ],
+  "hooks": [
+   "You picked a tool. How does a test find the right button without breaking next sprint?",
+   "You found the element. Is it ready yet, and how long should the test wait?",
+   "Waits are fixed, yet some tests still fail at random. What causes flakes?",
+   "Flakes under control. How do you keep selectors out of every test file?",
+   "Tests are tidy. How do you run hundreds quickly in CI with their own data?",
+   "Passing is not the same as looking right. How do you catch layout bugs and browser differences?"
+  ],
+  "upNext": "Next, API Testing: faster, steadier checks one layer below the browser.",
+  "basics": []
+ },
+ "api-testing": {
+  "order": [
+   1,
+   0,
+   8,
+   2,
+   4,
+   5,
+   6,
+   7,
+   3
+  ],
+  "hooks": [
+   "You have a tool. What exactly should you check in a response?",
+   "The body is right. What about status headers, content types and metadata?",
+   "Many endpoints need a login. How do tests get and reuse valid tokens?",
+   "You are signed in. What data should the test start with, and who cleans it up?",
+   "Happy paths pass. What should happen when the input is wrong or missing?",
+   "Bad input is handled. What about callers who try to reach data they should not see?",
+   "Some dependencies are slow or unavailable. How do you stand in for them?",
+   "Mocks can drift from the real service. How do two teams prove they still agree?"
+  ],
+  "upNext": "Next, Performance Testing: how the API behaves with thousands of callers instead of one.",
+  "basics": [
+   1
+  ]
+ },
+ "performance-testing": {
+  "order": [
+   1,
+   0,
+   3,
+   8,
+   2,
+   6,
+   4,
+   7,
+   5
+  ],
+  "hooks": [
+   "With a goal, which kind of test fits: load, stress, spike or soak?",
+   "You know the test types. What should the traffic actually look like?",
+   "A good model needs a place to run. How close to production must it be?",
+   "The environment is ready. Which tool will generate the load?",
+   "Load is running. How do you read p95, throughput and error rate without being fooled?",
+   "The numbers look bad. How do you find where the time actually goes?",
+   "The bottleneck is a resource. When does adding more help, and when does a limit stop it?",
+   "You can fix it once. How do you stop it getting slow again next release?"
+  ],
+  "upNext": "Next, Application Security: finding the flaws that load and functional tests never catch.",
+  "basics": []
+ },
+ "appsec": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6
+  ],
+  "hooks": [
+   "That is the map of risks. Start with the classic: what happens when user input becomes code?",
+   "Input is safe. What stops one user reading another user's record by changing an ID?",
+   "Access is checked per request. How do you know who is asking and keep sessions safe?",
+   "Login holds. Where do API keys and passwords live so they never reach the repo?",
+   "Practices are set. How do you catch mistakes automatically on every commit?",
+   "Scanners miss logic flaws. What should a human look for in a code review?"
+  ],
+  "upNext": "Next, Threat Modeling: finding design flaws before any code exists to scan.",
+  "basics": []
+ },
+ "threat-modeling": {
+  "order": [
+   0,
+   6,
+   1,
+   7,
+   2,
+   3,
+   4,
+   8,
+   5
+  ],
+  "hooks": [
+   "You know what threat modeling is. When in a project should you actually do it?",
+   "Early and often. What do you draw first?",
+   "You have a diagram. Where does trust change between its parts?",
+   "Boundaries are marked. How do you ask what can go wrong at each one?",
+   "You have a list of threats. How do you decide which matter most?",
+   "Ranked threats need action. How do you track each fix to done?",
+   "Tracking needs a plan. What options do you have for dealing with each threat?",
+   "You have the full method. Try it on something real: a typical web app."
+  ],
+  "upNext": "Next, Behavioral: how to tell the story of what you have built and learned.",
+  "basics": []
+ }
+}

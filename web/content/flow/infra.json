@@ -1,0 +1,225 @@
+{
+"linux": {
+ "order": [0,1,17,2,11,3,15,7,8,5,13,16,4,19,12,18,6,10,20,14,9],
+ "hooks": [
+  "The kernel hands over to PID 1. What does systemd start, and in what order?",
+  "Services are up. Where do they keep their files, and what does fstab have to do with it?",
+  "The layout is mapped out. How do disks, partitions and LVM sit underneath it?",
+  "The disk is carved up. What do you do when it says full and you cannot see why?",
+  "Space is accounted for. Now who is allowed to read and write all of it?",
+  "Permissions are bits on files. Who are the users and groups they point at, and what does sudo grant?",
+  "Accounts exist. How do people actually get onto the box securely?",
+  "You are in over SSH. What if a policy still blocks you after the permissions say yes?",
+  "Access is locked down. What do you do when the box cannot reach anything else?",
+  "You have a method for finding the broken hop. Which commands do the checking?",
+  "The network works. How do you make jobs run on a schedule without you?",
+  "Jobs run in the background. How do you see what is using the CPU right now?",
+  "Load is high. How do you stop a runaway process, and cap what it can take?",
+  "CPU is only half of it. Where did all the memory go, and is swap a problem?",
+  "You have seen each resource alone. What are the first 60 seconds when someone says it is slow?",
+  "You have a suspect. What did the system write down about it, and how long is it kept?",
+  "Logs are rotated. How do you search the journal without scrolling forever?",
+  "One box is easy. How do logs from many boxes end up in one place?",
+  "That is a lot of text. Which tools let you slice it fast?",
+  "Everything is healthy today. What keeps it that way when new fixes ship every week?"
+ ],
+ "upNext": "Next: Windows Server, where identity, policy and patching work very differently from a Linux box.",
+ "basics": [3,15]
+},
+"scripting": {
+ "order": [0,1,2,6,3,4,5],
+ "hooks": [
+  "Bash gives you the pieces. What does a real script that watches disk space look like?",
+  "One host is easy. How do you run the same check across fifty?",
+  "It works on your laptop. What makes a script safe to run in prod?",
+  "Safe habits are language independent. How do they look in PowerShell for a Windows fleet?",
+  "Shell gets awkward fast. When does Python become the better tool?",
+  "Every tool returns JSON now. How do you pull out just the field you need?"
+ ],
+ "upNext": "Next: Windows Server, the platform where PowerShell lives and where most of that fleet runs.",
+ "basics": [0]
+},
+"windows": {
+ "order": [0,2,1,5,8,3,4,7,6],
+ "hooks": [
+  "AD knows who you are. How does a client even find the domain controller?",
+  "Names resolve and addresses are handed out. How do policies then reach every machine?",
+  "Policy sets the rules. Who can actually open a shared folder, and who cannot?",
+  "Access works. What does it take to host a real web app on this server?",
+  "The site is running. How do you manage it without clicking through windows?",
+  "PowerShell shows the state. Which event IDs tell you what went wrong?",
+  "You can read the logs. Which other tools do you reach for when it still makes no sense?",
+  "You can diagnose it. How do you keep the whole fleet patched without breaking it?"
+ ],
+ "upNext": "Next: Networking, the layers every one of these Windows and Linux boxes depends on.",
+ "basics": []
+},
+"network": {
+ "order": [0,1,8,2,3,5,6,7,4],
+ "hooks": [
+  "Layers give you names. How does an address split into network and host?",
+  "Subnets keep traffic local. How does a machine find its neighbour or get an address?",
+  "Hosts can reach each other by IP. How does a name turn into one?",
+  "Put it together: what really happens when you type a URL?",
+  "A page load starts with a TCP connection. How does it open, close, and go wrong?",
+  "Connected, but not private. How does TLS secure that conversation?",
+  "The pipe is secure. What is actually being said over it in HTTP?",
+  "That is the traffic. What decides whether it is allowed through at all?"
+ ],
+ "upNext": "Next: load balancers and TLS, which spread that traffic across servers and secure it end to end.",
+ "basics": [0]
+},
+"lb": {
+ "order": [0,1,7,2,3,4,5,6],
+ "hooks": [
+  "You know the terms. Does the LB read the traffic, or only forward it?",
+  "Layer choice decided. How does it know a backend is actually healthy?",
+  "Health decides who gets traffic. How is that set up in Nginx as a reverse proxy?",
+  "The proxy routes requests. Where do certificates fit, and who holds the keys?",
+  "TLS is in place. What do 502, 503 and 504 mean when they show up at the LB?",
+  "You can read the errors. What does a F5 team actually build to serve an app?",
+  "That is the on-prem world. What are the equivalents in Azure?"
+ ],
+ "upNext": "Next: Docker, where the thing behind the load balancer is a container instead of a server.",
+ "basics": [0]
+},
+"docker": {
+ "order": [0,1,2,3,8,4,5,6,7],
+ "hooks": [
+  "Images become containers. Why is that lighter than a virtual machine?",
+  "Lighter, because it shares the kernel. How do you describe an image in a Dockerfile?",
+  "A Dockerfile works, but the image is huge. How do multi-stage builds shrink it?",
+  "The image is small. Where does it live so other machines can pull it?",
+  "Containers die and take their files with them. How do you keep data?",
+  "Data survives. How does traffic reach the container from outside?",
+  "One container is simple. How do you run several together with Compose?",
+  "It is running but misbehaving. What is your troubleshooting kit?"
+ ],
+ "upNext": "Next: Kubernetes, which runs and heals many containers across many machines for you.",
+ "basics": []
+},
+"k8s": {
+ "order": [0,1,2,3,4,5,6,7,8,9,11,10],
+ "hooks": [
+  "That is the cluster. What is the smallest unit it actually runs?",
+  "Pods are mortal. Who keeps the right number alive and rolls out new versions?",
+  "Pods come and go. How does anyone reach them at a stable address?",
+  "A Service is internal. How does outside traffic get in by hostname?",
+  "Traffic arrives. Where does the app get its configuration and secrets?",
+  "The app is configured. How does Kubernetes know it is healthy and ready?",
+  "Healthy is a signal. How much CPU and memory should each pod ask for?",
+  "Compute is sized. Where does data live when pods move?",
+  "Not every app is a Deployment. What are the other kinds of workload?",
+  "Workloads are covered. How do teams package, secure and separate all this?",
+  "Everything is in place. What do you do when a pod will not start?"
+ ],
+ "upNext": "Next: CI/CD and infrastructure as code, how changes and clusters get built without clicking.",
+ "basics": []
+},
+"cicd": {
+ "order": [0,1,2,3,4,5],
+ "hooks": [
+  "A commit lands in git. What turns it into something tested?",
+  "A pipeline is a definition. Which server actually runs it, and how?",
+  "The build passes. How do you release it without a big-bang outage?",
+  "The app ships safely. How do you create the servers it runs on from code?",
+  "Servers exist from code. How do you configure what runs on them?"
+ ],
+ "upNext": "Next: Monitoring, so you know the deployed change is behaving once real users arrive.",
+ "basics": [0]
+},
+"monitoring": {
+ "order": [0,1,3,2,6,5,4],
+ "hooks": [
+  "You know what to watch. How does Prometheus collect it?",
+  "Metrics are stored. How do you turn them into pictures people read in Grafana?",
+  "Dashboards need eyes. How do rules page someone before users notice?",
+  "Alerts fire only on metrics you have. How do you test from the outside too?",
+  "Checks cover the front door. How does Azure do this with Log Analytics and KQL?",
+  "That is one stack. How does it compare with the rest of the tool landscape?"
+ ],
+ "upNext": "Next: Cloud, where these same monitoring ideas meet managed Azure and AWS services.",
+ "basics": []
+},
+"cloud": {
+ "order": [0,4,2,1,8,3,5,6,7,9],
+ "hooks": [
+  "You know the building blocks. How is the account structure governed above them?",
+  "Governance sets the boundaries. Who and what gets an identity inside them?",
+  "Identity is sorted. What does a typical 3-tier app look like with it?",
+  "That is the layout. Which compute service should the app tier run on?",
+  "Compute is chosen. How do you keep it up when a zone or region fails?",
+  "It stays up. How are networks joined in a hub-spoke and to on-prem?",
+  "Networks are joined. How do you keep PaaS traffic off the public internet?",
+  "Private traffic is handled. How does an internal VM reach the internet outbound?",
+  "Traffic flows both ways. How do admins get in and secrets stay out of code?"
+ ],
+ "upNext": "Next: App onboarding, putting all of this together to take a real application live.",
+ "basics": []
+},
+"onboarding": {
+ "order": [0,1,2,3,4,5,6,7,8,9,10,11,12],
+ "hooks": [
+  "That is the whole lifecycle. What do you ask the app team at the start?",
+  "You have the answers. How big does it need to be, and where does each environment sit?",
+  "Sizes are known. Where should it run: VM, container, or a managed service?",
+  "The platform is chosen. What does the VM path look like step by step?",
+  "That is the VM way. How is the container path on Azure different?",
+  "Either way it needs connecting. What network and security plumbing is needed?",
+  "The plumbing is in. How do users reach it by name, with a valid certificate?",
+  "It is exposed. What must be true before you call it operationally ready?",
+  "It looks ready. How do you prove that with testing before go-live?",
+  "The tests pass. What does cutover day actually look like?",
+  "It is live. How does it pass to support and the business as BAU?",
+  "That is the full path. Which failures hit almost every onboarding?"
+ ],
+ "upNext": "Next: Troubleshooting, for when an onboarded app is slow or unreachable and you need a method.",
+ "basics": []
+},
+"troubleshoot": {
+ "order": [0,2,1,3,4,5,6,7,8,9,10],
+ "hooks": [
+  "You have the method. What does the error message already tell you?",
+  "Read the error first. What do latency, bandwidth and throughput each mean?",
+  "Terms are clear. What is the connectivity checklist on Linux and Windows?",
+  "It connects but feels slow. Which phase is the slow one?",
+  "Latency is fine. Why is the transfer still slow?",
+  "Numbers are not enough. What do you look for in a packet capture?",
+  "That is the generic toolbox. What does Azure add to it?",
+  "Azure has tools and traps. Which gotchas catch people out?",
+  "The cloud side is covered. When is the problem on-prem, and who do you engage?",
+  "Now you have every piece. How do they fit together in real scenarios?"
+ ],
+ "upNext": "Next: VMware and storage, the platform layer underneath many of the VMs you troubleshoot.",
+ "basics": [0]
+},
+"virt": {
+ "order": [0,3,2,1,4],
+ "hooks": [
+  "vSphere pools the hosts. What kind of storage sits behind them, and how safe is it?",
+  "Storage is chosen. Why is a VM slow when the host looks fine?",
+  "Slowness found. What is a snapshot, and why is it not a backup?",
+  "A snapshot is a bookmark. What do backup and disaster recovery add?"
+ ],
+ "upNext": "Next: Security and change, the controls that decide what is allowed to happen to all this infrastructure.",
+ "basics": []
+},
+"security": {
+ "order": [0,1,5,4,2,3],
+ "hooks": [
+  "A hardened baseline is the start. How do you decide which vulnerability to fix first?",
+  "You can rank the risk. How do certificates and PKI fit into trust?",
+  "Certificates prove identity. Where do secrets and zero trust come in?",
+  "Controls are in place. How do you change anything without causing an outage?",
+  "Change is controlled. What is the difference between an incident and a problem?"
+ ],
+ "upNext": "Next: Senior scenarios, where you pull everything together and answer open questions out loud.",
+ "basics": []
+},
+"scenarios": {
+ "order": [0],
+ "hooks": [],
+ "upNext": "You have covered the stack. Revisit any topic, or take a mock round to test how you answer under pressure.",
+ "basics": []
+}
+}

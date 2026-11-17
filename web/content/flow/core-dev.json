@@ -1,0 +1,249 @@
+{
+ "dsa": {
+  "order": [
+   0,
+   1,
+   7,
+   2,
+   3,
+   4,
+   5,
+   6,
+   8
+  ],
+  "hooks": [
+   "You can now count cost. What is the simplest structure to practise on, and what can two pointers do with it?",
+   "Sorted data lets you throw half away each step. How do you search that fast?",
+   "Binary search needs order. What if you want O(1) lookup with no order at all?",
+   "Hash maps find things fast but forget order. What if order is the whole point, like undo or a queue line?",
+   "Stacks and queues sit on a chain of nodes. What does a linked list cost you in pointers?",
+   "One pointer per node, one next. Give each node two children and what do you get?",
+   "Trees have one path between any two nodes. Allow cycles and many routes, and you need graph algorithms.",
+   "Graphs hide one more trick: solving a big problem by solving smaller copies. How does recursion do it?"
+  ],
+  "upNext": "Next, System Design: use these building blocks to decide how many servers, caches and queues a real product needs.",
+  "basics": [
+   0,
+   2
+  ]
+ },
+ "system-design": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8
+  ],
+  "hooks": [
+   "You have a framework. But how big is this system: requests per second, storage, bandwidth?",
+   "You know the load. One server will not carry it, so who spreads the traffic?",
+   "Servers are spread out and stateless. How do you stop every request from hitting the database?",
+   "A cache shields the database but does not replace it. How do you choose and scale the real store?",
+   "Some work is too slow for the request path. What can you hand off and finish later?",
+   "Queues and replicas mean copies drift apart. What do you promise readers about fresh data?",
+   "Consistent or not, one noisy client can still flatten you. How do you cap them at the door?",
+   "Everything is built. How do you see it failing before your users tell you?"
+  ],
+  "upNext": "Next, API Design: the contract that clients and services use to talk to the system you just sketched.",
+  "basics": [
+   2
+  ]
+ },
+ "api-design": {
+  "order": [
+   0,
+   1,
+   5,
+   4,
+   2,
+   6,
+   3,
+   7,
+   8
+  ],
+  "hooks": [
+   "You can name resources and verbs. What does the server say back: 200, 404, or something worse?",
+   "Status codes give the category. Where does the detail of what went wrong go?",
+   "Errors tell the client what failed. But who is this client, and what may they do?",
+   "You know who is calling. What happens when they ask for a list of a million records?",
+   "Pages work. What happens when a client retries a payment because the reply was lost?",
+   "Retries are safe now. But how do you change the API without breaking current callers?",
+   "Versioning needs a source of truth. How do you write the contract down so both sides can check it?",
+   "OpenAPI describes REST well. When do gRPC, GraphQL or webhooks fit better?"
+  ],
+  "upNext": "Next, SQL Essentials: the queries and indexes behind every handler in your API.",
+  "basics": [
+   0,
+   1
+  ]
+ },
+ "sql": {
+  "order": [
+   0,
+   8,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7
+  ],
+  "hooks": [
+   "You can read one table. But real data is split across many tables on purpose. Why?",
+   "Data lives in separate tables. How do you stitch it back together without duplicating rows?",
+   "Joined rows are only the start. How do you count, sum and group them into answers?",
+   "Grouping collapses rows. When a query gets tangled, how do you break it into readable steps?",
+   "What if you want a ranking or running total without collapsing the rows?",
+   "Your query is correct but takes 40 seconds. What lets the database skip most of the table?",
+   "You added an index. How do you check the database actually used it?",
+   "Fast and right, until two users write at once. What keeps the data safe?"
+  ],
+  "upNext": "Next, Git and Collaboration: how a team safely changes the code that runs these queries.",
+  "basics": [
+   0,
+   1
+  ]
+ },
+ "git": {
+  "order": [
+   0,
+   3,
+   1,
+   2,
+   6,
+   4,
+   5,
+   7
+  ],
+  "hooks": [
+   "You can commit locally. How does a team decide who branches from what, and when?",
+   "Branches diverge. When it is time to join them, do you merge or rebase?",
+   "Two people changed the same line. What does Git do, and what do you do?",
+   "Conflicts resolved. How does the change get reviewed before it lands on main?",
+   "It merged and broke production. How do you undo it without losing anyone's work?",
+   "Undo handles whole commits. What if you need one commit from elsewhere, or must find which one broke it?",
+   "You can move any change around. Who is allowed to, and what if a secret slipped into history?"
+  ],
+  "upNext": "Next, Software Testing: the checks that run on every pull request before it merges.",
+  "basics": [
+   0
+  ]
+ },
+ "testing": {
+  "order": [
+   0,
+   1,
+   2,
+   5,
+   3,
+   7,
+   4,
+   6,
+   8
+  ],
+  "hooks": [
+   "Most tests belong at the base. What does a good unit test look like?",
+   "Unit tests must stay isolated. How do you fake the database, the clock and the network?",
+   "You can fake dependencies. Does writing the test first change how you design them?",
+   "Mocks only prove your assumptions. Where do you test against a real database?",
+   "Real databases cover your own data layer. How do two services check they still agree?",
+   "Contracts cover the seams. What about the full user journey, and why does it flake?",
+   "You have many suites now. How much should you trust a green coverage number?",
+   "Coverage is easy on new code. How do you add tests to code nobody dares touch?"
+  ],
+  "upNext": "Next, OOP and Design Patterns: how to shape code so it stays easy to test and change.",
+  "basics": [
+   0,
+   1
+  ]
+ },
+ "oop-design-patterns": {
+  "order": [
+   0,
+   1,
+   2,
+   6,
+   3,
+   4,
+   5,
+   7,
+   8
+  ],
+  "hooks": [
+   "Classes bundle state and behaviour. But should you extend them or assemble them?",
+   "Composition keeps parts swappable. What rules keep a design from rotting as it grows?",
+   "SOLID says depend on abstractions. Who hands a class the things it depends on?",
+   "With dependencies injected, how do you control how objects get created?",
+   "Creating is solved. How do you wrap and connect objects that do not fit together?",
+   "Structure is set. How do objects talk to each other and change behaviour at runtime?",
+   "Patterns help, until they are overused. How do you spot code that is going bad?",
+   "You can smell and fix problems. Can you design a whole class model from a blank page?"
+  ],
+  "upNext": "Next, Concurrency: what happens when many threads use these objects at the same time.",
+  "basics": [
+   0
+  ]
+ },
+ "concurrency": {
+  "order": [
+   0,
+   5,
+   6,
+   1,
+   2,
+   3,
+   4,
+   7,
+   8
+  ],
+  "hooks": [
+   "Concurrency is about structure. How do you actually run many tasks on a few threads?",
+   "Thread pools suit CPU work. When you mostly wait on I/O, why use an event loop instead?",
+   "Now many things run together and share data. What goes wrong when two touch it at once?",
+   "A race corrupts data. How do locks and semaphores stop it?",
+   "Locks fix races but can freeze the program. What is a deadlock?",
+   "Locks are costly. When can a single atomic operation do the job, and what is visibility?",
+   "Atomics are subtle. What if there is nothing shared to protect in the first place?",
+   "Pass messages, share nothing. Put it together: how do producers and consumers coordinate?"
+  ],
+  "upNext": "Next, Web Fundamentals: the browser-to-server path where all of this runs under real traffic.",
+  "basics": [
+   0,
+   1
+  ]
+ },
+ "web-fundamentals": {
+  "order": [
+   0,
+   6,
+   1,
+   5,
+   2,
+   3,
+   4,
+   7,
+   8
+  ],
+  "hooks": [
+   "The page load opens a secure connection. How does the browser know the server is who it claims?",
+   "The channel is encrypted. What do the requests inside it actually say?",
+   "The same request is made a million times. How do browsers and CDNs avoid repeating it?",
+   "Caching treats every user the same. How does the server remember who you are?",
+   "Cookies tie a browser to a site. Why does the browser block calls to other origins?",
+   "CORS controls which sites may call you. How do you let another app act for a user?",
+   "Login is solved. What do attackers try against all of this?",
+   "Request and response is not the only model. How do you push live updates to the browser?"
+  ],
+  "upNext": "Next, put it to work: testing strategy, automation and security for a web app like this one.",
+  "basics": [
+   0,
+   1
+  ]
+ }
+}

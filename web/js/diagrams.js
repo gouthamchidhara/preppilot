@@ -351,7 +351,7 @@ function figureHtml(topicId, d, opts = {}) {
   const controls = opts.controls === undefined || opts.controls;
   const an = specFor(topicId)?.analogy;
   return `<figure class="diagram${opts.compact ? ' compact' : ''}" data-dg="${esc(topicId)}"${opts.autoplay ? ' data-autoplay="1"' : ''}><div class="label">${esc(d.title)}</div>`
-    + (an ? `<p class="analogy"><b>Think of it as ${esc(an.name.replace(/^(a|an|the) /i, m => m.toLowerCase()))}.</b> ${esc(an.line)}</p>` : '')
+    + (an ? `<p class="analogy"><b>Think of it as ${esc(/^[A-Z][a-z]/.test(an.name) ? an.name[0].toLowerCase() + an.name.slice(1) : an.name)}.</b> ${esc(an.line)}</p>` : '')
     + d.svg
     + `<figcaption>${esc(cap)}</figcaption>`
     + (controls ? `<div class="dg-controls">`

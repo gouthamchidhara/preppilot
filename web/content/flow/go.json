@@ -1,0 +1,56 @@
+{
+ "go-core": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   5,
+   4,
+   7,
+   6,
+   8
+  ],
+  "hooks": [
+   "Structs hold data and methods. How do types satisfy contracts without declaring it?",
+   "Interfaces are implicit. How does Go store lists of things, and what is a slice really?",
+   "Slices are windows on arrays. What about key-value lookups?",
+   "Maps are easy to use. How do you reuse code across types?",
+   "Generics cut repetition. Things will still fail, so how does Go report errors?",
+   "Errors are values. How do defer, panic and recover fit in?",
+   "Cleanup is handled. How do you organize code into packages and modules?",
+   "The code is organized. How do you test and benchmark it?"
+  ],
+  "upNext": "Core Go is covered. Next: Go's headline feature, goroutines and channels for concurrency.",
+  "basics": [
+   0,
+   2,
+   3
+  ]
+ },
+ "go-concurrency": {
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   7,
+   5,
+   8,
+   6
+  ],
+  "hooks": [
+   "Goroutines are cheap. How do they pass work to each other safely?",
+   "Channels pass values. How do you combine several and avoid waiting forever?",
+   "Patterns like pools are built. How do you cancel work that is no longer needed?",
+   "Cancellation flows through context. When data is shared, how do you protect it?",
+   "Locks protect state. What goes wrong when they are used badly?",
+   "Waiting can lock everything up. What if goroutines never exit?",
+   "Leaks and races are caught. How do you manage goroutines on purpose?",
+   "You manage goroutines well. How does it all come together in a real server?"
+  ],
+  "upNext": "Concurrency is covered. Next: build and run a Go service in production with observability and deployment.",
+  "basics": []
+ }
+}

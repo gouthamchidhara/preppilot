@@ -1,0 +1,72 @@
+{
+ "statistics": {
+  "analogy": {
+   "name": "A fair taste test",
+   "line": "An A/B test is like a blind taste test of two recipes: you state what you expect, give guests random portions, serve enough people, read how big the preference is, then choose a recipe."
+  },
+  "caption": "A test is a decision machine: a fair split, enough data and an interval, not a single magic number.",
+  "steps": [
+   "Hypothesis is saying beforehand which recipe should win and what result would prove you wrong. Writing it down first stops you from finding a story in the data afterwards.",
+   "Randomize is handing out portions by coin flip. A fair random split means the two groups differ only in the recipe, and a biased split makes every later number meaningless.",
+   "Run is serving until you have enough guests, decided in advance. Peeking early and stopping when it looks good is how false wins happen, and interviewers like to ask about it.",
+   "Analyze is reading how big the preference is and how sure you are. A confidence interval shows the size of the effect, while a lone p-value only hints that something exists.",
+   "Decide is picking the recipe or learning why not. A test that changes no decision taught you nothing, so state in advance what result leads to which action."
+  ]
+ },
+ "ml-fundamentals": {
+  "analogy": {
+   "name": "Studying for an exam",
+   "line": "Training a model is like studying for an exam: the training pile is your textbook, the validation pile is practice papers, and the test pile is the sealed final exam you sit once."
+  },
+  "caption": "The test set is looked at once, at the end. Use it during tuning and it stops being an honest test.",
+  "steps": [
+   "Split is dividing the material into textbook, practice papers and the sealed exam. Three piles, three jobs, and mixing them leaks answers into your score.",
+   "Train is studying the textbook. The model fits the training data and will score well on it, which proves little, because it may simply have memorized the pages.",
+   "Validate is sitting practice papers to choose how to study. Use this pile to compare models and tune settings, since it can be reused while the test set cannot.",
+   "Test is the sealed exam, opened once. If you tune against it, it becomes another practice paper and your final score is too optimistic.",
+   "Ship is the job after the exam. The world changes, so monitor predictions in production, because an unwatched model slowly gets worse without any error message."
+  ]
+ },
+ "python-data": {
+  "analogy": {
+   "name": "A spreadsheet assembly line",
+   "line": "A pandas pipeline is like a spreadsheet assembly line: load the sheet, tidy the blanks, sort rows into piles by key, total each pile, then chart it to check it looks right."
+  },
+  "caption": "Read, clean, group, aggregate, plot. The plot is not decoration; it is how you catch the lie in the numbers.",
+  "steps": [
+   "Read is opening the sheet. Check the shape and dtypes straight away, because a number column loaded as text will quietly break everything after it.",
+   "Clean is dealing with the blanks. Drop, fill or flag missing values, but decide on purpose, because each choice changes the answer you will report later.",
+   "GroupBy is sorting rows into piles by a key. The key is the question you are asking, such as per customer or per month, and nothing is calculated yet.",
+   "Aggregate is totalling each pile into one row. Mean, count and sum give the answer per group, and the number of groups tells you how many rows should come out.",
+   "Plot is a quick chart before you trust it. A table can hide an outlier or a broken month that a picture shows in a second, so look before presenting."
+  ]
+ },
+ "ml-ops": {
+  "analogy": {
+   "name": "A recipe going into a restaurant",
+   "line": "MLOps is like moving a recipe from a home kitchen to a restaurant: write down every trial, put the winner on the menu, test it on a few tables, watch feedback, and update it."
+  },
+  "caption": "A model in a notebook is a draft. Registered, deployed behind a shadow and monitored for drift, it becomes a system.",
+  "steps": [
+   "Experiment is the test cooking, with every trial logged. Tracking data, code and metrics in MLflow means any result can be explained and repeated, and an untracked run did not happen.",
+   "Register is putting the chosen recipe on the menu with a version. A model registry stores versions with a stage such as staging, production or archived, so everyone knows which is live.",
+   "Deploy is trying the new dish on a few tables first. Run it in shadow, then give it a slice of traffic, so the new model earns its share before it takes over.",
+   "Monitor is reading the diners' feedback. Watch for drift in the input data, in the predictions and in the business metric, because accuracy decays quietly when the world changes.",
+   "Retrain is updating the recipe with fresh ingredients. New data goes through the same pipeline, so the update is repeatable, and a model is never finished."
+  ]
+ },
+ "llm-apps": {
+  "analogy": {
+   "name": "An open-book exam",
+   "line": "RAG is like an open-book exam: the student is the model, the library search finds the right pages, and the answer must cite them or admit the book does not say."
+  },
+  "caption": "The model does not know your data. Retrieval finds it, the prompt carries it, and the answer stays grounded in what was retrieved.",
+  "steps": [
+   "Question is the exam question. Know what is really being asked and what a good answer would cite, because that decides what retrieval has to find.",
+   "Embed is turning the question into a coordinate on a map of meaning. The question becomes a vector in the same space as your documents, so similar meaning means nearby points.",
+   "Retrieve is the librarian fetching the nearest pages. The closest chunks come back, and bad retrieval is the most common RAG failure, so the model never saw the right text.",
+   "Prompt is handing the student the question with the fetched pages. The model answers from what it was given, not from memory, so the prompt must tell it to stay within them.",
+   "Answer is the written reply with citations. If the chunks do not contain it, the honest answer is I do not know, and sources let readers check the claim."
+  ]
+ }
+}

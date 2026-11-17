@@ -1,0 +1,81 @@
+{
+ "html-css": {
+  "analogy": {
+   "name": "A shipping parcel",
+   "line": "A box is like a parcel: the item is the content, bubble wrap is padding, the cardboard is the border, and the gap to the next parcel on the shelf is the margin."
+  },
+  "caption": "Every element is a parcel. When a layout looks wrong, one of the four layers is bigger or smaller than you assumed.",
+  "steps": [
+   "Margin is the shelf space around the parcel. It pushes neighbours away, and two vertical margins can merge into one, which surprises people.",
+   "Border is the cardboard. Its width counts toward the box size unless you set box-sizing: border-box. Interviewers love this one.",
+   "Padding is the bubble wrap between the cardboard and the item. It sits inside the border and takes the element's background.",
+   "Content is the item itself, the text and images. The width you set targets this part, and padding and border add on top by default."
+  ]
+ },
+ "react": {
+  "analogy": {
+   "name": "A company org chart",
+   "line": "State is like a manager who holds the budget: orders go down the chain as props, and requests for change travel back up as events."
+  },
+  "caption": "Data flows down, events flow up. That single direction is why a React tree is easy to reason about.",
+  "steps": [
+   "The manager (App) owns the data. Real name: the component holding the state. Children never own it, they only receive it.",
+   "The Header is a team member handed a task sheet. Real name: a component reading props. It renders what it is given and cannot change it.",
+   "Main is a team member who files a request instead of editing the budget. It raises an event and the parent changes the state, a classic interview point.",
+   "The Footer gets the same sheet, so it shows the same thing. Real name: a pure render from props, same input and same output."
+  ]
+ },
+ "angular": {
+  "analogy": {
+   "name": "A security guard on rounds",
+   "line": "Change detection is like a guard walking rounds after every alarm: he checks each door against his list and only fixes the ones that changed. OnPush tells him to skip rooms."
+  },
+  "caption": "Angular does not watch your data. After something happens it re-checks bindings, and OnPush lets a component say it needs no check.",
+  "steps": [
+   "The alarm goes off. Real name: an event such as a click, a timer or an HTTP response. Something happened, so something may have changed.",
+   "The control room hears the alarm end. Real name: Zone.js, which tells Angular the task finished and the app may be different now.",
+   "The guard compares each door with his list. Real name: every binding is checked, old value against new. OnPush components skip this walk.",
+   "The guard fixes only the changed doors. Real name: only the changed bindings are written to the DOM, which is why this is fast enough."
+  ]
+ },
+ "browser-performance": {
+  "analogy": {
+   "name": "A pizza kitchen order",
+   "line": "The rendering path is like making a pizza: dough (HTML), toppings plan (CSS), the assembled order (render tree), laying it out on the tray (layout), then the oven (paint)."
+  },
+  "caption": "Five steps stand between your HTML and a pixel. Anything blocking the first two delays everything after it.",
+  "steps": [
+   "HTML is the dough being shaped. Real name: the DOM, built tag by tag as the browser parses. Slow or blocked parsing delays the whole meal.",
+   "CSS is the toppings plan. Real name: the CSSOM. The browser will not serve an unstyled pizza, so CSS blocks rendering. Say that in interviews.",
+   "The render tree is the finished order slip: dough plus toppings, minus anything not on the menu. Hidden elements are left out.",
+   "Layout is placing every pizza on the tray with an exact size and spot. A change to one width can force the whole tray to be redone, called reflow.",
+   "Paint is the oven: pixels finally appear. Repaints are cheap, but a reflow sends you back to layout first and costs far more."
+  ]
+ },
+ "accessibility": {
+  "analogy": {
+   "name": "A building for everyone",
+   "line": "POUR is like four rules for a public building: signs people can see or hear, doors anyone can open, clear layouts, and wiring that survives renovations."
+  },
+  "caption": "If any one of the four promises fails, a group of users is locked out, so the page is not accessible.",
+  "steps": [
+   "Perceivable is signs in big print and braille. Real name: text alternatives, contrast and captions, so everyone can sense the content.",
+   "Operable is doors anyone can open. Real name: everything works by keyboard, with enough time and no focus traps. Test it by unplugging the mouse.",
+   "Understandable is a clear floor plan. Real name: readable language and predictable behavior, with helpful messages when input goes wrong.",
+   "Robust is wiring that survives renovations. Real name: valid, semantic markup that assistive tech can parse today and after the next browser update."
+  ]
+ },
+ "state-management": {
+  "analogy": {
+   "name": "A library with a reading desk",
+   "line": "Server state is like library books on your desk: the real copy lives on the shelf, your copy can go out of date, and a librarian (the cache) knows when to fetch a fresh one."
+  },
+  "caption": "Server state lives elsewhere and goes stale, so it needs a keyed cache. That is the job React Query and SWR do.",
+  "steps": [
+   "You ask for a book by its catalog number. Real name: the component requests data by a query key, such as ['todos', id].",
+   "The librarian checks your desk first. Real name: the cache. If the book is fresh it is handed over instantly with no network call.",
+   "A stale or missing book is fetched from the shelf while you keep reading the old copy. Real name: a background refetch, so the screen never blanks.",
+   "The new copy replaces the old one and the page updates. Real name: cache update and re-render, with no hand-written loading state for known data."
+  ]
+ }
+}
