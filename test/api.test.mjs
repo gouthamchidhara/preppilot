@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { generateKeyPairSync, createSign } from 'node:crypto';
 
 for (const k of ['AZURE_OPENAI_ENDPOINT', 'AZURE_OPENAI_API_KEY', 'AZURE_OPENAI_DEPLOYMENT', 'AZURE_OPENAI_REALTIME_DEPLOYMENT', 'ACCESS_CODE', 'STORAGE_CONNECTION_STRING']) delete process.env[k];
+delete process.env.REVENUECAT_SECRET_KEY;
 Object.assign(process.env, {
   RATE_CHAT_PER_HOUR: '1000', RATE_GENERATE_PER_HOUR: '1000', RATE_VOICE_PER_HOUR: '1000',
   GOOGLE_CLIENT_IDS: 'web-client.apps.googleusercontent.com', APPLE_AUDIENCES: 'com.gchid.preppilot',
@@ -39,6 +40,25 @@ const ask = (h, text = 'hi') => call('POST chat', { messages: [{ role: 'user', c
 beforeEach(async () => {
   await useMemoryDb(); resetRateLimits();
   delete process.env.FREE_MSGS; delete process.env.FREE_DAILY_MSGS; delete process.env.FREE_DAILY_VOICE_SEC;
+  delete process.env.REVENUECAT_SECRET_KEY;
+});
+
+test('health reports payments ready only when both RevenueCat server credentials are set', async () => {
+  const auth = process.env.REVENUECAT_WEBHOOK_AUTH;
+  const secret = process.env.REVENUECAT_SECRET_KEY;
+  try {
+    delete process.env.REVENUECAT_SECRET_KEY;
+    assert.equal((await call('GET health')).body.payments, false);
+    process.env.REVENUECAT_SECRET_KEY = 'test-secret';
+    assert.equal((await call('GET health')).body.payments, true);
+    delete process.env.REVENUECAT_WEBHOOK_AUTH;
+    assert.equal((await call('GET health')).body.payments, false);
+  } finally {
+    if (auth === undefined) delete process.env.REVENUECAT_WEBHOOK_AUTH;
+    else process.env.REVENUECAT_WEBHOOK_AUTH = auth;
+    if (secret === undefined) delete process.env.REVENUECAT_SECRET_KEY;
+    else process.env.REVENUECAT_SECRET_KEY = secret;
+  }
 });
 
 test('AI requires sign-in; the study guide (static) does not touch the API', async () => {

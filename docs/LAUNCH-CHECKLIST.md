@@ -12,9 +12,12 @@ Owner handles item 7. The assistant is handling the other items, with owner inpu
 - Privacy text now reflects role suggestions, guide submissions, audio streaming, fresh scenarios and actual account-deletion retention. App Store privacy answers still need checking.
 - Azure checks: OAuth audiences match the public app configuration; session secret is at least 32 characters; AI/storage settings exist; model deployments succeeded. This does not substitute for device sign-in or sandbox purchase testing.
 - Beta `ACCESS_CODE` is absent. Sweeper is Running, enabled on a one-minute schedule, and its storage/OpenAI settings match the API. Runtime timer state recorded Last `2026-11-17T15:16:00Z`, Next `2026-11-17T15:17:00Z`.
-- Missing Azure settings: `REVENUECAT_SECRET_KEY`, `ACS_EMAIL_ENDPOINT`, `ACS_EMAIL_KEY`, `ACS_EMAIL_SENDER`, `SUGGESTIONS_EMAIL`. `payments: true` in health only confirms webhook-auth configuration, not a working purchase/refresh.
-- Budget is configured at $20/month with actual-80% and forecast-100% alerts. Alert delivery and real per-session cost comparison are not yet verified.
-- Owner purchased `preppilot.us` and configured Cloudflare Email Routing for `support@preppilot.us`. Destination verification and routing rule were checked; end-to-end email delivery is not yet confirmed. Store products, offering, webhook and agreements still require dashboard verification. Never paste secret keys into chat.
+- Billing audit: App Store Connect has `pro_monthly` at Prepare for Submission and `mock_session_60min` as a consumable draft. The subscription currently advertises 500 AI messages and 45 voice minutes, which doesn't match the plan below. Paid Apps agreement status could not be verified because the Agreements page did not render its contents. RevenueCat's active `default` offering has 3 packages, but entitlement `interview_preppilot_pro` is attached to Test Store products (`monthly`, `yearly`, `lifetime`), not the App Store products; no RevenueCat webhook is configured.
+- Azure billing: `REVENUECAT_WEBHOOK_AUTH` is present, but `REVENUECAT_SECRET_KEY` is configured with an empty value. A local code change makes health report `payments: false` unless both backend credentials are set; it is not deployed yet and still cannot confirm the RevenueCat webhook itself is configured.
+- Budget is configured at $20/month with enabled actual-80% and forecast-100% alerts. Current spend observed was about $1.22; forecast was unavailable. Alert delivery and real per-session cost comparison are not yet verified.
+- The App Store subscription has a current price schedule covering 175 regions, but the amount could not be read. The Paid Apps agreement page did not render its status. RevenueCat's App Store product list is empty; its importer sees `pro_monthly` as Missing metadata, while the catalog currently contains only Test Store products. Never paste secret keys into chat.
+- iOS build alternative: Azure DevOps can run Xcode on a Microsoft-hosted macOS agent, so no persistent App Service is needed. This repo has no Azure DevOps pipeline configured; replacing EAS still requires a DevOps organization with hosted-agent quota, Apple signing assets in secure storage, and a successful TestFlight trial. Keep EAS until that trial passes.
+- Owner purchased `preppilot.us` and configured Cloudflare Email Routing for `support@preppilot.us`. Destination verification and routing rule were checked; end-to-end email delivery is not yet confirmed. Never paste secret keys into chat.
 - Spot-checked Go and JavaScript/TypeScript field cards and their lesson flow/Next hooks; reviewed all 26 analogies. Corrected Go loop capture, slice sharing, errgroup and scheduler explanations, plus TLS, Kubernetes, JVM, C# and TypeScript analogies. Validators pass: 924 field cards and 98 flow/meaning entries; 73 tests pass.
 
 ## Must do before launch
@@ -25,12 +28,12 @@ Owner handles item 7. The assistant is handling the other items, with owner inpu
 - After the merge, all work happens on `main` (or short branches merged into it).
 
 ### 2. Store setup (App Store Connect and RevenueCat)
-- [ ] App Store Connect: `pro_monthly` (auto-renewing subscription) priced at **$10.99/month**.
-- [ ] App Store Connect: `mock_session_60min` (consumable) priced at **$15.99**. Keep the product id; change its display name and description to "Live AI, 60 minutes" (users see the name, never the id).
+- [ ] App Store Connect: verify `pro_monthly` (auto-renewing subscription) is priced at **$10.99/month**. A current price exists, but its amount was not readable in the dashboard snapshot.
+- [ ] App Store Connect: `mock_session_60min` (consumable) priced at **$15.99**. Keep the product id; change its display name and description to "Live AI, 60 minutes" (users see the name, never the id). Current draft name is "Interview 60min".
 - [ ] Paid Apps agreement is Active (Agreements, Tax and Banking).
-- [ ] RevenueCat: entitlement `pro` contains `pro_monthly`; the Current offering has a package for `pro_monthly` (Monthly type) and one for `mock_session_60min`.
-- [ ] RevenueCat webhook: URL `<live site>/api/billing/revenuecat`, Authorization header equal to the Azure setting `REVENUECAT_WEBHOOK_AUTH`.
-- [ ] Azure setting `REVENUECAT_SECRET_KEY` is set (used by `/api/billing/refresh` after a purchase).
+- [ ] RevenueCat: create/fix entitlement `pro` and attach the App Store product `pro_monthly`; ensure the Current offering has a package for `pro_monthly` (Monthly type) and one for `mock_session_60min`. Current entitlement is `interview_preppilot_pro` with Test Store products only.
+- [ ] RevenueCat webhook: create URL `<live site>/api/billing/revenuecat`, with Authorization header equal to the Azure setting `REVENUECAT_WEBHOOK_AUTH`. No webhook currently exists.
+- [ ] Azure setting `REVENUECAT_SECRET_KEY` has a non-empty RevenueCat secret (used by `/api/billing/refresh` after a purchase). The setting currently exists but is empty; never paste secret keys into chat.
 - What Pro includes (keep store descriptions in line with this): unlimited AI messages (fair use 150 a day, 2,000 a month), two 30-minute Live AI sessions a month, every topic, card and diagram, plus terminology, troubleshooting and real-scenario cards. No separate voice minutes.
 
 ### 3. New iOS build
@@ -53,7 +56,8 @@ Owner handles item 7. The assistant is handling the other items, with owner inpu
 - [x] Sign-in: `GOOGLE_CLIENT_IDS`, `GOOGLE_WEB_CLIENT_ID`, `APPLE_AUDIENCES`, `SESSION_SECRET` (at least 32 characters; audiences checked against app configuration).
 - [x] AI: `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_REALTIME_DEPLOYMENT`, `AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT`.
 - [x] Storage: `STORAGE_CONNECTION_STRING` (users, usage, calls, suggestions, fresh scenarios; new tables are created on first use).
-- [ ] Billing: `REVENUECAT_WEBHOOK_AUTH`, `REVENUECAT_SECRET_KEY`.
+- [x] Billing webhook authorization: `REVENUECAT_WEBHOOK_AUTH` is present (RevenueCat webhook is still not configured).
+- [ ] Billing refresh: `REVENUECAT_SECRET_KEY` is non-empty.
 - [ ] Guide-suggestion email: `ACS_EMAIL_ENDPOINT`, `ACS_EMAIL_KEY`, `ACS_EMAIL_SENDER`, `SUGGESTIONS_EMAIL` (palpriya0825@gmail.com). Without these, suggestions are stored but no email is sent.
 - [ ] `ADMIN_EMAILS`: only addresses that should get unlimited access.
 - [x] Price labels: leave `PRO_PRICE_LABEL` and `LIVE_PRICE_LABEL` unset (defaults are $10.99/month and $15.99) or set them to match the store exactly.

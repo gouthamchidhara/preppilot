@@ -5,6 +5,12 @@
 
 This is one-time setup. For the manual command-line path, see `docs/DEPLOY-AND-SUBMIT.md`.
 
+## Azure-hosted build alternative
+
+Azure DevOps Microsoft-hosted macOS agents include Xcode, so iOS builds can run on ephemeral Macs without creating an Azure App Service. The free hosted-agent allocation is up to one parallel job and 1,800 minutes per month when available to the organization; confirm the macOS quota and usage in the specific DevOps organization before relying on it.
+
+Replacing EAS is not configured in this repository yet. It requires an Azure DevOps organization/project and pipeline, Apple distribution certificate and provisioning profile stored as secure files, an App Store Connect API key in secure storage, and a successful signed TestFlight upload. Do not cancel EAS until the Azure pipeline has produced and uploaded a verified build.
+
 ## Rules for the agent
 
 1. **Never type, paste, print, log or screenshot a secret.** That covers passwords, 2FA codes, the Expo access token, the `.p8` key file and the RevenueCat secret key (`sk_...`). When a secret has to move from one page to another, copy it through the clipboard and do not echo it in your output.
