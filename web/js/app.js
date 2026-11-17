@@ -674,7 +674,7 @@ const meter = (label, left, total, text) => `<div><div class="meter-top"><span>$
 function usageMeters(a) {
   if (!a || a.unlimited || !a.limits) return '';
   return `<div class="meters">
-    ${meter('AI messages left', a.msgsLeft, a.limits.msgs, `${a.msgsLeft} / ${a.limits.msgs}`)}
+    ${a.msgsUnlimited ? '<div><div class="meter-top"><span>AI messages</span><b>Unlimited</b></div><div class="bar"><i style="width:100%"></i></div></div>' : meter('AI messages left', a.msgsLeft, a.limits.msgs, `${a.msgsLeft} / ${a.limits.msgs}`)}
     ${meter('Voice minutes left', a.voiceSecLeft, a.limits.voiceSec, `${mins(a.voiceSecLeft)} / ${mins(a.limits.voiceSec)}`)}
   </div>`;
 }
@@ -728,7 +728,7 @@ function paywallCard() {
       ${usageMeters(a)}<div class="row"><button class="btn primary" data-act="plans">See Live AI</button><button class="btn" data-act="unpaywall">Close</button></div></section>`;
   }
   return `<section class="panel stack"><h3>Your free trial is used up</h3>
-    <p class="muted">Pro gives you ${o.proMsgs} messages and ${o.proVoice} voice minutes every month. Your plan and flashcards stay free either way.</p>
+    <p class="muted">Pro gives you unlimited AI messages, ${o.proVoice} voice minutes and two 30-minute Live AI sessions every month. Your plan and flashcards stay free either way.</p>
     <div class="row"><button class="btn primary" data-act="plans">See pricing</button><button class="btn quiet" data-act="unpaywall">Not now</button></div></section>`;
 }
 
@@ -745,7 +745,7 @@ function allowanceCard(a) {
     ${usageMeters(a)}<p class="muted small">Live AI: ${a.proLiveLeft ?? o.proLiveN} of ${o.proLiveN} sessions of ${o.proLive} minutes left this month. Need a full hour? A one-time session is ${esc(o.livePrice)}.</p></section>`;
   return `<section class="panel stack tight"><b>Free to try</b>
     ${usageMeters(a)}
-    <p class="muted small">Pro (${esc(o.proPrice)}): ${o.proMsgs} AI messages, ${o.proVoice} voice minutes and ${o.proLiveN === 2 ? 'two' : o.proLiveN} ${o.proLive}-minute Live AI sessions a month. <button class="link" data-act="plans">See pricing</button></p></section>`;
+    <p class="muted small">Pro (${esc(o.proPrice)}): unlimited AI messages, ${o.proVoice} voice minutes and ${o.proLiveN === 2 ? 'two' : o.proLiveN} ${o.proLive}-minute Live AI sessions a month. <button class="link" data-act="plans">See pricing</button></p></section>`;
 }
 
 function chatView() {
@@ -1097,7 +1097,7 @@ function plansView() {
     ['Flashcards', `${FREE_CARDS} per technology, shuffled`, 'All, in workflow order', '–'],
     ['Terminology, troubleshooting, real scenarios', no, yes, '–'],
     ['Animated diagrams for every topic', no, yes, '–'],
-    ['AI messages', `${o.freeMsgs} to try`, `${o.proMsgs} a month`, '–'],
+    ['AI messages about your prep', `${o.freeMsgs} to try`, 'Unlimited', '–'],
     ['Voice practice', `${o.freeVoice} min to try`, `${o.proVoice} min a month`, `${o.liveMin} min, continuous`],
     ['Uninterrupted Live AI', no, `${o.proLiveN} × ${o.proLive} min a month`, `${o.liveMin} min, once`],
     ['Spoken practice test with a verdict', no, yes, yes],
@@ -1154,6 +1154,7 @@ function plansView() {
       <details><summary>What counts as a message?</summary><p>Each question you send AI is one message. Writing a custom card set uses five. Voice is counted in minutes, only while a session is open.</p></details>
       <details><summary>What if my connection drops during a Live AI session?</summary><p>Rejoin within the hour and you pick up the same session with the time that is left. You are not charged again.</p></details>
       <details><summary>Can I use Live AI for a practice test first and the interview later?</summary><p>Each session is one block of time. Buy two if you want one for practice and one for the day.</p></details>
+      <details><summary>What can I ask AI?</summary><p>Anything that gets you ready for the interview in your technologies: explain a concept, quiz you, grade your answer, walk through an error or a short piece of code. It will not build apps, write essays or do take-home tasks. Pro messages are unlimited for normal use, with a daily fair-use limit of 150.</p></details>
       <details><summary>How do I cancel Pro?</summary><p>In your ${manage} subscription settings, at any time. You keep Pro until the end of the period you paid for.</p></details>
       <details><summary>What happens to my progress on Free?</summary><p>Nothing changes. Your plan, cards and progress stay on this device and stay yours.</p></details>
     </div>

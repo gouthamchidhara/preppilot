@@ -39,9 +39,9 @@ const str = (v, max) => (typeof v === 'string' ? v.slice(0, max) : '');
 
 export function validateChat(body) {
   if (!body || !Array.isArray(body.messages) || body.messages.length === 0) return { error: 'messages required' };
-  const messages = body.messages.slice(-12)
+  const messages = body.messages.slice(-8)
     .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string' && m.content.trim())
-    .map(m => ({ role: m.role, content: m.content.slice(0, 2000) }));
+    .map(m => ({ role: m.role, content: m.content.slice(0, 1500) }));
   if (!messages.length || messages[messages.length - 1].role !== 'user') return { error: 'last message must be from the user' };
   return {
     messages,
@@ -115,3 +115,15 @@ export function sanitizeDiagram(d) {
     steps,
   };
 }
+
+// Requests that are clearly not interview prep get a fixed answer without calling the model or
+// charging a message. The system prompt covers everything this misses.
+const OFF_SCOPE = [
+  /\b(build|create|make|develop|code|write)\b[^.?!]{0,40}\b(app|application|website|web ?site|game|saas|project|platform|bot|extension|backend|frontend|full[- ]stack)\b/i,
+  /\b(write|draft|compose)\b[^.?!]{0,30}\b(essay|email|e-mail|cover letter|resume|résumé|cv|poem|story|blog|article|linkedin post)\b/i,
+  /\b(do|solve|finish|complete)\b[^.?!]{0,20}\b(my )?(homework|assignment|take[- ]home)\b/i,
+];
+export function outOfScope(text) {
+  return OFF_SCOPE.some(r => r.test(String(text || '')));
+}
+export const SCOPE_REPLY = 'That is outside what PrepPilot does. I am here to get you ready for the interview: I can explain a concept, quiz you, grade your answer, or walk through an error or a short snippet the way an interviewer would ask about it. What would you like to practise?';

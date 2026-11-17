@@ -151,3 +151,11 @@ Recommendation: raise Live AI to $14.99 (we keep about $9 to $11) and Pro to $9.
 | Live AI, 60 minutes | $15.99 | $13.59 | $2 to $4 | $9.60 to $11.60 |
 | Pro, light user | $10.99 | $9.34 | about $0.50 | about $8.80 |
 | Pro, heaviest user (500 messages, 45 voice min, both 30-min Live AI sessions) | $10.99 | $9.34 | $3.30 to $6 | $3.30 to $6 |
+
+### Unlimited Pro messages (owner decision) and how they are kept in check
+
+- Sold as unlimited. Hidden fair-use ceilings: 150 a day and 2,000 a month (`PRO_MSGS_PER_DAY`, `PRO_MSGS`), plus 40 an hour.
+- Scope: AI only helps with interview prep in the user's technologies. Clear off-topic asks ("build me an app", "write a cover letter", "do my homework") get a fixed reply with no model call and no message used. Everything else is held to scope by the system prompt.
+- Cost per reply is capped: 8 messages of history, 1,500 characters per message, 450 output tokens, code snippets of about 25 lines.
+- Worst case at the ceiling: 2,000 messages × about $0.0012 = about $2.40 a month. A realistic heavy user (30 a day) is about $1.
+- Pro at $10.99 (we receive $9.34): heaviest possible user, everything used, costs about $5.70 to $8.40, so still a small profit. Typical users cost $1 to $3. $10.99 is enough; do not go lower.

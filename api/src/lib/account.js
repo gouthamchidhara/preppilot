@@ -63,7 +63,7 @@ const quotaMsg = plan => (plan === 'pro'
 
 export async function consumeMsgs(ident, n, now = Date.now()) {
   const user = await loadUser(ident);
-  if (!user) return err(401, 'signin', 'Sign in to use the AI coach.');
+  if (!user) return err(401, 'signin', 'Sign in to use AI.');
   const plan = planOf(user, now);
   if (plan === 'admin') return { ok: true, plan };
   if (plan === 'free' && !(await pool('msgs', n, now))) return err(429, 'free_pool', FREE_POOL_MSG);
@@ -72,6 +72,13 @@ export async function consumeMsgs(ident, n, now = Date.now()) {
     rollPeriod(u, now);
     const bucket = plan === 'pro' ? u.pro : u.free;
     if (bucket.msgs + n > limits()[plan].msgs) { result = err(402, 'quota', quotaMsg(plan)); return undefined; }
+    // Pro is unlimited for normal use, with a daily fair-use ceiling so one account cannot burn the month in a day.
+    if (plan === 'pro') {
+      const d = day(now);
+      if (u.pro.day !== d) { u.pro.day = d; u.pro.dayMsgs = 0; }
+      if (u.pro.dayMsgs + n > limits().pro.msgsPerDay) { result = err(429, 'fair_use', `You have reached today's fair-use limit of ${limits().pro.msgsPerDay} AI messages. It resets tomorrow.`); return undefined; }
+      u.pro.dayMsgs += n;
+    }
     bucket.msgs += n;
     return u;
   });
@@ -86,6 +93,7 @@ export async function refundMsgs(ident, n, plan, now = Date.now()) {
     rollPeriod(u, now);
     const bucket = plan === 'pro' ? u.pro : u.free;
     bucket.msgs = Math.max(0, bucket.msgs - n);
+    if (plan === 'pro' && u.pro.day === day(now)) u.pro.dayMsgs = Math.max(0, (u.pro.dayMsgs || 0) - n);
     return u;
   });
   if (plan === 'free') await pool('msgs', -n, now);

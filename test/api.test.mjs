@@ -90,7 +90,8 @@ test('RevenueCat webhook grants and revokes Pro; rejects unauthenticated calls',
   assert.equal((await call('POST billing/revenuecat', ev('INITIAL_PURCHASE'), { authorization: 'Bearer hook-secret' })).status, 200);
   let me = (await call('GET me', null, h)).body;
   assert.equal(me.plan, 'pro');
-  assert.equal(me.msgsLeft, 500);
+  assert.equal(me.msgsLeft, 2000);
+  assert.equal(me.msgsUnlimited, true);
   await call('POST billing/revenuecat', { event: { type: 'EXPIRATION', app_user_id: key, entitlement_ids: ['pro'], expiration_at_ms: Date.now() - 1000 } }, { authorization: 'Bearer hook-secret' });
   me = (await call('GET me', null, h)).body;
   assert.equal(me.plan, 'free');
@@ -379,4 +380,30 @@ test('Pro includes two 30-minute Live AI sessions a month; a dropped call resume
   assert.equal((await startProLive(key, t0 + 4000000)).ok, false);
   const h = (await call('GET health')).body.plans.pro;
   assert.equal(h.liveMin, 30); assert.equal(h.liveSessions, 2); assert.equal(h.price, '$10.99/month');
+});
+
+test('AI stays on interview prep: off-scope asks get a fixed reply and cost nothing', async () => {
+  const { outOfScope } = await import('../api/src/lib/guard.js');
+  assert.ok(outOfScope('Build me a full stack todo app with React and Node'));
+  assert.ok(outOfScope('Can you write a cover letter for this job?'));
+  assert.ok(outOfScope('please do my homework on linked lists'));
+  assert.ok(!outOfScope('Why does my Java code throw ConcurrentModificationException?'));
+  assert.ok(!outOfScope('How would you design a URL shortener in an interview?'));
+  const h = await signIn('scope@gmail.com', 'scope');
+  const before = (await call('GET me', null, h)).body.msgsLeft;
+  const r = await ask(h, 'Build me a complete e-commerce website in Next.js');
+  assert.equal(r.status, 200);
+  assert.equal(r.body.scoped, true);
+  assert.equal((await call('GET me', null, h)).body.msgsLeft, before);
+});
+
+test('Pro messages: unlimited for normal use, with a daily fair-use ceiling', async () => {
+  process.env.PRO_MSGS_PER_DAY = '3';
+  const h = await signIn('fair@gmail.com', 'fair');
+  await call('POST billing/revenuecat', { event: { type: 'INITIAL_PURCHASE', app_user_id: 'google:fair', entitlement_ids: ['pro'], expiration_at_ms: Date.now() + 30 * 86400000 } }, { authorization: 'Bearer hook-secret' });
+  for (let i = 0; i < 3; i++) assert.equal((await ask(h)).status, 200);
+  const r = await ask(h);
+  assert.equal(r.status, 429);
+  assert.equal(r.body.code, 'fair_use');
+  delete process.env.PRO_MSGS_PER_DAY;
 });

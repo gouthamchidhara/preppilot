@@ -9,7 +9,8 @@ const num = (k, d) => (process.env[k] !== undefined && process.env[k] !== '' ? N
 export function limits() {
   return {
     free: { msgs: num('FREE_MSGS', 15), voiceSec: num('FREE_VOICE_SEC', 120), period: 'lifetime' },
-    pro: { msgs: num('PRO_MSGS', 500), voiceSec: num('PRO_VOICE_SEC', 45 * 60), period: 'month' },
+    // Pro messages are sold as unlimited; these are fair-use ceilings (a month, and a day) that normal use never reaches.
+    pro: { msgs: num('PRO_MSGS', 2000), msgsPerDay: num('PRO_MSGS_PER_DAY', 150), voiceSec: num('PRO_VOICE_SEC', 45 * 60), period: 'month' },
     freePoolPerDay: { msgs: num('FREE_DAILY_MSGS', 200), voiceSec: num('FREE_DAILY_VOICE_SEC', 600) },
     maxCallSec: num('MAX_CALL_SEC', 10 * 60),
     liveCallSec: num('LIVE_CALL_SEC', 60 * 60),
@@ -60,6 +61,7 @@ export function usageStatus(user, now = Date.now()) {
     msgsLeft: Math.max(0, lim.msgs - bucket.msgs),
     voiceSecLeft: Math.max(0, lim.voiceSec - bucket.voiceSec),
     sessionCredits: user.sessionCredits || 0,
+    msgsUnlimited: plan === 'pro',
     proLiveLeft: plan === 'pro' ? Math.max(0, L.proLiveSessions - (user.pro?.liveUsed || 0)) : 0,
     proLiveSecLeft: plan === 'pro' ? Math.max(0, Math.floor(((user.proLiveUntil || 0) - now) / 1000)) : 0,
     liveSecLeft,

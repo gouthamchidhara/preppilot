@@ -1,7 +1,7 @@
 // Framework-agnostic handlers: (req) -> { status, body, headers }.
 // req = { body, headers (lower-case keys), ip }
 import { complete, llmConfigured } from './llm.js';
-import { rateLimit, validateChat, validateGenerate, validateLiveHint, validateSuggestion, sanitizeGenerated } from './guard.js';
+import { rateLimit, outOfScope, SCOPE_REPLY, validateChat, validateGenerate, validateLiveHint, validateSuggestion, sanitizeGenerated } from './guard.js';
 import { chatSystemPrompt, generateSystemPrompt, generateUserPrompt } from './prompts.js';
 import { realtimeConfigured, validateRealtime, startRealtime, hangupCall } from './realtime.js';
 import { identify, verifyIdToken, signSession } from './auth.js';
@@ -65,10 +65,11 @@ export async function handleChat(req, log) {
   if (w.error) return w.error;
   const rl = limited('chat', w.ident);
   if (rl) return rl;
+  if (outOfScope(v.messages[v.messages.length - 1].content)) return json(200, { reply: SCOPE_REPLY, scoped: true, account: await status(w.ident) });
   const q = await consumeMsgs(w.ident, COST.chat);
   if (!q.ok) return denied(q);
   try {
-    const reply = await complete([{ role: 'system', content: chatSystemPrompt(v) }, ...v.messages], { maxTokens: v.voice ? 200 : 500 });
+    const reply = await complete([{ role: 'system', content: chatSystemPrompt(v) }, ...v.messages], { maxTokens: v.voice ? 200 : 450 });
     return json(200, { reply, account: await status(w.ident) });
   } catch (e) {
     await refundMsgs(w.ident, COST.chat, q.plan);
@@ -281,7 +282,7 @@ export function handleHealth() {
     payments: !!process.env.REVENUECAT_WEBHOOK_AUTH,
     plans: {
       free: { msgs: L.free.msgs, voiceMin: Math.floor(L.free.voiceSec / 60) },
-      pro: { msgs: L.pro.msgs, voiceMin: Math.floor(L.pro.voiceSec / 60), liveMin: Math.floor(L.proLiveSec / 60), liveSessions: L.proLiveSessions, price: proPriceLabel() },
+      pro: { msgs: L.pro.msgs, msgsUnlimited: true, voiceMin: Math.floor(L.pro.voiceSec / 60), liveMin: Math.floor(L.proLiveSec / 60), liveSessions: L.proLiveSessions, price: proPriceLabel() },
       live: { minutes: Math.floor(L.liveCallSec / 60), price: livePriceLabel() },
     },
   });
