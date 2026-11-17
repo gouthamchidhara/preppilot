@@ -1,5 +1,7 @@
 # PrepPilot: production launch checklist
 
+> Current open items, short form: `docs/PENDING-CHECKLIST.md`.
+
 Written 17 November 2026. Work branch: `claude/eloquent-pasteur-wdc9yd` (Azure currently serves this branch). Tick items as they are done and commit the change, so whoever picks this up next sees the current state.
 
 Owner handles item 7. The assistant is handling the other items, with owner input for sign-in, secrets, legal agreements and purchases.
