@@ -12,12 +12,14 @@ export function limits() {
     pro: { msgs: num('PRO_MSGS', 500), voiceSec: num('PRO_VOICE_SEC', 30 * 60), period: 'month' },
     freePoolPerDay: { msgs: num('FREE_DAILY_MSGS', 200), voiceSec: num('FREE_DAILY_VOICE_SEC', 600) },
     maxCallSec: num('MAX_CALL_SEC', 15 * 60),
+    liveCallSec: num('LIVE_CALL_SEC', 60 * 60),
     minCallSec: 20,
   };
 }
 
 export const COST = { chat: 1, generate: 5 };
 export const proPriceLabel = () => process.env.PRO_PRICE_LABEL || '$11.99/month';
+export const livePriceLabel = () => process.env.LIVE_PRICE_LABEL || '$10.99';
 const MONTH = 30 * 86400000;
 
 export function adminEmails() {
@@ -42,8 +44,11 @@ export function rollPeriod(user, now = Date.now()) {
 export function usageStatus(user, now = Date.now()) {
   const plan = planOf(user, now);
   const L = limits();
-  if (plan === 'admin') return { plan, unlimited: true };
-  if (plan === 'anon') return { plan, msgsLeft: 0, voiceSecLeft: 0 };
+  // Stored under the original field names (sessionCredits / mockUntil) so credits bought
+  // before the rename keep working; the user-facing name is "Live coach".
+  const liveSecLeft = Math.max(0, Math.floor(((user.mockUntil || 0) - now) / 1000));
+  if (plan === 'admin') return { plan, unlimited: true, sessionCredits: user.sessionCredits || 0, liveSecLeft };
+  if (plan === 'anon') return { plan, msgsLeft: 0, voiceSecLeft: 0, sessionCredits: 0 };
   rollPeriod(user, now);
   const bucket = plan === 'pro' ? user.pro : user.free;
   const lim = L[plan];
@@ -51,6 +56,8 @@ export function usageStatus(user, now = Date.now()) {
     plan,
     msgsLeft: Math.max(0, lim.msgs - bucket.msgs),
     voiceSecLeft: Math.max(0, lim.voiceSec - bucket.voiceSec),
+    sessionCredits: user.sessionCredits || 0,
+    liveSecLeft,
     limits: { msgs: lim.msgs, voiceSec: lim.voiceSec, period: lim.period },
     proUntil: plan === 'pro' ? user.proUntil : undefined,
     periodEnds: plan === 'pro' ? user.pro.periodStart + MONTH : undefined,

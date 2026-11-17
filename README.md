@@ -4,11 +4,11 @@ Personalized interview prep for software developers (Java, Python, .NET, Node, G
 infrastructure/cloud/SRE/DevOps, QA and security roles: 23 roles, 72 topics.
 Users set a short profile (one or more target roles, level, background, self-rated strengths/weaknesses, interview date) and get:
 
-- **A day-by-day plan** ordered by role relevance and their weak spots, ending with review days.
+- **A day-by-day plan** ordered by role relevance and their weak spots, ending with a Live coach practice test.
 - **Learn cards** (what / why / example / what to say) and **flashcards** with spaced repetition, filtered to their level.
 - **Multi-role prep** combines selected roles into one plan; role-specific flashcards allow focused practice. Shared topics
   and their card progress are not duplicated. Select one role in Profile for a single-role plan.
-- **An AI coach** for instant answers, "go deeper" on any card, answer grading and quizzes:
+- **An AI coach** for instant answers, "go deeper" on any card, answer grading, quizzes, and Live coach practice tests:
   - **Talking mode**: hands-free speech-to-speech (Azure OpenAI Realtime over WebRTC). Replies start ~0.35 s after you
     stop speaking; talk over it to interrupt. Measured: first reply token ~250 ms after the turn ends.
   - **Listening mode**: mic stays open, the coach transcribes and does **not** interrupt while you practice a long answer;
@@ -23,7 +23,7 @@ the server then stores just the account ID, email, plan and usage counters. Chat
 current card are sent to the API only when the user asks the AI something.
 
 **Plans and launch:** the guide is free without an account. AI needs sign-in (Google, or Apple in the iOS app): free trial,
-then Pro at $11.99/month through in-app purchase. Usage is enforced on the server. See
+then Pro at $11.99/month, or a one-time $10.99 60-minute Live coach practice test, through in-app purchase. Usage is enforced on the server. See
 [docs/MONETIZATION-AND-LAUNCH.md](docs/MONETIZATION-AND-LAUNCH.md) for pricing math, enforcement design and the setup steps.
 
 ## Architecture
@@ -116,7 +116,7 @@ Import `private/packs/personal.json` in the app under Profile → Private packs.
 - Rate limits are in-memory per Functions instance. Fine for a beta; move to Azure Table Storage or Redis for real scale.
 - **Before a public launch, replace the shared access code** with per-user protection (Sign in with Apple + per-user
   quotas, or App Attest/DeviceCheck). Voice costs real money per minute; an open endpoint can be abused.
-  Voice sessions auto-end after 3 minutes of silence or 15 minutes total.
+  Voice sessions auto-end after 3 minutes of silence or 15 minutes total (60 minutes for a Live coach session, which has no silence cut-off).
 - No accounts or sync across devices (by design for privacy). Export/import exists under Profile.
 - Voice input relies on WebRTC + microphone permission; the 🎤 Dictate fallback uses the browser's speech API.
 - Answers are not streamed; add streaming when moving the API to a standalone Function App.

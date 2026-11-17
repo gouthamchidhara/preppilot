@@ -12,9 +12,9 @@ Object.assign(process.env, {
 const { ROUTES } = await import('../api/src/lib/routes.js');
 const { setJwksFetcher } = await import('../api/src/lib/auth.js');
 const { useMemoryDb } = await import('../api/src/lib/db.js');
-const { reserveVoice, recordCall, endCall, sweepCalls, status } = await import('../api/src/lib/account.js');
+const { reserveVoice, recordCall, endCall, sweepCalls, status, startLiveSession, cancelLiveSession } = await import('../api/src/lib/account.js');
 const { rateLimit, resetRateLimits, sanitizeGenerated, validateChat } = await import('../api/src/lib/guard.js');
-const { validateRealtime, sessionConfigs } = await import('../api/src/lib/realtime.js');
+const { validateRealtime, sessionConfigs, voiceInstructions } = await import('../api/src/lib/realtime.js');
 
 // A fake identity provider: our own RSA key served as the JWKS.
 const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
@@ -121,6 +121,68 @@ test('voice: other users cannot end your call; sweeper hangs up overdue calls', 
   assert.equal(await sweepCalls(async id => hung.push(id)), 1);
   assert.deepEqual(hung, ['rtc_2']);
   assert.equal(await sweepCalls(async () => {}), 0);
+});
+
+test('live coach: a purchase counts once, one credit opens a resumable 60-minute window', async () => {
+  const h = await signIn('m@gmail.com', 'm');
+  const key = 'google:m';
+  const hook = { authorization: 'Bearer hook-secret' };
+  const ev = txn => ({ event: { type: 'NON_RENEWING_PURCHASE', app_user_id: key, product_ids: ['mock_session_60min'], transaction_id: txn } });
+  await call('POST billing/revenuecat', ev('t1'), hook);
+  await call('POST billing/revenuecat', ev('t1'), hook); // webhook retry
+  assert.equal((await call('GET me', null, h)).body.sessionCredits, 1);
+
+  const t0 = Date.now();
+  const first = await startLiveSession(key, t0);
+  assert.deepEqual(first, { ok: true, allowedSec: 3600, resumed: false });
+  // Connection drops after 10 minutes: rejoining uses the same credit and only the time that is left.
+  const again = await startLiveSession(key, t0 + 600000);
+  assert.deepEqual(again, { ok: true, allowedSec: 3000, resumed: true });
+  assert.equal((await status({ key }, t0 + 600000)).liveSecLeft, 3000);
+  assert.equal((await status({ key }, t0)).sessionCredits, 0);
+  assert.equal((await startLiveSession(key, t0 + 3600000)).ok, false); // window over, no credit left
+
+  // Ending a live call early must not hand back free-plan voice minutes.
+  await reserveVoice({ key }, t0);
+  await recordCall({ id: 'rtc_m', key, start: t0, allowedSec: 3600, plan: 'live', day: '2026-01-01' });
+  await endCall('rtc_m', { key, now: t0 + 60000 });
+  assert.equal((await status({ key }, t0)).voiceSecLeft, 0);
+
+  // A session that never connected gives the credit back.
+  await call('POST billing/revenuecat', ev('t2'), hook);
+  await startLiveSession(key, t0 + 4000000);
+  await cancelLiveSession(key);
+  const me = await status({ key }, t0 + 4000000);
+  assert.equal(me.sessionCredits, 1);
+  assert.equal(me.liveSecLeft, 0);
+});
+
+test('live coach mode runs a structured practice test with the chosen settings', () => {
+  process.env.AZURE_OPENAI_REALTIME_DEPLOYMENT = 'rt';
+  const v = validateRealtime({ sdp: 'v=0', mode: 'live', speak: true, live: { lengthMin: 30, style: 'tough', topic: 'Kubernetes', difficulty: 'senior' } });
+  assert.equal(v.mode, 'live');
+  assert.deepEqual(v.live, { lengthMin: 30, style: 'tough', topic: 'Kubernetes', difficulty: 'senior' });
+  const cfg = sessionConfigs(v)[0].session;
+  assert.equal(cfg.audio.input.turn_detection.create_response, true);
+  assert.match(voiceInstructions(v), /LIVE COACH MODE/);
+  assert.match(voiceInstructions(v), /Kubernetes/);
+  assert.match(voiceInstructions(v), /senior level/);
+  // Bad settings fall back to the defaults instead of failing.
+  assert.deepEqual(validateRealtime({ sdp: 'v=0', mode: 'live', live: { lengthMin: 99, style: 'mean' } }).live, { lengthMin: 60, style: 'friendly', topic: '', difficulty: '' });
+  delete process.env.AZURE_OPENAI_REALTIME_DEPLOYMENT;
+});
+
+test('live coach hints need an open session window', async () => {
+  const h = await signIn('hint@gmail.com', 'hint');
+  assert.equal((await call('POST live/hint', { question: 'What is a Kubernetes Pod?' }, h)).status, 402);
+  const key = 'google:hint';
+  await call('POST billing/revenuecat', { event: { type: 'NON_RENEWING_PURCHASE', app_user_id: key, product_ids: ['mock_session_60min'], transaction_id: 'th1' } }, { authorization: 'Bearer hook-secret' });
+  await startLiveSession(key);
+  const r = await call('POST live/hint', { question: 'What is a Kubernetes Pod?' }, h);
+  assert.equal(r.status, 200);
+  assert.equal(typeof r.body.hint, 'string');
+  assert.ok(r.body.hint.length > 0);
+  assert.equal((await call('POST live/hint', { question: 'short' }, h)).status, 400);
 });
 
 test('quota messages quote the configured price and limits', async () => {

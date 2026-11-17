@@ -2,7 +2,7 @@
 const K = {
   profile: 'pp.profile', progress: 'pp.progress', custom: 'pp.customTopics',
   privatePacks: 'pp.privatePacks', chat: 'pp.chat', clientId: 'pp.clientId', access: 'pp.accessCode', speak: 'pp.speak',
-  session: 'pp.session', account: 'pp.account',
+  session: 'pp.session', account: 'pp.account', liveSettings: 'pp.liveSettings',
 };
 
 const read = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
@@ -27,6 +27,8 @@ export const store = {
   setSession: t => write(K.session, t),
   account: () => read(K.account, null),
   setAccount: a => write(K.account, a),
+  liveSettings: () => read(K.liveSettings, null),
+  setLiveSettings: s => write(K.liveSettings, s),
   clientId() {
     let id = read(K.clientId, null);
     if (!id) { id = crypto.randomUUID(); write(K.clientId, id); }

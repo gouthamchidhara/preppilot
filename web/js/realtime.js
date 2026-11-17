@@ -15,8 +15,10 @@ export class VoiceSession {
     this.pc = null; this.dc = null; this.mic = null; this.audio = null; this.timers = [];
   }
 
-  async start({ mode, speak, profileSummary, context }) {
+  async start({ mode, speak, profileSummary, context, live }) {
     this.mode = mode;
+    // A Live coach session runs continuously for the full session: no silence cut-off.
+    this.noIdle = mode === 'live';
     this.on.status('connecting');
     const pc = this.pc = new RTCPeerConnection();
     this.audio = Object.assign(document.createElement('audio'), { autoplay: true });
@@ -42,7 +44,7 @@ export class VoiceSession {
     const res = await fetch(apiBase() + '/api/realtime', {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ sdp: offer.sdp, mode, speak, profileSummary, context }),
+      body: JSON.stringify({ sdp: offer.sdp, mode, speak, profileSummary, context, ...(live ? { live } : {}) }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { this.stop(); throw new ApiError(data.error || `Voice failed (${res.status})`, res.status, data.code); }
@@ -59,6 +61,7 @@ export class VoiceSession {
   }
 
   bump() {
+    if (this.noIdle) return; // Live coach: the session runs until its time is up, however quiet it gets.
     clearTimeout(this.idle);
     this.idle = setTimeout(() => this.stop('Ended after 3 minutes of silence.'), IDLE_MS);
   }

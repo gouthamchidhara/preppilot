@@ -77,7 +77,7 @@ export function daysUntil(dateStr, now = Date.now()) {
 }
 
 // Spread ranked topics over the available days, weighting by card count,
-// and reserve the last ~15% of days (min 1) for mixed review.
+// and reserve the last ~15% of days (min 1) for mixed review; the final day is a Live coach practice test.
 export function buildPlan(topics, profile, now = Date.now()) {
   const ranked = rankTopics(topics, profile).filter(t => t.score > 0);
   const until = daysUntil(profile?.interviewDate, now);
@@ -106,7 +106,7 @@ export function buildPlan(topics, profile, now = Date.now()) {
     days[days.length - 1].topics = [...new Set([...days[days.length - 1].topics, ...last.topics])];
   }
   while (days.length < studyDays) days.push({ topics: [], kind: 'review' });
-  for (let k = 0; k < reviewDays; k++) days.push({ topics: [], kind: 'review' });
+  for (let k = 0; k < reviewDays; k++) days.push({ topics: [], kind: k === reviewDays - 1 ? 'live' : 'review' });
   return days.map((d, i) => ({ ...d, day: i + 1, date: new Date(now + i * DAY).toISOString().slice(0, 10) }));
 }
 

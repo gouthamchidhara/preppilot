@@ -11,6 +11,7 @@ export const ROUTES = {
   'POST generate': h.handleGenerate,
   'POST realtime': h.handleRealtime,
   'POST realtime/end': h.handleRealtimeEnd,
+  'POST live/hint': h.handleLiveHint,
   'POST billing/revenuecat': h.handleRevenueCatWebhook,
   'POST billing/refresh': h.handleBillingRefresh,
   'POST telemetry/role': h.handleRoleTelemetry,

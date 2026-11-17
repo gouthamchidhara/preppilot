@@ -20,8 +20,9 @@ if (extra.googleWebClientId) {
   GoogleSignin.configure({ webClientId: extra.googleWebClientId, iosClientId: extra.googleIosClientId || undefined });
 }
 if (rcKey) Purchases.configure({ apiKey: rcKey });
+const LIVE_PRODUCT = 'mock_session_60min'; // store product id for a Live coach session
 
-type FromWeb = { type: 'signin'; provider: 'google' | 'apple' } | { type: 'purchase' | 'restore'; userKey: string } | { type: 'signout' };
+type FromWeb = { type: 'signin'; provider: 'google' | 'apple' } | { type: 'purchase' | 'restore'; userKey: string } | { type: 'buyLive'; userKey: string } | { type: 'signout' };
 
 export default function App() {
   const web = useRef<WebView>(null);
@@ -67,11 +68,30 @@ export default function App() {
         await Purchases.restorePurchases();
       } else {
         const offerings = await Purchases.getOfferings();
+        // The subscription, never the Live coach consumable (which may sit in the same offering).
         const pkgs = offerings.current?.availablePackages ?? [];
-        const pkg = offerings.current?.monthly ?? pkgs.find(p => p.product.identifier.startsWith('pro_monthly')) ?? pkgs[0];
+        const pkg = offerings.current?.monthly ?? pkgs.find(p => p.product.identifier.startsWith('pro_monthly')) ?? pkgs.find(p => p.product.identifier !== LIVE_PRODUCT);
         if (!pkg) return fail('Pro is not available right now. Try again later.');
         await Purchases.purchasePackage(pkg);
       }
+      toWeb({ type: 'purchased' });
+    } catch (e) {
+      const err = e as PurchasesError & { userCancelled?: boolean };
+      if (err.userCancelled) return toWeb({ type: 'cancelled' });
+      fail(err.message || 'Purchase failed.');
+    }
+  }
+
+  async function buyLiveSession(userKey: string) {
+    if (!rcKey) return fail('In-app purchases are not set up yet.');
+    try {
+      await Purchases.logIn(userKey);
+      const offerings = await Purchases.getOfferings();
+      // Find the Live coach consumable across all offerings
+      const allPkgs = Object.values(offerings.all).flatMap(o => o.availablePackages);
+      const livePkg = allPkgs.find(p => p.product.identifier === LIVE_PRODUCT);
+      if (!livePkg) return fail('A Live coach session is not available right now.');
+      await Purchases.purchasePackage(livePkg);
       toWeb({ type: 'purchased' });
     } catch (e) {
       const err = e as PurchasesError & { userCancelled?: boolean };
@@ -85,6 +105,7 @@ export default function App() {
     try { m = JSON.parse(e.nativeEvent.data); } catch { return; }
     if (m.type === 'signin') return signIn(m.provider);
     if (m.type === 'purchase') return purchase(m.userKey);
+    if (m.type === 'buyLive') return buyLiveSession(m.userKey);
     if (m.type === 'restore') return purchase(m.userKey, true);
     if (m.type === 'signout') {
       GoogleSignin.signOut().catch(() => {});

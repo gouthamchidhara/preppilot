@@ -9,22 +9,38 @@ export function realtimeConfigured() {
 
 const VOICES = new Set(['alloy', 'ash', 'ballad', 'coral', 'cedar', 'echo', 'marin', 'sage', 'shimmer', 'verse']);
 
+const LIVE_LENGTHS = new Set([20, 30, 45, 60]);
+const LIVE_STYLES = new Set(['friendly', 'direct', 'tough']);
+const LIVE_LEVELS = new Set(['junior', 'mid', 'senior']);
+
 export function validateRealtime(body) {
   const sdp = typeof body?.sdp === 'string' ? body.sdp : '';
   if (!sdp.startsWith('v=0') || sdp.length > 30000) return { error: 'valid SDP offer required' };
+  const live = body?.mode === 'live' ? {
+    lengthMin: LIVE_LENGTHS.has(Number(body.live?.lengthMin)) ? Number(body.live.lengthMin) : 60,
+    style: LIVE_STYLES.has(body.live?.style) ? body.live.style : 'friendly',
+    topic: typeof body.live?.topic === 'string' ? body.live.topic.slice(0, 120) : '',
+    difficulty: LIVE_LEVELS.has(body.live?.difficulty) ? body.live.difficulty : '',
+  } : null;
   return {
     sdp,
-    mode: body.mode === 'listen' ? 'listen' : 'talk',
+    mode: body.mode === 'listen' ? 'listen' : body.mode === 'live' ? 'live' : 'talk',
     speak: body.speak !== false,
     voice: VOICES.has(body.voice) ? body.voice : 'marin',
     profile: typeof body.profileSummary === 'string' ? body.profileSummary.slice(0, 1500) : '',
     context: typeof body.context === 'string' ? body.context.slice(0, 3000) : '',
+    live,
   };
 }
 
 export function voiceInstructions(v) {
   const base = chatSystemPrompt({ profile: v.profile, context: v.context, voice: true });
-  const mode = v.mode === 'listen'
+  const mode = v.mode === 'live'
+    ? `LIVE COACH MODE: run a structured practice test, not a real interview. Ask one question at a time, wait for the answer, give brief honest feedback (strong / ok / weak + one improvement), then move to the next question.${v.live?.style === 'tough'
+      ? ' Be demanding: short follow-ups that probe gaps, no softening.'
+      : v.live?.style === 'direct' ? ' Be direct and businesslike: no small talk, straight to the next question.'
+      : ' Be encouraging but honest: warm tone, clear about what is missing.'}${v.live?.topic ? ` Focus the questions on: ${v.live.topic}.` : ' Cover the candidate\'s core topics progressively from fundamentals to scenarios.'}${v.live?.difficulty ? ` Pitch the questions at ${v.live.difficulty} level.` : ''} Keep feedback concise (2-3 sentences). After ~8-10 questions, give an overall assessment.`
+    : v.mode === 'listen'
     ? 'LISTENING MODE: the user is practicing an interview answer out loud. Do not interrupt. When asked to respond, grade the answer (strong / ok / weak), say the two most important missing points, and give one follow-up question an interviewer would ask.'
     : 'TALKING MODE: natural spoken conversation. Start answering immediately. Keep answers to 2-4 sentences unless asked for more; offer to go deeper.';
   return `${base}\n${mode}\nIf the user interrupts, stop and address what they said.`;

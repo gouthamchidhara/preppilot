@@ -3,6 +3,8 @@ const LIMITS = {
   chat: { max: Number(process.env.RATE_CHAT_PER_HOUR || 40), windowMs: 3600000 },
   generate: { max: Number(process.env.RATE_GENERATE_PER_HOUR || 6), windowMs: 3600000 },
   voice: { max: Number(process.env.RATE_VOICE_PER_HOUR || 15), windowMs: 3600000 },
+  liveHint: { max: Number(process.env.RATE_LIVE_HINT_PER_HOUR || 20), windowMs: 3600000 },
+  suggestions: { max: Number(process.env.RATE_SUGGESTIONS_PER_HOUR || 5), windowMs: 3600000 },
   telemetry: { max: 5, windowMs: 3600000 },
 };
 const DAILY_CAP = Number(process.env.DAILY_AI_CAP || 3000);
@@ -54,6 +56,20 @@ export function validateGenerate(body) {
   if (topic.length < 2) return { error: 'topic required' };
   const count = Math.min(Math.max(parseInt(body?.count, 10) || 8, 3), 12);
   return { topic, profile: str(body?.profileSummary, 1500), count };
+}
+
+// A Live coach hint: the coach's question, plus the user's answer once given.
+// Returns the validated pair; the caller decides whether the user may ask for one.
+export function validateLiveHint(body) {
+  const question = str(body?.question, 600).trim();
+  if (question.length < 10) return { error: 'question required' };
+  return { question, answer: str(body?.answer, 2000).trim() };
+}
+
+export function validateSuggestion(body) {
+  const text = str(body?.text, 500).trim();
+  if (text.length < 10) return { error: 'Tell us what guide or topic you want (at least 10 characters).' };
+  return { text, topic: str(body?.topic, 120).trim() };
 }
 
 // Model output is untrusted: keep only well-formed cards with bounded lengths.

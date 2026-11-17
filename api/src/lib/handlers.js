@@ -1,12 +1,12 @@
 // Framework-agnostic handlers: (req) -> { status, body, headers }.
 // req = { body, headers (lower-case keys), ip }
 import { complete, llmConfigured } from './llm.js';
-import { rateLimit, validateChat, validateGenerate, sanitizeGenerated } from './guard.js';
+import { rateLimit, validateChat, validateGenerate, validateLiveHint, sanitizeGenerated } from './guard.js';
 import { chatSystemPrompt, generateSystemPrompt, generateUserPrompt } from './prompts.js';
 import { realtimeConfigured, validateRealtime, startRealtime, hangupCall } from './realtime.js';
 import { identify, verifyIdToken, signSession } from './auth.js';
-import { upsertUser, status, consumeMsgs, refundMsgs, reserveVoice, refundVoice, recordCall, endCall, sweepCalls, deleteUser } from './account.js';
-import { COST, limits, proPriceLabel } from './plans.js';
+import { upsertUser, status, consumeMsgs, refundMsgs, reserveVoice, refundVoice, recordCall, endCall, sweepCalls, deleteUser, startLiveSession, cancelLiveSession, loadUser } from './account.js';
+import { COST, limits, proPriceLabel, livePriceLabel, planOf } from './plans.js';
 import { webhookAuthorized, applyWebhook, refreshFromRevenueCat } from './billing.js';
 import { getDb } from './db.js';
 import { createHash } from 'node:crypto';
@@ -110,6 +110,22 @@ export async function handleRealtime(req, log) {
   const now = Date.now();
   const L = limits();
 
+  // Live coach: one credit buys a 60-minute window. Beta-code sessions have no account, so no credits.
+  if (v.mode === 'live') {
+    const m = w.ident.viaCode ? { ok: true, allowedSec: L.liveCallSec, resumed: true } : await startLiveSession(w.ident.key, now);
+    if (!m.ok) return json(402, { error: 'No Live coach session on this account yet. Buy a session to start.', code: 'no_credit' });
+    // The user can pick a shorter session; the window stays open for rejoining either way.
+    const allowedSec = v.live?.lengthMin ? Math.min(m.allowedSec, v.live.lengthMin * 60) : m.allowedSec;
+    try {
+      const out = await startRealtime(v, log);
+      if (out.callId) await recordCall({ id: out.callId, key: w.ident.key, start: Date.now(), allowedSec, plan: 'live', day: today(now) });
+      return json(200, { sdp: out.sdp, callId: out.callId, allowedSec, degraded: out.degraded, live: true, resumed: m.resumed, account: await status(w.ident) });
+    } catch (e) {
+      if (!m.resumed) await cancelLiveSession(w.ident.key);
+      return fail(e, log);
+    }
+  }
+
   const r = await reserveVoice(w.ident, now);
   if (!r.ok) return denied(r);
   try {
@@ -133,6 +149,38 @@ export async function handleRealtimeEnd(req) {
   if (typeof id !== 'string' || !/^[\w-]{3,128}$/.test(id)) return json(400, { error: 'callId required' });
   const ended = await endCall(id, { key: w.ident.key, hangup: hangupCall });
   return json(200, { ended: !!ended, usedSec: ended?.usedSec ?? null, account: await status(w.ident) });
+}
+
+// Live coach hint: a short hint for the question the coach just asked, plus what a strong
+// answer would add. Practice only: hints are served only while a Live coach window is open
+// (or to an admin), and are part of the paid session, so they do not consume chat quota.
+export async function handleLiveHint(req, log) {
+  const v = validateLiveHint(req.body);
+  if (v.error) return json(400, { error: v.error });
+  const w = who(req);
+  if (w.error) return w.error;
+  const rl = limited('liveHint', w.ident);
+  if (rl) return rl;
+  const user = await loadUser(w.ident);
+  const now = Date.now();
+  const inWindow = user && (planOf(user, now) === 'admin' || (user.mockUntil || 0) > now);
+  if (!inWindow) return json(402, { error: 'Hints are part of a Live coach session. Start one to get hints.', code: 'no_live_session' });
+  const system = 'You are PrepPilot\'s practice helper. The user is in a timed practice test. '
+    + 'Given the coach\'s question and the user\'s answer so far (if any), reply with ONLY a JSON object: '
+    + '{"hint": "one short hint for answering, 1-2 sentences", "strong": "2-3 things a strong answer would add, concise"}. No markdown.';
+  const userText = v.answer
+    ? `Question: ${v.question}\nAnswer so far: ${v.answer}`
+    : `Question: ${v.question}\nNo answer yet.`;
+  try {
+    const raw = await complete([{ role: 'system', content: system }, { role: 'user', content: userText }], { json: true, maxTokens: 300, temperature: 0.3 });
+    let parsed = null;
+    try { parsed = JSON.parse(raw); } catch { /* fall through to the raw-text fallback */ }
+    const hint = typeof parsed?.hint === 'string' && parsed.hint.trim() ? parsed.hint.trim().slice(0, 600) : String(raw).slice(0, 600);
+    const strong = typeof parsed?.strong === 'string' ? parsed.strong.trim().slice(0, 600) : '';
+    return json(200, { hint, strong });
+  } catch (e) {
+    return fail(e, log);
+  }
 }
 
 export async function handleDeleteAccount(req) {
@@ -186,6 +234,7 @@ export function handleHealth() {
     plans: {
       free: { msgs: L.free.msgs, voiceMin: Math.floor(L.free.voiceSec / 60) },
       pro: { msgs: L.pro.msgs, voiceMin: Math.floor(L.pro.voiceSec / 60), price: proPriceLabel() },
+      live: { minutes: Math.floor(L.liveCallSec / 60), price: livePriceLabel() },
     },
   });
 }

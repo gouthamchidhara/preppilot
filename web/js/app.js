@@ -3,14 +3,14 @@ import { store } from './store.js';
 import { ai } from './ai.js';
 import { voice } from './voice.js';
 import { VoiceSession, realtimeSupported } from './realtime.js';
-import { native, signedIn, signOut, renderGoogleButton, refreshAccount, onAccountChange, nativeSignIn, nativePurchase, nativeRestore, listenNative } from './auth.js';
+import { native, signedIn, signOut, renderGoogleButton, refreshAccount, onAccountChange, nativeSignIn, nativePurchase, nativeBuyLive, nativeRestore, listenNative } from './auth.js';
 import { initContent, getCatalog, getManifest, roleById, topicMeta, ensureTopics, ensureForProfile, loadedTopics, reportUrl } from './content.js';
 
 const DAY = 86400000;
 const app = document.getElementById('app');
 const S = { view: 'home', topic: null, ci: 0, deck: null, di: 0, reveal: false, busy: false, listening: false, chatContext: '',
   rt: null, rtMode: null, rtStatus: '', rtStarting: false, voiceServer: false, live: null, pendingUser: false, muted: false,
-  googleClientId: '', plans: null, paywall: false, draft: null, roleSearch: '', showPlans: false, fullPlan: false, allTopics: false, buying: null, buyBusy: false, healthLoaded: false, lastView: '' };
+  googleClientId: '', plans: null, paywall: false, draft: null, roleSearch: '', showPlans: false, fullPlan: false, allTopics: false, buying: null, buyBusy: false, healthLoaded: false, lastView: '', liveHint: null };
 
 /* ---------- helpers ---------- */
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -77,9 +77,11 @@ function offer() {
     freeMsgs: P?.free.msgs ?? 15, freeVoice: P?.free.voiceMin ?? 2,
     proMsgs: P?.pro.msgs ?? 500, proVoice: P?.pro.voiceMin ?? 30, proPrice: `${amount}/${per}`, proAmount: amount, proPer: per,
     perDay: amount.trim().startsWith('$') && n > 0 && per === 'month' ? `About ${Math.round((n / 30) * 100)}¢ a day` : '',
+    livePrice: P?.live?.price || '$10.99', liveMin: P?.live?.minutes ?? 60,
   };
 }
 const storeName = () => (window.PP_PLATFORM === 'android' ? 'Google Play' : 'App Store');
+const liveState = () => { const a = store.account(); return { credits: a?.sessionCredits || 0, left: a?.liveSecLeft || 0 }; };
 
 /* ---------- onboarding ---------- */
 // The form re-renders when the role changes (role decides which extras and self-rating chips appear),
@@ -165,6 +167,17 @@ async function saveProfile() {
 }
 
 /* ---------- views ---------- */
+function livePromo() {
+  const { credits, left } = liveState();
+  const o = offer();
+  const body = left >= 20
+    ? ['Session in progress', 'Your practice test is still open', `${Math.ceil(left / 60)} minutes left. Rejoin and pick up where you stopped.`, `<button class="btn primary" data-act="livesetup">Rejoin now</button>`]
+    : credits
+      ? ['Ready when you are', 'Your practice test is waiting', `${credits} session${credits > 1 ? 's' : ''} available. ${o.liveMin} minutes, spoken, with hints and feedback after every answer.`, `<button class="btn primary" data-act="livesetup">Start the practice test</button>`]
+      : ['Live coach: practice test', `${o.liveMin} minutes with a live coach`, 'Spoken questions for your role, hints as you go, honest feedback after every answer, and an overall verdict at the end.', `<button class="btn" data-act="buylive" ${S.buyBusy ? 'disabled' : ''}>Get a session · ${esc(o.livePrice)}</button>`];
+  return `<section class="card stack"><div class="eyebrow">${body[0]}</div><h3>${esc(body[1])}</h3><p class="muted small">${esc(body[2])}</p><div class="row" style="margin-top:6px">${body[3]}</div></section>`;
+}
+
 function homeView() {
   const p = profile();
   const relevant = rankTopics(topics(), p);
@@ -176,7 +189,7 @@ function homeView() {
   const r = readiness(relevant, p, prog);
   const due = dueCards(topics(), p, prog, Date.now(), 999).length;
   const left = daysUntil(p.interviewDate);
-  const dayLabel = d => d.kind === 'review' ? 'Mixed review' : d.topics.map(topicName).join(', ');
+  const dayLabel = d => d.kind === 'live' ? 'Live coach: practice test' : d.kind === 'review' ? 'Mixed review' : d.topics.map(topicName).join(', ');
   const mine = new Set(relevant.map(t => t.id));
   const others = getManifest().packs.map(pk => ({ ...pk, topics: pk.topics.filter(t => !mine.has(t.id)) })).filter(pk => pk.topics.length);
   const roleIds = migrateProfile(p).roleIds;
@@ -185,7 +198,9 @@ function homeView() {
   const todayTopics = today.kind === 'learn' ? today.topics.map(topicById).filter(Boolean) : [];
   const nLearn = todayTopics.reduce((n, t) => n + t.concepts.length, 0);
   const nQs = todayTopics.reduce((n, t) => n + t.qa.length, 0);
-  const todayHint = today.kind === 'review'
+  const todayHint = today.kind === 'live'
+    ? 'A full practice test with the live coach: spoken questions for your role, hints as you go, and honest feedback after every answer.'
+    : today.kind === 'review'
     ? (due ? `${due} card${due === 1 ? '' : 's'} due. The ones you missed come first.` : 'Nothing is due. Pick any topic below to get ahead.')
     : `${nLearn} short lesson${nLearn === 1 ? '' : 's'}, then ${nQs} question${nQs === 1 ? '' : 's'} to check it stuck.`;
   const countdown = left === null ? `Day ${ti + 1} of ${plan.length}` : left === 0 ? 'Your interview is today' : `${left} day${left === 1 ? '' : 's'} until your interview`;
@@ -203,20 +218,22 @@ function homeView() {
     </section>
     <section class="card stacked">
       <div class="card-head"><span>Today, day ${ti + 1} of ${plan.length}</span>${due ? `<span>${due} due</span>` : ''}</div>
-      <h2>${esc(today.kind === 'review' ? 'Review what is due' : dayLabel(today))}</h2>
+      <h2>${esc(today.kind === 'review' ? 'Review what is due' : today.kind === 'live' ? 'Live coach: practice test' : dayLabel(today))}</h2>
       <p class="muted" style="margin-top:8px">${esc(todayHint)}</p>
       <div class="row" style="margin-top:20px">
         ${today.kind === 'learn' ? `<button class="btn primary" data-act="learn" data-id="${today.topics[0]}">Start today's lesson</button>` : ''}
-        <button class="btn ${today.kind === 'learn' ? '' : 'primary'}" data-act="deck" data-id="${today.kind === 'learn' ? today.topics.join(',') : ''}">Practice flashcards</button>
+        ${today.kind === 'live' ? `<button class="btn primary" data-act="livesetup">Start the practice test</button>` : ''}
+        <button class="btn ${today.kind === 'learn' || today.kind === 'live' ? '' : 'primary'}" data-act="deck" data-id="${today.kind === 'learn' ? today.topics.join(',') : ''}">Practice flashcards</button>
       </div>
     </section>
+    ${livePromo()}
     <section class="readiness" aria-label="Readiness">
       <div class="nums"><span><b>${r.pct}% ready</b> for ${esc(roleIds.map(label).join(' and '))}</span><span>${r.known} of ${r.total} cards known</span></div>
       <div class="bar"><i style="width:${r.pct}%"></i></div>
     </section>
     <section>
       <div class="sec-head"><h3>${S.fullPlan ? 'Full plan' : 'Coming up'}</h3><button class="link quiet small" data-act="toggleplan">${S.fullPlan ? 'Show less' : `All ${plan.length} days`}</button></div>
-      <div class="rows">${upcoming.map(([d, i]) => `<button class="rowi ${i < ti ? 'past' : i === ti ? 'now' : ''}" ${d.kind === 'learn' ? `data-act="learn" data-id="${d.topics[0]}"` : 'data-act="deck"'}>
+      <div class="rows">${upcoming.map(([d, i]) => `<button class="rowi ${i < ti ? 'past' : i === ti ? 'now' : ''}" ${d.kind === 'learn' ? `data-act="learn" data-id="${d.topics[0]}"` : d.kind === 'live' ? 'data-act="livesetup"' : 'data-act="deck"'}>
         <span class="when">${i === ti ? 'Today' : esc(short(d.date))}</span><span class="main"><span class="t">${esc(dayLabel(d))}</span></span></button>`).join('')}</div>
     </section>
     ${roleIds.length > 1 ? `<section><div class="sec-head"><h3>Practice one role</h3></div><div class="chips">${roleIds.map(id => `<button class="chip" data-act="roledeck" data-id="${esc(id)}">${esc(label(id))}</button>`).join('')}</div></section>` : ''}
@@ -288,7 +305,7 @@ function deckView() {
 }
 
 const STATUS = { connecting: 'Connecting…', ready: 'Listening. Just talk.', listening: 'Listening. I won\'t interrupt.', you: 'You\'re speaking…', thinking: 'Thinking…', ai: 'Speaking. Talk to interrupt.' };
-const MODE_NAME = { talk: 'Talk', listen: 'Rehearse' };
+const MODE_NAME = { talk: 'Talk', listen: 'Rehearse', live: 'Live coach' };
 const clock = sec => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
 
 function voicePanel() {
@@ -308,9 +325,13 @@ function voicePanel() {
     return S.healthLoaded ? `<p class="note">Live voice isn't available ${S.voiceServer ? 'in this browser' : 'right now'}. You can still type, or dictate with the microphone button.</p>` : '';
   }
   const dis = S.rtStarting ? 'disabled' : '';
+  const { credits, left } = liveState();
+  const o = offer();
+  const liveTag = left >= 20 ? `Rejoin · ${Math.ceil(left / 60)} min left` : credits ? `${credits} session${credits > 1 ? 's' : ''} ready` : `${o.livePrice} · one-time`;
   return `<div class="rows">
     <button class="mode" data-act="rtstart" data-mode="talk" ${dis}><span class="ico">${ic('mic')}</span><span class="main"><b>Talk it through</b><span class="d">A spoken conversation. Interrupt whenever you like.</span></span>${ic('right')}</button>
     <button class="mode" data-act="rtstart" data-mode="listen" ${dis}><span class="ico">${ic('ear')}</span><span class="main"><b>Rehearse an answer</b><span class="d">Speak without being interrupted, then get it graded.</span></span>${ic('right')}</button>
+    <button class="mode" data-act="livesetup" ${dis}><span class="ico">${ic('target')}</span><span class="main"><b>Live coach</b><span class="d">A full practice test, up to ${o.liveMin} minutes, with hints.</span></span><span class="tag">${esc(liveTag)}</span>${ic('right')}</button>
   </div>`;
 }
 
@@ -353,6 +374,7 @@ function accountCard() {
     <div class="row"><div class="avatar">${esc(name[0].toUpperCase())}</div>
       <div class="grow"><div class="row" style="gap:8px"><b style="overflow:hidden;text-overflow:ellipsis">${esc(name)}</b>${planTag}</div><div class="small muted">${esc(sub)}</div></div></div>
     ${usageMeters(a)}
+    ${(() => { const { credits, left } = liveState(); return credits || left >= 20 ? `<p class="note">${left >= 20 ? `Live coach session in progress: ${Math.ceil(left / 60)} min left. ` : ''}${credits ? `${credits} Live coach session${credits > 1 ? 's' : ''} ready.` : ''} <button class="link" data-act="livesetup">${left >= 20 ? 'Rejoin' : 'Start'} →</button></p>` : ''; })()}
     ${a.plan === 'free' ? `<button class="btn primary block" data-act="plans">Upgrade to Pro, ${esc(o.proPrice)}</button>` : ''}
     <div class="links">
       ${a.plan !== 'free' || a.unlimited ? '<button class="link quiet" data-act="plans">Plans</button>' : ''}
@@ -369,8 +391,8 @@ function paywallCard() {
   const o = offer();
   if (a?.plan === 'pro') {
     return `<section class="panel stack"><h3>This month's Pro allowance is used up</h3>
-      <p class="muted">It refills ${a.periodEnds ? 'on ' + new Date(a.periodEnds).toLocaleDateString(undefined, { month: 'long', day: 'numeric' }) : 'at your next billing period'}. Your plan and flashcards keep working in the meantime.</p>
-      ${usageMeters(a)}<div class="row"><button class="btn" data-act="unpaywall">Close</button></div></section>`;
+      <p class="muted">It refills ${a.periodEnds ? 'on ' + new Date(a.periodEnds).toLocaleDateString(undefined, { month: 'long', day: 'numeric' }) : 'at your next billing period'}. A Live coach session is separate and works right now.</p>
+      ${usageMeters(a)}<div class="row"><button class="btn primary" data-act="plans">See the Live coach</button><button class="btn" data-act="unpaywall">Close</button></div></section>`;
   }
   return `<section class="panel stack"><h3>Your free trial is used up</h3>
     <p class="muted">Pro gives you ${o.proMsgs} messages and ${o.proVoice} voice minutes every month. Your plan and flashcards stay free either way.</p>
@@ -397,6 +419,7 @@ function chatView() {
       <div class="row" style="gap:16px">${S.rt ? '' : `<label class="switch"><input type="checkbox" id="speakToggle" ${store.speak() ? 'checked' : ''}>Read replies aloud</label>`}
       ${msgs.length ? '<button class="link quiet small" data-act="clearchat">Clear chat</button>' : ''}</div></div>
     ${S.paywall ? paywallCard() : voicePanel()}
+    ${S.rtMode === 'live' && S.liveHint ? liveHintCard() : ''}
     ${lowFree && !S.rt ? `<p class="note row between"><span>${a.msgsLeft} message${a.msgsLeft === 1 ? '' : 's'} and ${mins(a.voiceSecLeft)} voice minutes left in your free trial.</span><button class="link" data-act="plans">See Pro</button></p>` : ''}
     ${S.chatContext ? `<p class="note row between"><span>Talking about <b>${esc(S.chatContext.split('\n')[0])}</b></span><button class="link quiet" data-act="dropctx">Remove</button></p>` : ''}
     <div class="msgs" id="msgs">${started ? msgs.map(bubble).join('') : `<div class="stack" style="padding-top:10px"><p class="muted">Or type a question. A few to start with:</p>
@@ -408,6 +431,60 @@ function chatView() {
       <button class="iconbtn primary" type="submit" ${S.busy ? 'disabled' : ''} aria-label="Send">${ic('send')}</button>
     </form>
   </div>`;
+}
+
+/* ---------- live coach ---------- */
+function liveSettings() {
+  const p = profile();
+  const saved = store.liveSettings() || {};
+  return {
+    lengthMin: [20, 30, 45, 60].includes(saved.lengthMin) ? saved.lengthMin : 60,
+    voice: saved.voice !== false,
+    style: ['friendly', 'direct', 'tough'].includes(saved.style) ? saved.style : 'friendly',
+    topic: typeof saved.topic === 'string' ? saved.topic : '',
+    difficulty: ['junior', 'mid', 'senior'].includes(saved.difficulty) ? saved.difficulty : (p?.level || 'mid'),
+  };
+}
+
+function liveSetupSheet() {
+  const s = liveSettings();
+  const p = profile();
+  const relevant = rankTopics(topics(), p);
+  const { credits, left } = liveState();
+  const o = offer();
+  const state = left >= 20 ? `Your session is still open with ${Math.ceil(left / 60)} minutes left.` : credits ? `You have ${credits} session${credits > 1 ? 's' : ''} ready.` : `One session costs ${o.livePrice}, billed separately from Pro.`;
+  sheet(`<form id="liveSetupForm" class="stack">
+    <h2>Live coach: practice test</h2>
+    <p class="muted">${esc(state)} Up to ${o.liveMin} minutes of spoken questions, with hints as you go and feedback after every answer.</p>
+    <label>Session length<select name="lengthMin">${[20, 30, 45, 60].map(n => `<option value="${n}" ${s.lengthMin === n ? 'selected' : ''}>${n} minutes</option>`).join('')}</select></label>
+    <label>Coach style<select name="style">${[['friendly', 'Friendly and encouraging'], ['direct', 'Direct, no small talk'], ['tough', 'Tough, probes every gap']].map(([v, n]) => `<option value="${v}" ${s.style === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+    <label>Topic focus<select name="topic"><option value="">All my topics</option>${relevant.map(t => `<option value="${esc(t.name)}" ${s.topic === t.name ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
+    <label>Difficulty<select name="difficulty">${LEVELS.map(l => `<option value="${l.id}" ${s.difficulty === l.id ? 'selected' : ''}>${esc(l.name)}</option>`).join('')}</select></label>
+    <label class="switch"><input type="checkbox" name="voice" ${s.voice ? 'checked' : ''}>Coach speaks out loud</label>
+    <p class="muted small">With voice off, the coach writes its questions and you can type or speak your answers.</p>
+    <button class="btn primary block lg" type="submit">${left >= 20 ? 'Rejoin the session' : credits ? 'Start the practice test' : `Buy a session · ${esc(o.livePrice)}`}</button>
+    <button class="btn block" type="button" data-act="closesheet">Not now</button>
+  </form>`);
+}
+
+function liveHintCard() {
+  const h = S.liveHint;
+  if (!h) return '';
+  return `<section class="panel stack"><div class="label">Hint for this question</div>
+    <p style="font:400 1.05rem/1.6 var(--serif)">${h.loading ? 'Thinking of a hint…' : esc(h.hint)}</p>
+    ${h.showStrong && h.strong ? `<div><div class="label">A strong answer would add</div><p class="muted" style="font:400 1.05rem/1.6 var(--serif)">${esc(h.strong)}</p></div>` : ''}
+    <p class="muted small">Hints are for practice. The coach is here to prepare you, not to sit the interview for you.</p>
+  </section>`;
+}
+
+async function fetchLiveHint(question) {
+  S.liveHint = { question, hint: '', strong: '', showStrong: false, loading: true };
+  render();
+  try {
+    const d = await ai.post('/api/live/hint', { question });
+    S.liveHint = { question, hint: d.hint || '', strong: d.strong || '', showStrong: S.liveHint?.showStrong || false, loading: false };
+  } catch { S.liveHint = null; }
+  if (S.view === 'chat') render();
 }
 
 /* ---------- realtime voice ---------- */
@@ -436,6 +513,8 @@ function rtHandlers() {
       if (i >= 0) msgs[i] = { role: 'user', content: text.trim() || '(inaudible)' };
       else if (text.trim()) msgs.push({ role: 'user', content: text.trim() });
       store.setChat(msgs); S.pendingUser = false;
+      // In a practice test, once the user has answered, show what a strong answer would add.
+      if (S.rtMode === 'live' && S.liveHint && text.trim()) S.liveHint.showStrong = true;
       if (!S.live) render();
     },
     delta(id, text) {
@@ -448,12 +527,16 @@ function rtHandlers() {
       const final = text ?? S.live?.text ?? '';
       S.live = null;
       if (final.trim()) store.setChat([...store.chat(), { role: 'assistant', content: final }]);
+      // In a practice test, a finished question gets an instant hint.
+      if (S.rtMode === 'live' && /\?\s*$/.test(final.trim())) fetchLiveHint(final.trim());
       render();
     },
     end(reason) {
-      S.rt = null; S.rtMode = null; S.rtStatus = ''; S.live = null; S.pendingUser = false; S.muted = false;
+      const wasLive = S.rtMode === 'live';
+      S.rt = null; S.rtMode = null; S.rtStatus = ''; S.live = null; S.pendingUser = false; S.muted = false; S.liveHint = null;
       store.setChat(store.chat().filter(m => m.content !== '🎙 …'));
       if (reason) store.setChat([...store.chat(), { role: 'assistant', content: `ℹ️ ${reason}` }]);
+      if (wasLive) refreshAccount().catch(() => {}); // remaining session time for the "rejoin" button
       if (S.view === 'chat') render();
     },
   };
@@ -468,11 +551,14 @@ async function startVoice(mode) {
   S.rt = session; S.rtMode = mode; S.rtStatus = 'connecting'; S.rtStarting = true; S.paywall = false; render();
   try {
     // Rehearse mode stays silent unless "read replies aloud" is on; talk mode is always spoken.
-    await session.start({ mode, speak: mode !== 'listen' || store.speak(), profileSummary: summary(), context: S.chatContext });
+    // Live coach uses its own settings: voice on/off, length, style, topic focus, difficulty.
+    const live = mode === 'live' ? liveSettings() : null;
+    await session.start({ mode, speak: mode === 'live' ? live.voice : mode !== 'listen' || store.speak(), profileSummary: summary(), context: S.chatContext, live });
   } catch (e) {
     S.rt = null; S.rtMode = null;
     if (e.code === 'quota') S.paywall = true;
-    store.setChat([...store.chat(), { role: 'assistant', content: `⚠️ ${e.message}` }]);
+    if (e.code === 'no_credit') { refreshAccount().catch(() => {}); oops('No Live coach session on this account yet.'); }
+    else store.setChat([...store.chat(), { role: 'assistant', content: `⚠️ ${e.message}` }]);
   } finally { S.rtStarting = false; render(); }
 }
 
@@ -504,6 +590,7 @@ function plansView() {
   const isPro = a?.plan === 'pro';
   const dis = S.buyBusy ? 'disabled' : '';
   const manage = window.PP_PLATFORM === 'android' ? 'Google Play' : 'Apple ID';
+  const { credits } = liveState();
   return `<div class="stack loose">
     <div class="row between" style="margin-bottom:-14px"><span></span><button class="iconbtn plain" data-act="pickfree" aria-label="Close">${ic('x')}</button></div>
     <div class="head">
@@ -516,12 +603,19 @@ function plansView() {
       <div style="margin:20px 0 22px">${ticks([`<b>${o.proVoice} minutes of voice practice</b> a month, spoken back to you`, `<b>${o.proMsgs} coach messages</b> a month`, 'Answers graded against what a panel listens for', 'Follow-up questions on your weak topics', 'Card sets written for any technology you name'])}</div>
       ${isPro ? '<button class="btn block lg" disabled>You are on Pro</button>' : `<button class="btn primary block lg" data-act="buysub" ${dis}>${S.buyBusy === 'pro' ? `Opening the ${storeName()}…` : `Start Pro for ${esc(o.proPrice)}`}</button>`}
     </section>
+    <section class="card">
+      <div class="card-head"><span>Live coach: practice test</span><span>One-time</span></div>
+      <div class="price">${esc(o.livePrice)}<span>per session</span></div>
+      <div style="margin:20px 0 22px">${ticks([`A spoken practice test built for your role and level, up to ${o.liveMin} minutes`, 'One question at a time, honest feedback after each answer', 'Hints as you go, and what a strong answer would add', 'Overall assessment at the end', 'Dropped call? Rejoin within the hour, same session', 'Works with Free or Pro'])}</div>
+      <button class="btn block lg" data-act="buylive" ${dis}>${S.buyBusy === 'live' ? `Opening the ${storeName()}…` : credits ? `Buy another (you have ${credits})` : 'Buy a session'}</button>
+    </section>
     <section class="stack">
       <div class="row between"><div><h3>Free</h3><p class="muted">Your day-by-day plan, every lesson and flashcard, and ${o.freeMsgs} messages plus ${o.freeVoice} voice minutes to try the coach.</p></div></div>
       <div class="row"><button class="btn" data-act="pickfree">${isPro ? 'Back to the app' : 'Continue on Free'}</button></div>
     </section>
     <div class="faq">
       <details><summary>What counts as a message?</summary><p>Each question you send the coach is one message. Writing a custom card set uses five. Voice is counted in minutes, only while a session is live.</p></details>
+      <details><summary>Do I need Pro for a Live coach session?</summary><p>No. A Live coach session is a separate one-time purchase and works on the free plan. It does not use your monthly voice minutes.</p></details>
       <details><summary>How do I cancel?</summary><p>In your ${manage} subscription settings, at any time. You keep Pro until the end of the period you paid for.</p></details>
       <details><summary>What happens to my progress on Free?</summary><p>Nothing changes. Your plan, cards and progress stay on this device and stay yours.</p></details>
     </div>
@@ -572,31 +666,33 @@ function needSignIn() {
   toast('Sign in first. It takes a few seconds, then pick your plan.');
 }
 function storeSheet() {
-  sheet(`<h2>Pro lives in the iPhone app</h2>
-    <p class="muted">Pro is bought through the App Store. Sign in there with this same account and everything unlocks here too, on any device.</p>
+  sheet(`<h2>Upgrades live in the iPhone app</h2>
+    <p class="muted">Pro and Live coach sessions are bought through the App Store. Sign in there with this same account and everything unlocks here too, on any device.</p>
     <button class="btn primary block" data-act="closesheet">Got it</button>`);
 }
 let buyTimer;
-function buy(kind) { // 'pro' | 'restore'
+function buy(kind) { // 'pro' | 'live' | 'restore'
   if (!store.session()) return needSignIn(); // beta-code sessions have no account to attach a purchase to
   if (!native()) return storeSheet();
   const acc = store.account();
   if (!acc?.key) return oops('Still loading your account. Try again in a moment.');
-  S.buying = { kind };
+  S.buying = { kind, credits: acc.sessionCredits || 0 };
   S.buyBusy = kind; render();
   // Older app builds don't report a cancelled purchase sheet, so never leave the buttons locked.
   clearTimeout(buyTimer);
   buyTimer = setTimeout(() => { S.buyBusy = false; render(); }, 8000);
-  if (kind === 'pro') nativePurchase(acc.key); else nativeRestore(acc.key);
+  if (kind === 'pro') nativePurchase(acc.key); else if (kind === 'live') nativeBuyLive(acc.key); else nativeRestore(acc.key);
 }
 function buyDone() { clearTimeout(buyTimer); const b = S.buying; S.buying = null; S.buyBusy = false; return b; }
 // The store confirms a purchase before our server has heard about it; check again a few times.
-function pollPurchase(tries = [3000, 8000, 20000]) {
+function pollPurchase(before, tries = [3000, 8000, 20000]) {
   if (!tries.length) return;
   setTimeout(async () => {
     try { await ai.post('/api/billing/refresh', {}); } catch { /* try again below */ }
-    if (store.account()?.plan === 'pro') { S.showPlans = false; render(); return toast('You\'re on Pro. Thank you!'); }
-    pollPurchase(tries.slice(1));
+    const a = store.account();
+    if ((a?.sessionCredits || 0) > before.credits) { S.showPlans = false; render(); return toast('Live coach session added. Start it from the Coach tab.'); }
+    if (before.kind === 'pro' && a?.plan === 'pro') { S.showPlans = false; render(); return toast('You\'re on Pro. Thank you!'); }
+    pollPurchase(before, tries.slice(1));
   }, tries[0]);
 }
 function onPurchased(acc) {
@@ -604,7 +700,8 @@ function onPurchased(acc) {
   S.paywall = false;
   if (acc?.plan === 'pro') { S.showPlans = false; toast(b?.kind === 'restore' ? 'Pro restored.' : 'You\'re on Pro. Thank you!'); }
   else if (b?.kind === 'restore') oops('No active subscription found for this account.');
-  else { toast('Payment received. Pro will unlock in a moment.'); pollPurchase(); }
+  else if (b?.kind === 'live') { toast('Payment received. Your Live coach session will unlock in a moment.'); pollPurchase(b); }
+  else { toast('Payment received. Pro will unlock in a moment.'); pollPurchase(b); }
   render();
 }
 
@@ -678,6 +775,22 @@ app.addEventListener('submit', async e => {
   if (e.target.id === 'profileForm') return saveProfile();
   if (e.target.id === 'chatForm') { const i = document.getElementById('chatInput'); const v = i.value; i.value = ''; i.style.height = ''; return sendChat(v); }
   if (e.target.id === 'codeForm') { store.setAccessCode(document.getElementById('code').value.trim()); return render(); }
+  if (e.target.id === 'liveSetupForm') {
+    const fd = new FormData(e.target);
+    const settings = {
+      lengthMin: Number(fd.get('lengthMin')) || 60,
+      voice: fd.get('voice') === 'on',
+      style: String(fd.get('style') || 'friendly'),
+      topic: String(fd.get('topic') || ''),
+      difficulty: String(fd.get('difficulty') || 'mid'),
+    };
+    store.setLiveSettings(settings);
+    closeSheet();
+    const { credits, left } = liveState();
+    if (left < 20 && !credits) return buy('live');
+    S.view = 'chat'; render();
+    return startVoice('live');
+  }
   if (e.target.id === 'genForm') {
     if (!signedIn()) { S.view = 'chat'; return render(); }
     const topic = document.getElementById('genTopic').value.trim();
@@ -792,6 +905,8 @@ document.addEventListener('click', async e => {
   else if (a === 'pickfree') { S.showPlans = false; render(); }
   else if (a === 'unpaywall') { S.paywall = false; render(); }
   else if (a === 'buysub') buy('pro');
+  else if (a === 'buylive') buy('live');
+  else if (a === 'livesetup') liveSetupSheet();
   else if (a === 'restore') buy('restore');
   else if (a === 'rtrespond') S.rt?.respond();
   else if (a === 'rtinterrupt') S.rt?.interrupt();
