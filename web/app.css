@@ -395,7 +395,7 @@ pre code { background: none; border: 0; padding: 0; }
 /* ---------- tabs ---------- */
 .tabs {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
-  display: grid; grid-template-columns: repeat(6, 1fr); max-width: 640px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(5, 1fr); max-width: 640px; margin: 0 auto;
   height: calc(var(--tabs) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom);
   background: color-mix(in srgb, var(--desk) 88%, transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid var(--line);
@@ -429,3 +429,19 @@ pre code { background: none; border: 0; padding: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* ---------- Live coach: the one inverted object in the app ---------- */
+.card.live-hero { background: var(--ink); color: var(--desk); border-color: var(--ink); }
+.card.live-hero.stacked::before, .card.live-hero.stacked::after { background: var(--ink-soft); border-color: var(--ink-soft); }
+.card.live-hero .card-head { color: color-mix(in srgb, var(--desk) 65%, transparent); border-bottom-color: color-mix(in srgb, var(--desk) 22%, transparent); }
+.card.live-hero h2 { color: var(--desk); }
+.card.live-hero p, .card.live-hero .ticks li { color: color-mix(in srgb, var(--desk) 82%, transparent); }
+.card.live-hero .ticks li svg { color: var(--desk); }
+.card.live-hero .price span { color: color-mix(in srgb, var(--desk) 65%, transparent); }
+.live-points { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.live-points li { font-size: 12.5px; padding: 3px 9px; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--desk) 28%, transparent); color: color-mix(in srgb, var(--desk) 85%, transparent); }
+.btn.invert { background: var(--desk); color: var(--ink); border-color: var(--desk); }
+.btn.invert:hover { opacity: .92; }
+.btn.invert-quiet { color: color-mix(in srgb, var(--desk) 75%, transparent); }
+.btn.invert-quiet:hover { background: color-mix(in srgb, var(--desk) 10%, transparent); }
+.chat .card.live-hero { margin-bottom: 18px; }

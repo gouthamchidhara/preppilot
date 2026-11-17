@@ -230,12 +230,18 @@ async function saveProfile() {
 function livePromo() {
   const { credits, left } = liveState();
   const o = offer();
-  const body = left >= 20
-    ? ['Session in progress', 'Your practice test is still open', `${Math.ceil(left / 60)} minutes left. Rejoin and pick up where you stopped.`, `<button class="btn primary" data-act="livesetup">Rejoin now</button>`]
+  const [head, title, text, cta] = left >= 20
+    ? ['Session in progress', 'Your practice test is still open', `${Math.ceil(left / 60)} minutes left. Rejoin and pick up where you stopped.`, '<button class="btn invert lg" data-act="livesetup">Rejoin the session</button>']
     : credits
-      ? ['Ready when you are', 'Your practice test is waiting', `${credits} session${credits > 1 ? 's' : ''} available. ${o.liveMin} minutes, spoken, with hints and feedback after every answer.`, `<button class="btn primary" data-act="livesetup">Start the practice test</button>`]
-      : ['Live coach: practice test', `${o.liveMin} minutes with a live coach`, 'Spoken questions for your role, hints as you go, honest feedback after every answer, and an overall verdict at the end.', `<button class="btn" data-act="buylive" ${S.buyBusy ? 'disabled' : ''}>Get a session · ${esc(o.livePrice)}</button>`];
-  return `<section class="card stack"><div class="eyebrow">${body[0]}</div><h3>${esc(body[1])}</h3><p class="muted small">${esc(body[2])}</p><div class="row" style="margin-top:6px">${body[3]}</div></section>`;
+      ? [`${credits} session${credits > 1 ? 's' : ''} ready`, 'Your live coach is waiting', `A full hour, spoken, with hints as each question lands and feedback after every answer.`, '<button class="btn invert lg" data-act="livesetup">Start the practice test</button>']
+      : [`${o.liveMin} minutes, ${o.livePrice}`, 'An hour with a live coach', 'It asks the questions your role gets asked, out loud, one after another. A hint appears as each question lands, and you hear what a strong answer would have added. Best done the day before your interview, or an hour before it.', `<button class="btn invert lg" data-act="buylive" ${S.buyBusy ? 'disabled' : ''}>Get a session</button>`];
+  return `<section class="card stacked live-hero" aria-label="Live coach">
+    <div class="card-head"><span>Live coach: practice test</span><span>${esc(head)}</span></div>
+    <h2>${esc(title)}</h2>
+    <p style="margin-top:8px">${esc(text)}</p>
+    <ul class="live-points"><li>Continuous for the full session</li><li>Hints as each question lands</li><li>Verdict at the end</li></ul>
+    <div class="row" style="margin-top:18px">${cta}${credits || left >= 20 ? '' : '<button class="btn quiet invert-quiet" data-act="plans">How it works</button>'}</div>
+  </section>`;
 }
 
 function homeView() {
@@ -281,6 +287,7 @@ function homeView() {
       <div class="label">${esc(new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }))}</div>
       <h1>${esc(countdown)}</h1>
     </section>
+    ${livePromo()}
     <section class="card stacked">
       <div class="card-head"><span>Today, day ${ti + 1} of ${plan.length}</span>${due ? `<span>${due} due</span>` : ''}</div>
       <h2>${esc(today.kind === 'review' ? 'Review what is due' : today.kind === 'live' ? 'Live coach: practice test' : dayLabel(today))}</h2>
@@ -291,7 +298,6 @@ function homeView() {
         <button class="btn ${today.kind === 'learn' || today.kind === 'live' ? '' : 'primary'}" data-act="deck" data-id="${today.kind === 'learn' ? today.topics.join(',') : ''}">Practice flashcards</button>
       </div>
     </section>
-    ${livePromo()}
     <section class="knowmap" aria-label="What you know">
       <div class="nums"><span><b>What you know</b></span><span><b data-countup="${knownTotal}">${knownTotal}</b> of ${cardsTotal} cards known</span></div>
       <div class="tiles">${map.topics.map((t, i) => {
@@ -417,10 +423,9 @@ function voicePanel() {
   const { credits, left } = liveState();
   const o = offer();
   const liveTag = left >= 20 ? `Rejoin · ${Math.ceil(left / 60)} min left` : credits ? `${credits} session${credits > 1 ? 's' : ''} ready` : `${o.livePrice} · one-time`;
-  return `<div class="rows">
+  return `${livePromo()}<div class="rows">
     <button class="mode" data-act="rtstart" data-mode="talk" ${dis}><span class="ico">${ic('mic')}</span><span class="main"><b>Talk it through</b><span class="d">A spoken conversation. Interrupt whenever you like.</span></span>${ic('right')}</button>
     <button class="mode" data-act="rtstart" data-mode="listen" ${dis}><span class="ico">${ic('ear')}</span><span class="main"><b>Rehearse an answer</b><span class="d">Speak without being interrupted, then get it graded.</span></span>${ic('right')}</button>
-    <button class="mode" data-act="livesetup" ${dis}><span class="ico">${ic('target')}</span><span class="main"><b>Live coach</b><span class="d">A full practice test, up to ${o.liveMin} minutes, with hints.</span></span><span class="tag">${esc(liveTag)}</span>${ic('right')}</button>
   </div>`;
 }
 
@@ -692,6 +697,7 @@ function settingsView() {
   const custom = store.customTopics(), priv = store.privatePacks();
   return `<div class="stack loose">
     ${accountCard()}
+    ${statsSection()}
     ${onboardingView(profile())}
     <section class="stack"><div class="head"><h2>Cards for any topic</h2>
       <p class="muted">Something your interview covers that isn't here? Name it and the coach writes a set. Uses 5 AI messages.</p></div>
@@ -750,7 +756,7 @@ function statRing(pct, big, small) {
   return `<div class="stat-ring"><div class="score-ring small"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="52"/><circle class="ring-prog" cx="60" cy="60" r="52" pathLength="100" style="stroke-dashoffset:${ringOffset(pct)}"/></svg><div class="score-num"><span class="n">${big}</span><span class="muted small">${small}</span></div></div></div>`;
 }
 
-function statsView() {
+function statsSection() {
   const p = profile();
   const relevant = rankTopics(topics(), p);
   const prog = store.progress();
@@ -775,8 +781,8 @@ function statsView() {
   const next = weakest[0];
   const anyActivity = days.some(d => d.graded > 0);
   return `<div class="stack loose">
-    <div class="head"><h1>Where you stand</h1>
-      <p class="lede">Readiness, practice and voice — the way a health app shows fitness. All of it from your own progress on this device.</p></div>
+    <div class="head"><h2>Where you stand</h2>
+      <p class="muted">Readiness, practice and voice, from your own progress on this device.</p></div>
     <section class="rings" aria-label="Rings">
       ${statRing(overall.pct, `${overall.pct}%`, 'ready')}
       ${statRing(voicePct, voiceBig, voiceSmall)}
@@ -796,8 +802,8 @@ function statsView() {
         : `<p class="muted">Everything you have started is solid. Pick any topic below, or practice what is due.</p><div class="row"><button class="btn primary" data-act="deck" data-id="">Practice what's due</button></div>`}
     </section>
     <section>
-      <div class="sec-head"><h3>Per-topic readiness</h3></div>
-      <div class="rows">${map.topics.map(t => `<button class="rowi" data-act="learn" data-id="${t.id}">
+      <div class="sec-head"><h3>Per-topic readiness</h3>${map.topics.length > 6 ? `<button class="link quiet small" data-act="toggletopics">${S.allTopics ? 'Show fewer' : `All ${map.topics.length} topics`}</button>` : ''}</div>
+      <div class="rows">${(S.allTopics ? map.topics : map.topics.slice(0, 6)).map(t => `<button class="rowi" data-act="learn" data-id="${t.id}">
         <span class="main"><span class="t">${esc(t.name)}</span><span class="d">${t.state === 'strong' ? 'Solid' : t.state === 'ok' ? 'Getting there' : t.state === 'weak' ? 'Shaky' : 'Not started'} · ${t.known}/${t.total} cards</span></span>
         <span class="pct"><span>${t.pct}%</span><span class="bar"><i style="width:${t.pct}%"></i></span></span></button>`).join('')}</div>
     </section>
@@ -817,17 +823,17 @@ function plansView() {
       <h1>Say your answers out loud before the day they count.</h1>
       <p class="lede" style="margin-top:12px">Reading about an answer and giving one are different skills. Pro is the coach that listens, pushes back and tells you what an interviewer would have wanted to hear.</p>
     </div>
+    <section class="card stacked live-hero">
+      <div class="card-head"><span>Live coach: practice test</span><span>One-time</span></div>
+      <div class="price">${esc(o.livePrice)}<span>per session</span></div>
+      <div style="margin:20px 0 22px">${ticks([`A spoken practice test built for your role and level, up to ${o.liveMin} minutes`, 'One question at a time, honest feedback after each answer', 'Hints as you go, and what a strong answer would add', 'Overall assessment at the end', 'Dropped call? Rejoin within the hour, same session', 'Works with Free or Pro'])}</div>
+      <button class="btn invert block lg" data-act="buylive" ${dis}>${S.buyBusy === 'live' ? `Opening the ${storeName()}…` : credits ? `Buy another (you have ${credits})` : 'Buy a session'}</button>
+    </section>
     <section class="card">
       <div class="card-head"><span>PrepPilot Pro</span>${o.perDay ? `<span>${esc(o.perDay.toLowerCase())}</span>` : ''}</div>
       <div class="price">${esc(o.proAmount)}<span>per ${esc(o.proPer)}, cancel any time</span></div>
       <div style="margin:20px 0 22px">${ticks([`<b>${o.proVoice} minutes of voice practice</b> a month, spoken back to you`, `<b>${o.proMsgs} coach messages</b> a month`, 'Answers graded against what a panel listens for', 'Follow-up questions on your weak topics', 'Card sets written for any technology you name'])}</div>
       ${isPro ? '<button class="btn block lg" disabled>You are on Pro</button>' : `<button class="btn primary block lg" data-act="buysub" ${dis}>${S.buyBusy === 'pro' ? `Opening the ${storeName()}…` : `Start Pro for ${esc(o.proPrice)}`}</button>`}
-    </section>
-    <section class="card">
-      <div class="card-head"><span>Live coach: practice test</span><span>One-time</span></div>
-      <div class="price">${esc(o.livePrice)}<span>per session</span></div>
-      <div style="margin:20px 0 22px">${ticks([`A spoken practice test built for your role and level, up to ${o.liveMin} minutes`, 'One question at a time, honest feedback after each answer', 'Hints as you go, and what a strong answer would add', 'Overall assessment at the end', 'Dropped call? Rejoin within the hour, same session', 'Works with Free or Pro'])}</div>
-      <button class="btn block lg" data-act="buylive" ${dis}>${S.buyBusy === 'live' ? `Opening the ${storeName()}…` : credits ? `Buy another (you have ${credits})` : 'Buy a session'}</button>
     </section>
     <section class="card">
       <div class="card-head"><span>Every lesson opens with a moving picture</span></div>
@@ -908,6 +914,7 @@ function animateIn(changed) {
 
 function render() {
   const p = profile();
+  if (S.view === 'stats') S.view = 'settings'; // Stats now lives inside Profile.
   const key = S.showPlans ? 'plans' : !p ? 'onboard' : S.view === 'deck' && !S.deck ? 'home' : S.view;
   const changed = key !== S.lastView;
   S.lastView = key;
@@ -925,7 +932,6 @@ function render() {
     : key === 'deck' ? deckView()
     : key === 'chat' ? chatView()
     : key === 'custom' ? customView()
-    : key === 'stats' ? statsView()
     : key === 'settings' ? settingsView()
     : homeView();
   app.innerHTML = `<div class="${changed ? 'view' : ''}">${html}</div>`;
