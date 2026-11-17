@@ -65,7 +65,7 @@ function planFor(p) { return buildPlan(topics(), p, p.planStart || Date.now()); 
 function todayIndex(p) { return Math.max(0, Math.floor((Date.now() - (p.planStart || Date.now())) / DAY)); }
 
 function betaNote(t, where) {
-  return t?.beta ? `<div class="small muted"><span class="tag">AI-written</span> <a class="link quiet small" href="${esc(reportUrl(t, where))}" target="_blank" rel="noopener">Report a problem</a></div>` : '';
+  return t?.beta ? `<div class="small muted"><a class="link quiet small" href="${esc(reportUrl(t, where))}" target="_blank" rel="noopener">Report a problem</a></div>` : '';
 }
 
 /* ---------- pricing facts (server-provided, with offline fallbacks) ---------- */
@@ -208,7 +208,7 @@ function homeView() {
   const topicRow = t => {
     const tr = readiness([t], p, prog);
     return `<button class="rowi" data-act="learn" data-id="${t.id}">
-      <span class="main"><span class="t">${esc(t.name)}${t.beta ? ' <span class="tag">AI-written</span>' : ''}</span><span class="d">${esc(t.blurb || '')}</span></span>
+      <span class="main"><span class="t">${esc(t.name)}</span><span class="d">${esc(t.blurb || '')}</span></span>
       ${tr.total ? `<span class="pct"><span>${tr.pct}%</span><span class="bar"><i style="width:${tr.pct}%"></i></span></span>` : ''}</button>`;
   };
   return `<div class="stack loose">
@@ -741,7 +741,7 @@ async function buildRoleGuide() {
   try {
     const r = await ai.generate(`${p.otherRole}: interview essentials`, summary(), 12);
     const id = 'c-role-' + Date.now().toString(36);
-    store.setCustomTopics([...store.customTopics(), { id, name: `${p.otherRole} essentials`, blurb: 'AI-generated for your role', tag: 'ai', concepts: r.concepts, qa: r.qa, custom: true, beta: true }]);
+    store.setCustomTopics([...store.customTopics(), { id, name: `${p.otherRole} essentials`, blurb: 'Written for your role', tag: 'ai', concepts: r.concepts, qa: r.qa, custom: true, beta: true }]);
     toast('Your role guide is in your topics.');
   } catch (err) { aiFailed(err); }
   S.busy = false; render();
@@ -798,7 +798,7 @@ app.addEventListener('submit', async e => {
     try {
       const r = await ai.generate(topic, summary(), 8);
       const id = 'c-' + topic.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40) + '-' + Date.now().toString(36);
-      store.setCustomTopics([...store.customTopics(), { id, name: topic, blurb: 'AI-generated', tag: 'ai', concepts: r.concepts, qa: r.qa, custom: true, beta: true }]);
+      store.setCustomTopics([...store.customTopics(), { id, name: topic, blurb: 'Custom topic', tag: 'ai', concepts: r.concepts, qa: r.qa, custom: true, beta: true }]);
       toast(`"${topic}" added to your topics.`);
     } catch (err) { aiFailed(err); }
     S.busy = false; render();
