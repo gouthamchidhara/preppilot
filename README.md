@@ -4,7 +4,7 @@ Personalized interview prep for software developers (Java, Python, .NET, Node, G
 infrastructure/cloud/SRE/DevOps, QA and security roles: 23 roles, 72 topics.
 Users set a short profile (one or more target roles, level, background, self-rated strengths/weaknesses, interview date) and get:
 
-- **A day-by-day plan** ordered by role relevance and their weak spots, ending with a Live coach practice test.
+- **A study path** ordered by role relevance and their weak spots, with no calendar: users move at their own pace.
 - **Learn cards** (what / why / example / what to say) and **flashcards** with spaced repetition, filtered to their level.
 - **Multi-role prep** combines selected roles into one plan; role-specific flashcards allow focused practice. Shared topics
   and their card progress are not duplicated. Select one role in Profile for a single-role plan.

@@ -165,18 +165,23 @@ function pickNudge(topic, due) {
   const n = use[idx % use.length];
   return { title: n.title, body: n.body.replaceAll('{topic}', topic).replaceAll('{due}', String(due)) };
 }
+// What to work on next: the first open topic in the user's order that is not solid yet.
+// No calendar: people move at their own pace.
+function nextTopic(p = profile()) {
+  if (!p) return null;
+  const prog = store.progress();
+  const list = rankTopics(topics(), p).filter(t => !isLocked(t.id));
+  return list.find(t => { const r = readiness([t], p, prog); return r.total && r.pct < 80; }) || list[0] || null;
+}
+
 function dailyReminder() {
   const p = profile();
   if (!p) return null;
-  const plan = planFor(p);
-  const ti = Math.min(todayIndex(p), plan.length - 1);
-  const day = plan[ti];
   const prog = store.progress();
+  const nt = nextTopic(p);
   const due = dueCards(topics(), p, prog, Date.now(), 999);
-  const topic = day.kind === 'learn' ? topicName(day.topics[0]) : due[0] ? topicName(due[0].topic) : 'practice';
-  const line = day.kind === 'live' ? '60 minutes with Live AI today'
-    : day.kind === 'review' ? (due.length ? `${due.length} card${due.length === 1 ? '' : 's'} due for review` : 'Nothing due — pick any topic')
-    : `Today: ${topic}`;
+  const topic = nt ? nt.name : due[0] ? topicName(due[0].topic) : 'practice';
+  const line = due.length ? `${due.length} card${due.length === 1 ? '' : 's'} due, then ${topic}` : `Up next: ${topic}`;
   const n = pickNudge(topic, due.length);
   return { title: n.title, body: `${line}. ${n.body}`.slice(0, 240), due: due.length };
 }
@@ -209,7 +214,7 @@ function captureDraft() {
 function welcome() {
   return `<section class="head" style="padding:18px 0 26px">
     <h1>Prepare for the interview you actually have.</h1>
-    <p class="lede" style="margin-top:12px">Tell PrepPilot the role and the date. It lays out what to study each day, drills you on what you miss, and listens while you practice your answers out loud.</p>
+    <p class="lede" style="margin-top:12px">Tell PrepPilot your role. It puts the topics in the order that matters, drills you on what you miss, and listens while you practise your answers out loud.</p>
   </section>`;
 }
 
@@ -238,7 +243,6 @@ function onboardingView(existing) {
     ${chosen ? `
     ${step(2, `<fieldset class="stack"><legend>About you</legend>
       <label>Experience<select name="level">${LEVELS.map(l => `<option value="${l.id}" ${d.level === l.id ? 'selected' : ''}>${esc(l.name)}</option>`).join('')}</select></label>
-      <label>Interview date, if you have one<input type="date" name="interviewDate" value="${esc(d.interviewDate || '')}"></label>
       <label>Your background, in a line or two<textarea name="background" rows="3" maxlength="600" placeholder="e.g. 4 years of Java microservices, some AWS">${esc(d.background || '')}</textarea></label>
       <label>What you're aiming for<input name="goal" maxlength="200" value="${esc(d.goal || '')}" placeholder="e.g. Senior backend roles at product companies"></label>
       ${extras.length ? `<div class="stack tight"><span style="font-weight:600;font-size:14px">Other tech you use</span>
@@ -294,9 +298,6 @@ function homeView() {
   const p = profile();
   const relevant = rankTopics(topics(), p);
   if (!relevant.length) return '<p class="muted">Loading your topics…</p>';
-  const plan = planFor(p);
-  const ti = Math.min(todayIndex(p), plan.length - 1);
-  const today = plan[ti];
   const prog = store.progress();
   const map = knowledgeMap(relevant, p, prog);
   // Remember this render's map so the next one can highlight tiles that moved up.
@@ -304,24 +305,16 @@ function homeView() {
   S.prevMap = Object.fromEntries(map.topics.map(t => [t.id, t.state]));
   const knownTotal = map.topics.reduce((n, t) => n + t.known, 0);
   const cardsTotal = map.topics.reduce((n, t) => n + t.total, 0);
-  const due = dueCards(topics(), p, prog, Date.now(), 999).length;
-  const left = daysUntil(p.interviewDate);
-  const dayLabel = d => d.kind === 'live' ? 'Live AI, 60 minutes' : d.kind === 'review' ? 'Mixed review' : d.topics.map(topicName).join(', ');
+  // Only cards seen before count as due; a new user is not 'behind' on 254 cards.
+  const due = dueCards(topics(), p, prog, Date.now(), 999).filter(c => prog[c.id]).length;
   const mine = new Set(relevant.map(t => t.id));
   const others = getManifest().packs.map(pk => ({ ...pk, topics: pk.topics.filter(t => !mine.has(t.id)) })).filter(pk => pk.topics.length);
   const roleIds = migrateProfile(p).roleIds;
   const label = id => id === 'other' ? p.otherRole : roleName(id);
-  const short = iso => new Date(iso + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' });
-  const todayTopics = today.kind === 'learn' ? today.topics.map(topicById).filter(Boolean) : [];
-  const nLearn = todayTopics.reduce((n, t) => n + t.concepts.length, 0);
-  const nQs = todayTopics.reduce((n, t) => n + t.qa.length, 0);
-  const todayHint = today.kind === 'live'
-    ? '60 minutes with Live AI: spoken questions for your role, hints as you go, and honest feedback after every answer.'
-    : today.kind === 'review'
-    ? (due ? `${due} card${due === 1 ? '' : 's'} due. The ones you missed come first.` : 'Nothing is due. Pick any topic below to get ahead.')
-    : `${nLearn} short lesson${nLearn === 1 ? '' : 's'}, then ${nQs} question${nQs === 1 ? '' : 's'} to check it stuck.`;
-  const countdown = left === null ? `Day ${ti + 1} of ${plan.length}` : left === 0 ? 'Your interview is today' : `${left} day${left === 1 ? '' : 's'} until your interview`;
-  const upcoming = S.fullPlan ? plan.map((d, i) => [d, i]) : plan.map((d, i) => [d, i]).slice(ti, ti + 5);
+  const nt = nextTopic(p);
+  const ntr = nt ? readiness([nt], p, prog) : null;
+  const started = ntr && Object.keys(prog).some(k => k.startsWith(nt.id + '-'));
+  const nextHint = nt ? `${nt.concepts.length} short lesson${nt.concepts.length === 1 ? '' : 's'} and ${nt.qa.length} interview question${nt.qa.length === 1 ? '' : 's'}.${started ? ` You know ${ntr.known} of ${ntr.total} so far.` : ''}` : '';
   const lockMark = id => isLocked(id) ? `<span class="lockmark" aria-label="Pro">${ic('lock')}</span>` : '';
   const topicRow = t => {
     const tr = readiness([t], p, prog);
@@ -333,20 +326,19 @@ function homeView() {
   const lockedCards = relevant.filter(t => isLocked(t.id)).reduce((n, t) => n + t.qa.length, 0);
   return `<div class="stack loose">
     <section class="greet">
-      <div class="label">${esc(new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }))}</div>
-      <h1>${esc(countdown)}</h1>
+      <div class="label">${esc(roleIds.map(label).join(' and '))}</div>
+      <h1>${started ? 'Pick up where you left off.' : 'What do you want to get sharp on?'}</h1>
     </section>
     ${livePromo()}
-    <section class="card stacked">
-      <div class="card-head"><span>Today, day ${ti + 1} of ${plan.length}</span>${due ? `<span>${due} due</span>` : ''}</div>
-      <h2>${esc(today.kind === 'review' ? 'Review what is due' : today.kind === 'live' ? 'Live AI, 60 minutes' : dayLabel(today))}</h2>
-      <p class="muted" style="margin-top:8px">${esc(todayHint)}</p>
+    ${nt ? `<section class="card stacked">
+      <div class="card-head"><span>Up next</span>${due ? `<span>${due} due</span>` : ''}</div>
+      <h2>${esc(nt.name)}</h2>
+      <p class="muted" style="margin-top:8px">${esc(nextHint)}</p>
       <div class="row" style="margin-top:20px">
-        ${today.kind === 'learn' ? `<button class="btn primary" data-act="learn" data-id="${today.topics[0]}">Start today's lesson</button>` : ''}
-        ${today.kind === 'live' ? `<button class="btn primary" data-act="livesetup">Start the practice test</button>` : ''}
-        <button class="btn ${today.kind === 'learn' || today.kind === 'live' ? '' : 'primary'}" data-act="deck" data-id="${today.kind === 'learn' ? today.topics.join(',') : ''}">Practice flashcards</button>
+        <button class="btn primary" data-act="learn" data-id="${nt.id}">${started ? 'Continue' : 'Start the lesson'}</button>
+        <button class="btn" data-act="deck" data-id="${due ? '' : nt.id}">${due ? `Review ${due} due card${due === 1 ? '' : 's'}` : 'Practice flashcards'}</button>
       </div>
-    </section>
+    </section>` : ''}
     ${freshCard()}
     <section class="knowmap" aria-label="What you know">
       <div class="nums"><span><b>What you know</b></span><span><b data-countup="${knownTotal}">${knownTotal}</b> of ${cardsTotal} cards known</span></div>
@@ -358,11 +350,6 @@ function homeView() {
         <span class="t">${esc(t.name)}${lockMark(t.id)}</span><span class="bar"><i style="width:${t.pct}%;animation-delay:${S._stagger ? i * 60 + 150 : 0}ms"></i></span>
         <span class="m">${t.state === 'strong' ? 'Solid' : t.state === 'ok' ? 'Getting there' : t.state === 'weak' ? 'Shaky' : 'Not started'} · ${t.total ? `${t.known}/${t.total}` : 'no cards here'}</span></button>`; }).join('')}</div>
       <p class="muted small">${map.counts.strong} solid · ${map.counts.ok} getting there · ${map.counts.weak} shaky · ${map.counts.unseen} not started</p>
-    </section>
-    <section>
-      <div class="sec-head"><h3>${S.fullPlan ? 'Full plan' : 'Coming up'}</h3><button class="link quiet small" data-act="toggleplan">${S.fullPlan ? 'Show less' : `All ${plan.length} days`}</button></div>
-      <div class="rows">${upcoming.map(([d, i]) => `<button class="rowi ${i < ti ? 'past' : i === ti ? 'now' : ''}" ${d.kind === 'learn' ? `data-act="learn" data-id="${d.topics[0]}"` : d.kind === 'live' ? 'data-act="livesetup"' : 'data-act="deck"'}>
-        <span class="when">${i === ti ? 'Today' : esc(short(d.date))}</span><span class="main"><span class="t">${esc(dayLabel(d))}</span></span>${d.kind === 'learn' ? lockMark(d.topics[0]) : ''}</button>`).join('')}</div>
     </section>
     ${roleIds.length > 1 ? `<section><div class="sec-head"><h3>Practice one role</h3></div><div class="chips">${roleIds.map(id => `<button class="chip" data-act="roledeck" data-id="${esc(id)}">${esc(label(id))}</button>`).join('')}</div></section>` : ''}
     ${roleIds.includes('other') ? `<section class="panel stack"><h3>Make it specific to ${esc(p.otherRole)}</h3>
@@ -915,7 +902,7 @@ function plansView() {
   const yes = '<span class="yes" aria-label="Included">' + ic('check') + '</span>';
   const no = '<span class="no" aria-label="Not included">–</span>';
   const rows = [
-    ['Day-by-day plan', yes, yes, '–'],
+    ['Topics in the order that matters for your role', yes, yes, '–'],
     ['Lessons and flashcards', `First ${FREE_TOPICS} topics`, 'Every topic', '–'],
     ['Animated diagrams for every topic', no, yes, '–'],
     ['Coach messages', `${o.freeMsgs} to try`, `${o.proMsgs} a month`, '–'],
@@ -1387,7 +1374,6 @@ document.addEventListener('click', async e => {
   }
   if (a === 'closesheet') closeSheet();
   else if (a === 'toggletopics') { S.allTopics = !S.allTopics; const y = window.scrollY; render(); window.scrollTo({ top: y }); }
-  else if (a === 'toggleplan') { S.fullPlan = !S.fullPlan; const y = window.scrollY; render(); window.scrollTo({ top: y }); }
   else if (a === 'home') { S.view = 'home'; render(); }
   else if (a === 'learn') openTopic(id);
   else if (a === 'buildrole') buildRoleGuide();
