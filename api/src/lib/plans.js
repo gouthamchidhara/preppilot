@@ -3,22 +3,22 @@
 //   voice (gpt-realtime-mini)     ~ $0.02-0.04 per conversation minute (+ ~$0.003/min transcription)
 // Free:  15 messages + 2 voice minutes, lifetime            -> worst case ~ $0.10 per free user
 //        global free pool per day: 200 msgs + 10 voice min  -> worst case ~ $0.65/day across ALL free users
-// Pro:   $11.99/month (≈ $10.19 after Apple's 15%), 500 msgs + 30 voice min -> worst case ~ $1.85/month
+// Pro:   $7.99/month (≈ $6.79 after Apple's 15%), 500 msgs + 45 voice min -> worst case ~ $2.45/month
 const num = (k, d) => (process.env[k] !== undefined && process.env[k] !== '' ? Number(process.env[k]) : d);
 
 export function limits() {
   return {
     free: { msgs: num('FREE_MSGS', 15), voiceSec: num('FREE_VOICE_SEC', 120), period: 'lifetime' },
-    pro: { msgs: num('PRO_MSGS', 500), voiceSec: num('PRO_VOICE_SEC', 30 * 60), period: 'month' },
+    pro: { msgs: num('PRO_MSGS', 500), voiceSec: num('PRO_VOICE_SEC', 45 * 60), period: 'month' },
     freePoolPerDay: { msgs: num('FREE_DAILY_MSGS', 200), voiceSec: num('FREE_DAILY_VOICE_SEC', 600) },
-    maxCallSec: num('MAX_CALL_SEC', 15 * 60),
+    maxCallSec: num('MAX_CALL_SEC', 10 * 60),
     liveCallSec: num('LIVE_CALL_SEC', 60 * 60),
     minCallSec: 20,
   };
 }
 
 export const COST = { chat: 1, generate: 5 };
-export const proPriceLabel = () => process.env.PRO_PRICE_LABEL || '$11.99/month';
+export const proPriceLabel = () => process.env.PRO_PRICE_LABEL || '$7.99/month';
 export const livePriceLabel = () => process.env.LIVE_PRICE_LABEL || '$10.99';
 const MONTH = 30 * 86400000;
 

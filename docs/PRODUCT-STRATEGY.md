@@ -4,7 +4,7 @@ Written November 2026, alongside the UI redesign. Prices and conversion effects 
 
 ## The short version
 
-1. **Pro currently sells quota** (500 messages, 30 voice minutes). Quota of a general AI is exactly what ChatGPT and Claude sell, for more uses, at a similar price. Nobody should pay us for that, and the plans screen has been telling them that is what they get.
+1. **Pro currently sells quota** (500 messages, 45 voice minutes). Quota of a general AI is exactly what ChatGPT and Claude sell, for more uses, at a similar price. Nobody should pay us for that, and the plans screen has been telling them that is what they get.
 2. **What a general chatbot does not give you** is structure and memory: a plan tied to your date, a record of what you got wrong, a realistic interview with a score, and a clear answer to "am I ready?". That is the product. The AI is a component.
 3. **Interview prep is episodic.** People search for one to three months, get hired and leave. A monthly subscription fights that. A time-boxed pass fits it.
 4. **The scored mock interview should come back**, as the centre of the paid offer. It was removed in this round at your request. As a bare 60-minute voice call it was not worth $10.99. With a rubric, a written report and history, it is the one thing here that is hard to get from a prompt.
@@ -68,7 +68,7 @@ Effort assumes the current codebase. Cost is ongoing AI spend per active user.
 
 | Model | Fit with how people use this | Risk | Verdict |
 |---|---|---|---|
-| Monthly subscription (today, $11.99) | Poor: the need lasts weeks; people subscribe, finish and cancel, or avoid subscribing at all | High churn, direct comparison with general AI subscriptions | Keep working, stop leading with it |
+| Monthly subscription (today, $7.99) | Poor: the need lasts weeks; people subscribe, finish and cancel, or avoid subscribing at all | High churn, direct comparison with general AI subscriptions | Keep working, stop leading with it |
 | Credits or pay per use | Fair: maps to cost | People ration credits and practise less, which defeats the product | Use only for top-ups |
 | **Time-boxed pass** (30 or 90 days, does not renew) | Good: matches a job search; no fear of a forgotten renewal | Lower lifetime value per user unless priced for the whole episode | **Recommended core** |
 | Lifetime purchase | Poor: ongoing voice cost against a one-off payment | Margin | No |

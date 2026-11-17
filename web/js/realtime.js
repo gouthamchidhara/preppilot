@@ -55,7 +55,7 @@ export class VoiceSession {
     this.bump();
     if (data.account) setAccount(data.account);
     // The server decides how long the call may run and hangs up at that point.
-    const capMs = (data.allowedSec || 900) * 1000;
+    const capMs = (data.allowedSec || 600) * 1000;
     this.endsAt = Date.now() + capMs;
     this.timers.push(setTimeout(() => this.stop('Voice time for this session is used up.'), capMs));
   }

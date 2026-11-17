@@ -71,11 +71,11 @@ function betaNote(t, where) {
 /* ---------- pricing facts (server-provided, with offline fallbacks) ---------- */
 function offer() {
   const P = S.plans;
-  const [amount, per = 'month'] = (P?.pro.price || '$11.99/month').split('/');
+  const [amount, per = 'month'] = (P?.pro.price || '$7.99/month').split('/');
   const n = parseFloat(amount.replace(/[^\d.]/g, ''));
   return {
     freeMsgs: P?.free.msgs ?? 15, freeVoice: P?.free.voiceMin ?? 2,
-    proMsgs: P?.pro.msgs ?? 500, proVoice: P?.pro.voiceMin ?? 30, proPrice: `${amount}/${per}`, proAmount: amount, proPer: per,
+    proMsgs: P?.pro.msgs ?? 500, proVoice: P?.pro.voiceMin ?? 45, proPrice: `${amount}/${per}`, proAmount: amount, proPer: per,
     perDay: amount.trim().startsWith('$') && n > 0 && per === 'month' ? `About ${Math.round((n / 30) * 100)}¢ a day` : '',
     livePrice: P?.live?.price || '$10.99', liveMin: P?.live?.minutes ?? 60,
   };

@@ -190,7 +190,7 @@ test('quota messages quote the configured price and limits', async () => {
   for (let i = 0; i < 15; i++) await ask(h);
   const r = await ask(h);
   assert.equal(r.status, 402);
-  assert.match(r.body.error, /\$11\.99\/month/);
+  assert.match(r.body.error, /\$7\.99\/month/);
 });
 
 test('voice is refused once free minutes are gone', async () => {

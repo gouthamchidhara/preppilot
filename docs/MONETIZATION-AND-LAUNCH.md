@@ -20,7 +20,7 @@ At worst-case usage the margin is about $1.80 per user per month; typical users 
 - **Lifetime** trial (it doesn't reset), tied to the Google/Apple account ID. Deleting the account and signing up again doesn't reset it.
 - **Global free pool per day**, shared by every free user: 200 messages + 10 voice minutes, which is about $0.65 per day maximum.
   When the pool is used up, free users see "Free AI is at capacity today. Upgrade or try tomorrow."
-- Per-user hourly rate limits, per-call voice caps (15 minutes), Azure tokens-per-minute quotas, and a $20 per month budget alert.
+- Per-user hourly rate limits, per-call voice caps (10 minutes on the monthly plan; 60 for a Live coach session), Azure tokens-per-minute quotas, and a $20 per month budget alert.
 - All limits can be changed without a code change through Static Web App app settings:
   `FREE_MSGS`, `FREE_VOICE_SEC`, `FREE_DAILY_MSGS`, `FREE_DAILY_VOICE_SEC`, `PRO_MSGS`, `PRO_VOICE_SEC`, `MAX_CALL_SEC`.
 

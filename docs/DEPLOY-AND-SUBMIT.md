@@ -168,7 +168,7 @@ When ready to submit for App Review (not just TestFlight):
    - Support URL: `https://github.com/gouthamchidhara/preppilot/issues`
 3. **Attach IAP:** Add `mock_session_60min` and the `pro_monthly` subscription to the review
 4. **App Review notes:**
-   > PrepPilot is a free interview-prep study app. AI coaching requires sign-in (Google or Apple) and includes a free trial. Pro ($11.99/month) is an auto-renewing subscription. Live coach ($10.99) is a consumable one-time purchase: a practice test, not help during a real interview. Voice mode uses the microphone. Account deletion: Profile → Delete account.
+   > PrepPilot is a free interview-prep study app. AI coaching requires sign-in (Google or Apple) and includes a free trial. Pro ($7.99/month) is an auto-renewing subscription. Live coach ($10.99) is a consumable one-time purchase: a practice test, not help during a real interview. Voice mode uses the microphone. Account deletion: Profile → Delete account.
 5. **Submit for Review**
 
 ---
@@ -192,7 +192,7 @@ When ready to submit for App Review (not just TestFlight):
 
 | Product ID | Type | Price | Description |
 |---|---|---|---|
-| `pro_monthly` | Subscription (auto-renew) | $11.99/month | 500 AI messages + 30 voice min/month |
+| `pro_monthly` | Subscription (auto-renew) | $7.99/month | 500 AI messages + 45 voice min/month |
 | `mock_session_60min` | Consumable | $10.99 | One 60-min Live coach practice test (rejoinable within the hour) |
 
 ## Troubleshooting
