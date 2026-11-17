@@ -29,6 +29,7 @@ const ICONS = {
   target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
   send: '<path d="M12 19V5M5 12l7-7 7 7"/>',
   stop: '<rect x="6" y="6" width="12" height="12" rx="2.5"/>',
+  play: '<path d="m8 5 11 7-11 7z"/>',
   x: '<path d="M6 6l12 12M18 6 6 18"/>',
   check: '<path d="M4 12.5 9.5 18 20 6.5"/>',
   alert: '<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/>',
@@ -277,6 +278,15 @@ function landingView() {
   return `<div class="landing">
     <section class="l-hero">
       <div class="l-copy">
+        ${!signedIn() ? `<aside class="l-pitch" aria-label="A quicker way to refresh">
+          <div class="l-pitch-motion" aria-hidden="true">
+            <span class="l-pitch-video">${ic('play')} Long videos<span class="l-pitch-progress"></span></span>
+            <span class="l-pitch-arrow">${ic('right')}</span>
+            <span class="l-pitch-cards">${ic('cards')} Short cards</span>
+          </div>
+          <strong>Less binge-watching. More “I remember this.”</strong>
+          <p>Fed up with long Udemy or Pluralsight videos? Try short cards that bring back what you already know.</p>
+        </aside>` : ''}
         <h1 class="l-title">Your interview is coming up. Let’s make sure it all comes back to you.</h1>
         <p class="l-sub">Quick flashcards for the tech you already work with, Java, React, Python, SQL, cloud and AI, one or two lines each, in the order you actually work.</p>
         <div class="row l-cta"><button class="btn primary lg" data-act="startonboard">Get started, it’s free</button></div>
