@@ -39,6 +39,7 @@ let n = 0;
 for (const p of packs) {
   const out = {};
   for (const t of p.topics) if (A[t.id]) { out[t.id] = { analogy: { name: A[t.id][0], line: A[t.id][1] } }; n++; }
-  if (Object.keys(out).length) writeFileSync(`${dir}${p.id}.json`, JSON.stringify(out, null, 1) + '\n');
+  // Every pack gets a file (empty when it has no analogies) so the app never requests a missing one.
+  writeFileSync(`${dir}${p.id}.json`, JSON.stringify(out, null, 1) + '\n');
 }
 console.log(`${n} analogies written`);

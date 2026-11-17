@@ -20,6 +20,34 @@ Owner handles item 7. The assistant is handling the other items, with owner inpu
 - Owner purchased `preppilot.us` and configured Cloudflare Email Routing for `support@preppilot.us`. Destination verification and routing rule were checked; end-to-end email delivery is not yet confirmed. Never paste secret keys into chat.
 - Spot-checked Go and JavaScript/TypeScript field cards and their lesson flow/Next hooks; reviewed all 26 analogies. Corrected Go loop capture, slice sharing, errgroup and scheduler explanations, plus TLS, Kubernetes, JVM, C# and TypeScript analogies. Validators pass: 924 field cards and 98 flow/meaning entries; 73 tests pass.
 
+## Live check, 17 November 2026 (from outside, after the custom domain)
+
+| Area | Result |
+| --- | --- |
+| Cloudflare DNS | Correct and public. Nameservers are Cloudflare; `preppilot.us` resolves to Azure (flattened CNAME); `www` is a CNAME to `lively-pond-0ad55040f.8.azurestaticapps.net`; MX, SPF and DKIM for Email Routing are present. If a change does not show for you, it is your local DNS cache (records have a 5-minute TTL): flush it or try mobile data. |
+| HTTPS | Valid Azure certificates on `preppilot.us` and `www.preppilot.us` (issued 17 Nov, auto-renewed by Azure). |
+| App and API | Load with no errors on all three addresses; `/api/health` answers on each. |
+| **Google sign-in** | **Broken on every address, including the Azure one.** Google answers "The given origin is not allowed for the given client ID" for web client `372383686135-jj1mv49jbskilvqk6qfiqguh4uqjkdl5`. This is why the app "does not work in the browser": everything that needs an account fails. |
+| Support email (`support@preppilot.us`) | DNS is right. Delivery not confirmed. |
+| App emails (guide suggestions) | Not configured: the `ACS_EMAIL_*` settings are empty, so suggestions are stored but never emailed. |
+
+### Fix Google sign-in (owner, Google Cloud Console)
+1. APIs & Services → Credentials → OAuth 2.0 Client IDs → open the **Web** client whose id starts `372383686135-jj1mv49j` (the one `/api/health` reports; a newly created client does nothing unless the Azure settings point at it).
+2. Authorized JavaScript origins must contain exactly these three, no trailing slash, no path:
+   `https://preppilot.us`, `https://www.preppilot.us`, `https://lively-pond-0ad55040f.8.azurestaticapps.net`
+3. Save, then allow up to an hour for Google to apply it. Test in a private window.
+4. If the agent created new clients instead: either add the origins above to the old client (simplest), or set `GOOGLE_WEB_CLIENT_ID` and `GOOGLE_CLIENT_IDS` in Azure to the new client id (keep the iOS client id in `GOOGLE_CLIENT_IDS`).
+
+### Fix support@ email (owner, Cloudflare)
+1. Email → Email Routing → Routing rules: `support@preppilot.us` → your Gmail, status Active; Destination addresses: that Gmail shows Verified.
+2. Test from a **different** mailbox. Gmail hides a message forwarded back to the same account that sent it, so testing from the destination Gmail looks like a failure.
+3. Check Email Routing → Activity log for the test message: "Forwarded", "Dropped" or "Rejected" says where it stopped. Check Gmail spam.
+
+### Turn on app emails (guide suggestions)
+1. Azure: create a Communication Services resource and an Email Communication Services resource; add `preppilot.us` as a custom domain and add the TXT, SPF and DKIM records it gives you in Cloudflare (DNS only), or use the free Azure-managed domain to start.
+2. Set `ACS_EMAIL_ENDPOINT`, `ACS_EMAIL_KEY`, `ACS_EMAIL_SENDER` (for example `DoNotReply@preppilot.us`) and `SUGGESTIONS_EMAIL` in the Static Web App settings.
+3. Submit a suggestion from Profile and check the inbox.
+
 ## Must do before launch
 
 ### 1. Merge the branch into `main`
