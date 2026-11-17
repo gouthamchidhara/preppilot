@@ -154,6 +154,29 @@ export function readiness(topics, profile, progress) {
   return { known: k, total: n, pct: n ? Math.round((k * 100) / n) : 0 };
 }
 
+// A visual map of what the user knows, per topic, instead of one percentage.
+// state: strong (at least 80% of cards known), ok (50-79%), weak (some known,
+// under 50%), unseen (no card attempted yet, or no cards at this level).
+export function knowledgeMap(topics, profile, progress) {
+  const tiers = tiersFor(profile?.level);
+  const out = topics.map(t => {
+    let total = 0, known = 0, attempted = 0;
+    t.qa.forEach((q, i) => {
+      if (!tiers.includes(q.l)) return;
+      total++;
+      const st = progress[`${t.id}-${i}`];
+      if (st) attempted++;
+      if (isKnown(st)) known++;
+    });
+    const pct = total ? Math.round((known * 100) / total) : 0;
+    const state = total === 0 || attempted === 0 ? 'unseen' : pct >= 80 ? 'strong' : pct >= 50 ? 'ok' : 'weak';
+    return { id: t.id, name: t.name || t.id, state, known, total, pct };
+  });
+  const counts = { strong: 0, ok: 0, weak: 0, unseen: 0 };
+  out.forEach(t => counts[t.state]++);
+  return { topics: out, counts };
+}
+
 // roleName/topicName come from the catalog and loaded packs (kept out of this pure module).
 export function profileSummary(profile, { roleName = id => id, topicName = id => id } = {}) {
   if (!profile) return 'No profile.';

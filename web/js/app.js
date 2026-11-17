@@ -1,10 +1,11 @@
-import { LEVELS, buildPlan, rankTopics, dueCards, review, readiness, profileSummary, migrateProfile, effectiveRoles, daysUntil } from './plan.js';
+import { LEVELS, buildPlan, rankTopics, dueCards, review, readiness, knowledgeMap, profileSummary, migrateProfile, effectiveRoles, daysUntil } from './plan.js';
 import { store } from './store.js';
 import { ai } from './ai.js';
 import { voice } from './voice.js';
 import { VoiceSession, realtimeSupported } from './realtime.js';
 import { native, signedIn, signOut, renderGoogleButton, refreshAccount, onAccountChange, nativeSignIn, nativePurchase, nativeBuyLive, nativeRestore, listenNative } from './auth.js';
 import { initContent, getCatalog, getManifest, roleById, topicMeta, ensureTopics, ensureForProfile, loadedTopics, reportUrl } from './content.js';
+import { diagramHtml } from './diagrams.js';
 
 const DAY = 86400000;
 const app = document.getElementById('app');
@@ -186,7 +187,9 @@ function homeView() {
   const ti = Math.min(todayIndex(p), plan.length - 1);
   const today = plan[ti];
   const prog = store.progress();
-  const r = readiness(relevant, p, prog);
+  const map = knowledgeMap(relevant, p, prog);
+  const knownTotal = map.topics.reduce((n, t) => n + t.known, 0);
+  const cardsTotal = map.topics.reduce((n, t) => n + t.total, 0);
   const due = dueCards(topics(), p, prog, Date.now(), 999).length;
   const left = daysUntil(p.interviewDate);
   const dayLabel = d => d.kind === 'live' ? 'Live coach: practice test' : d.kind === 'review' ? 'Mixed review' : d.topics.map(topicName).join(', ');
@@ -227,9 +230,12 @@ function homeView() {
       </div>
     </section>
     ${livePromo()}
-    <section class="readiness" aria-label="Readiness">
-      <div class="nums"><span><b>${r.pct}% ready</b> for ${esc(roleIds.map(label).join(' and '))}</span><span>${r.known} of ${r.total} cards known</span></div>
-      <div class="bar"><i style="width:${r.pct}%"></i></div>
+    <section class="knowmap" aria-label="What you know">
+      <div class="nums"><span><b>What you know</b></span><span>${knownTotal} of ${cardsTotal} cards known</span></div>
+      <div class="tiles">${map.topics.map(t => `<button class="tile ${t.state}" data-act="learn" data-id="${t.id}" aria-label="${esc(t.name)}: ${t.state === 'strong' ? 'solid' : t.state === 'ok' ? 'getting there' : t.state === 'weak' ? 'shaky' : 'not started'}, ${t.known} of ${t.total} cards known">
+        <span class="t">${esc(t.name)}</span><span class="bar"><i style="width:${t.pct}%"></i></span>
+        <span class="m">${t.state === 'strong' ? 'Solid' : t.state === 'ok' ? 'Getting there' : t.state === 'weak' ? 'Shaky' : 'Not started'} · ${t.total ? `${t.known}/${t.total}` : 'no cards here'}</span></button>`).join('')}</div>
+      <p class="muted small">${map.counts.strong} solid · ${map.counts.ok} getting there · ${map.counts.weak} shaky · ${map.counts.unseen} not started</p>
     </section>
     <section>
       <div class="sec-head"><h3>${S.fullPlan ? 'Full plan' : 'Coming up'}</h3><button class="link quiet small" data-act="toggleplan">${S.fullPlan ? 'Show less' : `All ${plan.length} days`}</button></div>
@@ -259,6 +265,7 @@ function learnView() {
   return `<div class="stack">
     <div class="row between"><button class="back" data-act="home">${ic('left')}Plan</button><span class="muted small">${esc(t.name)}, ${S.ci + 1} of ${t.concepts.length}</span></div>
     <div class="segs">${t.concepts.map((_, i) => `<i class="${i <= S.ci ? 'on' : ''}"></i>`).join('')}</div>
+    ${S.ci === 0 ? diagramHtml(t.id) : ''}
     <article class="lesson" style="padding:14px 0 6px">
       <h1>${esc(c.t)}</h1>
       <div class="part body" style="margin-top:16px"><p class="lede" style="max-width:none">${fmt(c.what)}</p></div>

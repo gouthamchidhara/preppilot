@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildPlan, rankTopics, review, dueCards, readiness, daysUntil, INTERVAL_DAYS, effectiveRoles, migrateProfile, profileSummary, topicWeight } from '../web/js/plan.js';
+import { buildPlan, rankTopics, review, dueCards, readiness, knowledgeMap, daysUntil, INTERVAL_DAYS, effectiveRoles, migrateProfile, profileSummary, topicWeight } from '../web/js/plan.js';
 
 const mk = (id, roles, nConcepts = 3, tiers = [1, 2, 3]) => ({
   id, name: id, roles,
@@ -91,4 +91,31 @@ test('migration and other-role mapping preserve legacy profiles and explicit emp
   const p = migrateProfile({ roleIds: ['java', 'other'], baseRoleId: 'python', otherRole: 'Data developer' });
   assert.deepEqual(effectiveRoles(p), ['java', 'python']);
   assert.match(profileSummary(p), /java, Data developer \(closest listed role: python\)/);
+});
+
+test('knowledge map classifies each topic: strong, ok, weak, unseen', () => {
+  // TOPICS have 3 cards each (tiers 1, 2, 3). Senior sees all three.
+  const progress = {
+    'linux-0': { box: 2, due: NOW }, 'linux-1': { box: 3, due: NOW }, 'linux-2': { box: 2, due: NOW }, // 3/3 known
+    'k8s-0': { box: 2, due: NOW }, 'k8s-1': { box: 1, due: NOW }, // 1/3 known, 2 attempted
+    // windows: nothing attempted
+  };
+  const map = knowledgeMap(TOPICS, { role: 'infra', level: 'senior' }, progress);
+  const byId = Object.fromEntries(map.topics.map(t => [t.id, t]));
+  assert.equal(byId.linux.state, 'strong');
+  assert.equal(byId.linux.pct, 100);
+  assert.equal(byId.k8s.state, 'weak');
+  assert.equal(byId.k8s.pct, 33);
+  assert.equal(byId.windows.state, 'unseen');
+  assert.deepEqual(map.counts, { strong: 1, ok: 0, weak: 1, unseen: 1 });
+});
+
+test('knowledge map: 2 of 3 known is ok, and only in-level cards count', () => {
+  const progress = { 'linux-0': { box: 2, due: NOW }, 'linux-1': { box: 2, due: NOW } };
+  const map = knowledgeMap(TOPICS, { role: 'infra', level: 'senior' }, progress);
+  assert.equal(map.topics.find(t => t.id === 'linux').state, 'ok');
+  assert.equal(map.topics.find(t => t.id === 'linux').pct, 67);
+  // Junior sees only tiers 1-2, so the same progress is 2/2 = strong.
+  const junior = knowledgeMap(TOPICS, { role: 'infra', level: 'junior' }, progress);
+  assert.equal(junior.topics.find(t => t.id === 'linux').state, 'strong');
 });

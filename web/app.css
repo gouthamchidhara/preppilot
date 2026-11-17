@@ -195,11 +195,19 @@ details[open] summary::after { content: "–"; }
 
 /* ---------- home ---------- */
 .greet h1 { margin-top: 2px; }
-.readiness { display: flex; flex-direction: column; gap: 8px; }
-.readiness .bar { height: 6px; }
-.readiness .nums { display: flex; justify-content: space-between; gap: 12px; font-size: 13.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.readiness .nums b { color: var(--ink); }
-.readiness .nums span:last-child { white-space: nowrap; }
+/* What you know, as a map of tiles instead of one percentage. */
+.knowmap { display: flex; flex-direction: column; gap: 10px; }
+.knowmap .nums { display: flex; justify-content: space-between; gap: 12px; font-size: 13.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.knowmap .nums b { color: var(--ink); }
+.knowmap .nums span:last-child { white-space: nowrap; }
+.knowmap .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.knowmap .tile { text-align: left; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; cursor: pointer; display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.knowmap .tile .t { font-size: 13.5px; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.knowmap .tile .m { font-size: 12px; color: var(--muted); }
+.knowmap .tile.strong { background: var(--accent-soft); border-color: var(--accent-soft); }
+.knowmap .tile.weak .m { color: var(--warn); }
+.knowmap .tile.unseen .t { color: var(--muted); font-weight: 400; }
+.knowmap .tile.unseen .bar i { background: var(--line-strong); }
 
 /* ---------- learn / deck ---------- */
 .back { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); background: none; border: 0; padding: 6px 0; cursor: pointer; font-size: 14px; }
@@ -210,6 +218,32 @@ details[open] summary::after { content: "–"; }
 .lesson .part + .part { margin-top: 20px; }
 .lesson .part > .label { margin-bottom: 4px; }
 .say { border-left: 2px solid var(--accent); padding: 2px 0 2px 16px; }
+
+/* ---------- concept diagrams ---------- */
+/* Inline SVG, drawn in the same ink and muted green as the rest of the page.
+   Motion is slow and explains the flow; every animation ends fully drawn. */
+.diagram { margin: 4px 0 0; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 16px 14px 12px; }
+.diagram .label { margin-bottom: 6px; }
+.diagram figcaption { margin-top: 8px; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); }
+.dg { display: block; width: 100%; height: auto; }
+.dg text { font-family: var(--sans); }
+.dg-box rect { fill: var(--paper); stroke: var(--line-strong); stroke-width: 1; }
+.dg-cluster rect { fill: none; stroke-dasharray: 3 4; }
+.dg-heap { fill: var(--sunk); }
+.dg-t { font-size: 13px; font-weight: 600; fill: var(--ink); }
+.dg-s { font-size: 11px; fill: var(--muted); }
+.dg-n { font-size: 11px; font-weight: 600; fill: var(--paper); }
+.dg-step circle { fill: var(--accent); }
+.dg-line { fill: none; stroke: var(--muted); stroke-width: 1.4; }
+.dg-march { stroke-dasharray: 4 4; animation: dg-march 3s linear infinite; }
+.dg-sweep { fill: var(--accent); opacity: .18; animation: dg-sweep 6s ease-in-out infinite; }
+.dg-draw { stroke-dasharray: 100; stroke-dashoffset: 100; animation: dg-draw 1s ease forwards; }
+.dg-step, .dg-pop { animation: dg-in .5s ease both; }
+.dg-pop { transform-box: fill-box; transform-origin: center; }
+@keyframes dg-draw { to { stroke-dashoffset: 0; } }
+@keyframes dg-in { from { opacity: 0; transform: translateY(4px) scale(.97); } }
+@keyframes dg-march { to { stroke-dashoffset: -16; } }
+@keyframes dg-sweep { 0%, 100% { transform: translateX(0); opacity: 0; } 15%, 85% { opacity: .18; } 50% { transform: translateX(164px); } }
 code { font-family: var(--mono); font-size: .86em; background: var(--code-bg); border: 1px solid var(--line); padding: 1px 5px; border-radius: 5px; overflow-wrap: anywhere; }
 pre { margin: 6px 0 0; background: var(--code-bg); border: 1px solid var(--line); color: var(--ink); font: 13px/1.6 var(--mono); padding: 13px 15px; border-radius: 8px; overflow-x: auto; white-space: pre; }
 pre code { background: none; border: 0; padding: 0; }
