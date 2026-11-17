@@ -1,0 +1,838 @@
+{
+ "linux": {
+  "terms": [
+   {
+    "q": "What is systemd and what is a unit?",
+    "a": "systemd is PID 1 and the service manager. A unit is a config file describing something it manages: a service, socket, timer, mount or target. Control them with `systemctl`, read logs with `journalctl -u <unit>`."
+   },
+   {
+    "q": "What is an inode?",
+    "a": "The filesystem record holding a file's metadata (owner, mode, size, block pointers) but not its name. Directory entries map names to inodes. You can run out of inodes while blocks are free; check with `df -i`."
+   },
+   {
+    "q": "What is the difference between a process and a thread?",
+    "a": "A process has its own address space and file descriptors. Threads live inside a process and share its memory. Each gets a scheduler entry; `ps -eLf` shows threads."
+   },
+   {
+    "q": "What is LVM?",
+    "a": "Logical Volume Manager: physical volumes are pooled into a volume group, which is carved into logical volumes. It lets you grow filesystems online with `lvextend -r` and take snapshots."
+   },
+   {
+    "q": "What are file descriptors and ulimit?",
+    "a": "A file descriptor is an integer handle to an open file, socket or pipe. `ulimit -n` caps how many a process can hold; services set it with `LimitNOFILE=` in the unit file."
+   },
+   {
+    "q": "What is a package repository and how does yum/dnf or apt use it?",
+    "a": "A repo is a signed index of packages. `dnf`/`apt` resolve dependencies from it, verify GPG signatures and install. `dnf history` or `apt` logs let you see and undo what changed."
+   }
+  ],
+  "trouble": [
+   {
+    "q": "Permission denied when running a script you just copied.",
+    "a": "Usually the execute bit is missing or the mount is `noexec`. Fix with `chmod +x script.sh` and check `mount | grep noexec`. Also confirm the shebang line and that line endings are not Windows CRLF."
+   },
+   {
+    "q": "Service fails to start and `systemctl status` shows little.",
+    "a": "Run `journalctl -xeu <service>` for the real error, then `systemd-analyze verify` on the unit. Common causes: bad path in ExecStart, wrong User, port already in use, or missing environment file."
+   },
+   {
+    "q": "sudo says 'user is not in the sudoers file'.",
+    "a": "The user has no sudo rule. As root or via console, add them to the wheel/sudo group (`usermod -aG wheel user`) or add a drop-in with `visudo -f /etc/sudoers.d/name`. Never edit sudoers with a plain editor."
+   },
+   {
+    "q": "SSH connection hangs for 30 seconds before the prompt.",
+    "a": "Typically reverse DNS lookup or GSSAPI on the server. Set `UseDNS no` and `GSSAPIAuthentication no` in sshd_config, reload sshd, or test with `ssh -vvv` to see where it stalls."
+   }
+  ],
+  "scenarios": [
+   {
+    "q": "You need to find why a server became unresponsive last night and it has been rebooted. What do you do?",
+    "a": "Check `last -x` and `journalctl --list-boots`, read `journalctl -b -1` for the end of the previous boot, look for OOM kills in kernel logs, check sar or monitoring history for CPU, memory and disk, and look for hardware errors in dmesg or the BMC log."
+   },
+   {
+    "q": "Ten servers must have a new config file and a service restart. How do you do it safely?",
+    "a": "Use configuration management (Ansible), not a loop of ssh. Run on one canary host first, validate the config with the service's test command, then roll in small batches with health checks, keeping the previous file for rollback."
+   }
+  ]
+ },
+ "scripting": {
+  "terms": [
+   {
+    "q": "What is a shebang?",
+    "a": "The first line, such as `#!/usr/bin/env bash`, telling the kernel which interpreter runs the file. Without it, the script is run by the calling shell, which may behave differently."
+   },
+   {
+    "q": "What is a pipe versus a redirect?",
+    "a": "A pipe (`|`) connects one command's stdout to another's stdin. A redirect (`>`, `>>`, `2>`) sends a stream to a file. `2>&1` merges stderr into stdout."
+   },
+   {
+    "q": "What is idempotency in a script?",
+    "a": "Running it twice gives the same end state as running it once. Use checks like `mkdir -p`, `grep -q || append`, or state tests before changing anything, so reruns after a failure are safe."
+   },
+   {
+    "q": "What is Ansible's inventory and playbook?",
+    "a": "The inventory lists hosts and groups. A playbook is a YAML list of plays mapping hosts to tasks. Modules do the work over SSH and report changed or ok."
+   },
+   {
+    "q": "What is a cron expression versus a systemd timer?",
+    "a": "Cron uses five fields (min hour dom month dow). A systemd timer pairs a .timer with a .service, logs to the journal, and can catch up missed runs with `Persistent=true`."
+   },
+   {
+    "q": "What is the PowerShell pipeline object model?",
+    "a": "Cmdlets emit .NET objects, so `Get-Service | Where-Object Status -eq Running` filters on properties, not text. Use `Select-Object` and `ConvertTo-Json` to shape output."
+   }
+  ],
+  "trouble": [
+   {
+    "q": "Script works in your shell but fails in cron.",
+    "a": "Cron has a minimal environment and PATH. Use absolute paths, set PATH at the top, source needed profiles, and redirect output (`>> /var/log/job.log 2>&1`) to see the error."
+   },
+   {
+    "q": "'bad interpreter: No such file or directory' on a script.",
+    "a": "Almost always CRLF line endings from Windows. Fix with `dos2unix script.sh` or `sed -i 's/\\r$//' script.sh`. Also confirm the interpreter path in the shebang exists."
+   },
+   {
+    "q": "A loop over filenames breaks on names with spaces.",
+    "a": "Unquoted expansions split on whitespace. Quote variables (`\"$f\"`), iterate with globs instead of `ls`, and use `find -print0 | xargs -0` or `while IFS= read -r` for safe handling."
+   },
+   {
+    "q": "A script runs twice at once and corrupts a file.",
+    "a": "No locking. Wrap with `flock -n /var/lock/job.lock command` or use a lock directory via `mkdir`, and write to a temp file then `mv` it into place for an atomic update."
+   }
+  ],
+  "scenarios": [
+   {
+    "q": "You are asked to automate a manual weekly server health report. How do you approach it?",
+    "a": "Define what the report needs, collect data with a script or Ansible facts, output structured data (CSV or JSON), schedule with a timer, send via mail or a ticket, log failures, and keep the code in Git with a README."
+   },
+   {
+    "q": "A teammate's cleanup script deleted the wrong directory. How do you prevent a repeat?",
+    "a": "Add a dry-run mode, validate variables are set (`${VAR:?}`), refuse paths outside an allowlist, use `set -euo pipefail`, review it in a pull request, and test on a non-production host first."
+   }
+  ]
+ },
+ "windows": {
+  "terms": [
+   {
+    "q": "What is a domain controller versus a member server?",
+    "a": "A domain controller hosts the AD database and authenticates users. A member server is joined to the domain and runs workloads but does not hold the directory."
+   },
+   {
+    "q": "What is Group Policy versus a local policy?",
+    "a": "Group Policy is centrally managed settings applied to users or computers by linking GPOs to sites, domains or OUs. Local policy applies only to one machine and loses to domain GPOs on conflict."
+   },
+   {
+    "q": "What is DNS's role in Active Directory?",
+    "a": "AD clients locate domain controllers through SRV records in DNS. If DNS is wrong, logons, GPO processing and replication fail even if the network is fine."
+   },
+   {
+    "q": "What is WSUS versus Windows Update for Business?",
+    "a": "WSUS is an on-prem server that approves and distributes updates. Windows Update for Business uses cloud-side policy rings and deferrals. Both control which patches reach machines and when."
+   },
+   {
+    "q": "What is the registry and when do you edit it?",
+    "a": "A hierarchical store of OS and application settings (HKLM, HKCU). Edit only when no supported setting exists, export the key first with `reg export`, and prefer GPO or scripts for repeatability."
+   },
+   {
+    "q": "What is NTFS permission versus share permission?",
+    "a": "Share permissions apply over the network; NTFS permissions apply locally and remotely. The effective access is the more restrictive of the two."
+   }
+  ],
+  "trouble": [
+   {
+    "q": "'The trust relationship between this workstation and the primary domain failed.'",
+    "a": "The machine account password is out of sync. Rejoin the domain, or run `Reset-ComputerMachinePassword -Credential <admin> -Server <DC>`. Check for restored snapshots and time skew too."
+   },
+   {
+    "q": "Event ID 4625 floods the Security log.",
+    "a": "Failed logons. Read the logon type and source IP, find the source with the account and workstation fields, and check for a service with an old password or an external password-spray attempt."
+   },
+   {
+    "q": "A server can't join the domain.",
+    "a": "Check it can resolve the domain via the DC as its DNS server, that time is in sync, ports like 53, 88, 389 and 445 are open, and that the computer name is not a stale duplicate object."
+   },
+   {
+    "q": "Windows Update stuck at 'Pending restart' or failing with a 0x80 error.",
+    "a": "Reboot, then check `C:\\Windows\\Logs\\CBS\\CBS.log`, run `DISM /Online /Cleanup-Image /RestoreHealth` and `sfc /scannow`, and reset the update components if needed."
+   }
+  ],
+  "scenarios": [
+   {
+    "q": "A critical file server is at 98% disk. Users cannot save. What do you do?",
+    "a": "Free space first by moving old data or shadow copies safely, find hogs with a tree-size tool, extend the volume if the platform allows, and then add quotas and a monitoring alert so it does not recur."
+   },
+   {
+    "q": "How do you onboard a new Windows server into the managed estate?",
+    "a": "Build from a hardened template, join the domain in the right OU, apply GPOs, install the monitoring and backup agents, patch it, set up local admin controls, and record it in the CMDB."
+   }
+  ]
+ },
+ "network": {
+  "terms": [
+   {
+    "q": "What is a subnet mask and CIDR notation?",
+    "a": "The mask splits an address into network and host bits. CIDR writes it as a prefix, for example `/24` is 255.255.255.0 with 254 usable hosts."
+   },
+   {
+    "q": "What is a routing table and longest prefix match?",
+    "a": "Routers pick the most specific route that matches the destination. The default route `0.0.0.0/0` is used only when nothing more specific matches."
+   },
+   {
+    "q": "What is DNS record types A, CNAME, MX, PTR?",
+    "a": "A maps a name to IPv4, CNAME aliases one name to another, MX names mail servers, PTR is reverse lookup from IP to name."
+   },
+   {
+    "q": "What is DHCP and the DORA exchange?",
+    "a": "Discover, Offer, Request, Acknowledge. A client broadcasts to find a server and receives an IP lease, mask, gateway and DNS settings."
+   },
+   {
+    "q": "What is a stateful firewall?",
+    "a": "It tracks connections, so return traffic for an allowed outbound flow is permitted automatically without a separate inbound rule."
+   },
+   {
+    "q": "What are BGP and OSPF?",
+    "a": "OSPF is an interior routing protocol used inside an organization. BGP is the exterior protocol exchanging routes between autonomous systems, and is also used for cloud and WAN connectivity."
+   }
+  ],
+  "trouble": [
+   {
+    "q": "IP conflict: two hosts have the same address.",
+    "a": "Find the MAC owners with `arp -a` or the switch table, fix the static or DHCP overlap, and reserve addresses in DHCP. Use `arping -D` to detect duplicates."
+   },
+   {
+    "q": "A host gets a 169.254.x.x address.",
+    "a": "It failed DHCP and self-assigned. Check cable and VLAN, DHCP server and scope exhaustion, relay (ip helper) configuration, and run `dhclient -v` or `ipconfig /renew`."
+   },
+   {
+    "q": "DNS resolves but the connection hangs.",
+    "a": "Resolution is fine, so test the path: `traceroute`, `Test-NetConnection host -Port N`, and check firewall rules, routing and asymmetric paths rather than DNS."
+   },
+   {
+    "q": "Packet loss on a link with no errors on either end.",
+    "a": "Check interface counters for CRC and drops, duplex or speed mismatch, QoS policing, and congestion. Run `mtr` to see where loss starts and whether it continues to later hops."
+   }
+  ],
+  "scenarios": [
+   {
+    "q": "A new server cannot reach a database in another subnet. How do you troubleshoot?",
+    "a": "Verify its IP, mask and gateway, ping the gateway, trace the route, test the DB port from the server, then check firewall rules and ACLs on both sides and return routing. Capture packets at the server to see whether SYN gets a reply."
+   },
+   {
+    "q": "How would you design addressing and segmentation for a new three-tier application?",
+    "a": "Separate web, app and data subnets, allow only needed flows between tiers with firewall or security group rules, keep management on its own network, reserve room to grow, and document the flows."
+   }
+  ]
+ },
+ "lb": {
+  "terms": [
+   {
+    "q": "What is a VIP and a pool?",
+    "a": "The virtual IP is the address clients connect to. The pool is the set of backend members the load balancer distributes traffic across."
+   },
+   {
+    "q": "What is SSL offload versus passthrough versus re-encryption?",
+    "a": "Offload terminates TLS at the LB and sends plain HTTP. Passthrough forwards encrypted traffic untouched. Re-encryption terminates and then opens a new TLS session to the backend."
+   },
+   {
+    "q": "What is a certificate chain?",
+    "a": "Leaf certificate, intermediate CA, root CA. Servers must send the leaf and intermediates; clients trust the root from their store. A missing intermediate causes errors on some clients only."
+   },
+   {
+    "q": "What is X-Forwarded-For?",
+    "a": "An HTTP header added by proxies carrying the original client IP. Backends read it for logging and access control instead of the LB's address."
+   },
+   {
+    "q": "What is connection draining?",
+    "a": "Letting existing connections finish while a member receives no new ones, so you can remove or patch a node without dropping users."
+   },
+   {
+    "q": "What is a CSR?",
+    "a": "A certificate signing request containing the public key and subject names, signed with the private key. You send it to the CA and keep the private key secret."
+   }
+  ],
+  "trouble": [
+   {
+    "q": "Intermittent 'certificate not trusted' errors from some clients.",
+    "a": "Likely a missing intermediate on one node or an old trust store on the client. Check with `openssl s_client -connect host:443 -showcerts` and install the full chain on every member."
+   },
+   {
+    "q": "Users lose their session after each request.",
+    "a": "Persistence is off or the app stores sessions in local memory. Enable cookie persistence as a short term fix, and store sessions in a shared cache for a real one."
+   },
+   {
+    "q": "All pool members marked down but the app is up.",
+    "a": "The monitor is wrong: path, port, expected status or Host header, or a firewall blocks the LB's probe source. Replay the probe with `curl -v` from the LB's address."
+   },
+   {
+    "q": "'SSL handshake failed' after a cert renewal.",
+    "a": "Check the key matches the certificate (compare modulus hashes), the chain order, that the SAN covers the name, and that the LB's cipher or TLS version still overlaps with clients."
+   }
+  ],
+  "scenarios": [
+   {
+    "q": "A site goes down with 503 errors after a deployment. What do you do?",
+    "a": "Check pool member state and health checks first, test a member directly with curl, read app logs for the failing version, and roll back or fail traffic to the old pool while you investigate."
+   },
+   {
+    "q": "You are asked to put an application behind a load balancer. What do you need to know?",
+    "a": "Protocol and ports, health check endpoint, session needs, TLS requirements and certificates, expected traffic, client IP needs, backend capacity, DNS plan and a test and rollback plan."
+   }
+  ]
+ },
+ "docker": {
+  "terms": [
+   {
+    "q": "What is a Dockerfile?",
+    "a": "A text recipe of instructions (FROM, COPY, RUN, CMD) that `docker build` turns into image layers. Order matters for layer caching."
+   },
+   {
+    "q": "What is a registry?",
+    "a": "A server storing and distributing images, such as Docker Hub or a private one. Images are named `registry/repo:tag` and pulled by digest or tag."
+   },
+   {
+    "q": "What is a volume versus a bind mount?",
+    "a": "A volume is managed by Docker and persists independent of the container. A bind mount maps a host path into the container. Both survive container removal."
+   },
+   {
+    "q": "What is a multi-stage build?",
+    "a": "Several FROM stages in one Dockerfile; you build in a heavy stage and copy only the artifact into a slim final stage, giving a smaller image with no build tools."
+   },
+   {
+    "q": "What are namespaces and cgroups?",
+    "a": "Namespaces isolate what a process sees (PID, network, mounts). Cgroups limit what it can use (CPU, memory). Together they make a container."
+   },
+   {
+    "q": "What is a tag versus a digest?",
+    "a": "A tag is a movable label like `1.2`. A digest (`sha256:...`) is an immutable content hash. Pin digests for reproducible deploys."
+   }
+  ],
+  "trouble": [
+   {
+    "q": "'Cannot connect to the Docker daemon'.",
+    "a": "The daemon is not running or you lack permission. Check `systemctl status docker`, start it, and add your user to the docker group or use sudo."
+   },
+   {
+    "q": "'no space left on device' when building images.",
+    "a": "Old images, containers and build cache fill the disk. Inspect with `docker system df`, clean with `docker system prune`, and move the data root if needed."
+   },
+   {
+    "q": "Container cannot reach the internet.",
+    "a": "Check DNS inside it (`/etc/resolv.conf`), the host's IP forwarding and firewall, and proxy settings. A corporate proxy must be configured for the daemon and the container."
+   },
+   {
+    "q": "Image pull fails with 'unauthorized' or 'manifest unknown'.",
+    "a": "Log in with `docker login` to the right registry, check the repo and tag exist, and confirm the credential has pull rights."
+   }
+  ],
+  "scenarios": [
+   {
+    "q": "A container works on your laptop but not in production. How do you investigate?",
+    "a": "Compare image digests, environment variables, mounted config, network and ports, resource limits and host differences. Check logs and `docker inspect`, and reproduce with the same image and settings."
+   },
+   {
+    "q": "How do you design a safe image build pipeline?",
+    "a": "Pin base images, scan for vulnerabilities, build in CI with multi-stage Dockerfiles, run as non-root, sign and tag with commit IDs, push to a private registry and promote the same image across environments."
+   }
+  ]
+ },
+ "k8s": {
+  "terms": [
+   {
+    "q": "What is a pod?",
+    "a": "The smallest deployable unit: one or more containers sharing a network namespace and volumes. Pods are ephemeral and get new IPs when recreated."
+   },
+   {
+    "q": "What is a namespace in Kubernetes?",
+    "a": "A virtual partition of cluster resources for names, quotas and RBAC. It scopes most objects but is not a security boundary on its own."
+   },
+   {
+    "q": "What is etcd?",
+    "a": "The consistent key-value store holding all cluster state. Back it up; losing it means losing the cluster's desired state."
+   },
+   {
+    "q": "What is an Ingress versus a Service?",
+    "a": "A Service gives stable in-cluster access to pods. An Ingress defines HTTP routing from outside to Services and needs an ingress controller to act on it."
+   },
+   {
+    "q": "What are taints and tolerations?",
+    "a": "A taint on a node repels pods unless they tolerate it. Used to reserve nodes for specific workloads or keep pods off nodes with issues."
+   },
+   {
+    "q": "What is a PersistentVolumeClaim?",
+    "a": "A pod's request for storage. It binds to a PersistentVolume, often provisioned dynamically by a StorageClass, so data outlives the pod."
+   }
+  ],
+  "trouble": [
+   {
+    "q": "kubectl says 'Unable to connect to the server'.",
+    "a": "Check the kubeconfig context (`kubectl config current-context`), network reach to the API server, expired certificates, and whether the control plane is up."
+   },
+   {
+    "q": "A deployment rollout is stuck.",
+    "a": "Run `kubectl rollout status` and `describe` the new pods. Usual causes are failing readiness probes, image pull errors or insufficient resources. Roll back with `kubectl rollout undo`."
+   },
+   {
+    "q": "Pod can't resolve service names.",
+    "a": "Check CoreDNS pods and logs, the pod's `/etc/resolv.conf`, and NetworkPolicies blocking DNS on port 53. Test with `nslookup kubernetes.default` from a debug pod."
+   },
+   {
+    "q": "A node is full of evicted pods.",
+    "a": "Memory or disk pressure. Check `kubectl describe node` conditions, fix the noisy workload, set requests and limits, and clean up evicted pods with `kubectl delete pod --field-selector=status.phase=Failed`."
+   }
+  ],
+  "scenarios": [
+   {
+    "q": "An application in the cluster has intermittent 5xx errors. How do you debug?",
+    "a": "Check pod restarts and readiness, logs across replicas, resource throttling, recent rollouts, endpoints on the Service, and ingress logs. Compare a failing pod against a healthy one."
+   },
+   {
+    "q": "How would you deploy an app to Kubernetes with zero downtime?",
+    "a": "Use a Deployment with a rolling update, readiness probes, enough replicas, a PodDisruptionBudget, resource requests, graceful shutdown handling, and a tested rollback."
+   }
+  ]
+ },
+ "cicd": {
+  "terms": [
+   {
+    "q": "What is a pipeline stage versus a job?",
+    "a": "A stage is a phase such as build, test or deploy. Jobs are the units of work inside it, run by runners or agents, and stages usually run in sequence."
+   },
+   {
+    "q": "What is a runner or agent?",
+    "a": "The machine or container that executes pipeline jobs. Self-hosted runners can reach private networks; hosted ones are ephemeral."
+   },
+   {
+    "q": "What is GitOps?",
+    "a": "Git is the source of truth for desired state, and a controller such as Argo CD or Flux reconciles the cluster to match it. Changes happen by pull request."
+   },
+   {
+    "q": "What is a Terraform plan versus apply?",
+    "a": "Plan shows the diff between code, state and reality without changing anything. Apply performs it. Always review the plan before applying."
+   },
+   {
+    "q": "What is configuration drift?",
+    "a": "When the real environment diverges from the code, usually from manual changes. Detect with `terraform plan` or Ansible check mode and fix by reapplying code."
+   },
+   {
+    "q": "What is semantic versioning?",
+    "a": "MAJOR.MINOR.PATCH: major for breaking changes, minor for compatible features, patch for fixes. Lets consumers judge upgrade risk."
+   }
+  ],
+  "trouble": [
+   {
+    "q": "Pipeline passes locally but fails in CI.",
+    "a": "Environment differences: tool versions, missing env vars, paths, permissions or network access. Pin versions, run in the same container image, and print diagnostic info."
+   },
+   {
+    "q": "Terraform 'Error acquiring the state lock'.",
+    "a": "Another run or a crashed one holds the lock. Confirm no apply is active, then `terraform force-unlock <ID>`. Do not force unlock while a run is live."
+   },
+   {
+    "q": "Deploy job fails with 'permission denied' to the cluster or cloud.",
+    "a": "The pipeline identity lacks a role or its token expired. Check the service principal's role assignment and scope, and the secret or federated credential configuration."
+   },
+   {
+    "q": "Flaky tests make the pipeline unreliable.",
+    "a": "Identify and quarantine them, fix race conditions and shared state, avoid fixed sleeps, and track flake rate. Do not just rerun until green."
+   }
+  ],
+  "scenarios": [
+   {
+    "q": "A bad release is in production. How do you respond using your pipeline?",
+    "a": "Stop further deploys, roll back to the last known good artifact or revert the commit, verify with smoke tests, communicate status, then fix forward in a branch with a test covering the failure."
+   },
+   {
+    "q": "How would you introduce CI/CD for a team that deploys manually?",
+    "a": "Start with version control and a build, add automated tests, publish versioned artifacts, automate deploy to a test environment, add approvals for production, and measure lead time and failures."
+   }
+  ]
+ },
+ "monitoring": {
+  "terms": [
+   {
+    "q": "What is an alert threshold versus anomaly detection?",
+    "a": "A threshold fires at a fixed value. Anomaly detection compares against learned behavior. Thresholds are simple and predictable; anomaly detection suits seasonal metrics."
+   },
+   {
+    "q": "What is cardinality in metrics?",
+    "a": "The number of unique label combinations. High cardinality (user IDs as labels) blows up storage and query cost in systems like Prometheus."
+   },
+   {
+    "q": "What is an exporter?",
+    "a": "A process that exposes a system's metrics in a format a monitor can scrape, such as node_exporter for host metrics."
+   },
+   {
+    "q": "What is a dashboard versus an alert?",
+    "a": "A dashboard is for humans exploring state. An alert interrupts someone and must be actionable and urgent."
+   },
+   {
+    "q": "What is MTTD versus MTTR?",
+    "a": "Mean time to detect and mean time to recover. Monitoring improves detection; runbooks and automation reduce recovery."
+   },
+   {
+    "q": "What is log aggregation?",
+    "a": "Shipping logs from many hosts to a central searchable store (for example Elasticsearch or Log Analytics) with parsing and retention, so you can search across systems."
+   }
+  ],
+  "trouble": [
+   {
+    "q": "Monitoring shows a host down but it is up.",
+    "a": "Check the agent or exporter, firewall to the monitoring server, DNS, and the check's credentials. Separate host availability from check availability."
+   },
+   {
+    "q": "Metrics have gaps.",
+    "a": "Scrape timeouts, agent restarts, clock skew or dropped network. Check the scrape logs and target status, and raise scrape timeout or fix the overloaded target."
+   },
+   {
+    "q": "Disk fills because of log growth.",
+    "a": "Add logrotate with size and age limits and compression, send logs off host, lower noisy debug levels, and alert on disk trend before it is full."
+   },
+   {
+    "q": "An alert fires but nobody knows what to do.",
+    "a": "The alert lacks a runbook. Add a description, severity, owner, dashboard link and first steps, and delete alerts that are not actionable."
+   }
+  ],
+  "scenarios": [
+   {
+    "q": "You are paged for high latency on a customer-facing app. What do you do?",
+    "a": "Acknowledge, check scope and start time, look at the golden signals, recent changes, dependency health and saturation, mitigate first (rollback, scale, failover), then find root cause and write it up."
+   },
+   {
+    "q": "How do you decide what to alert on for a new service?",
+    "a": "Alert on user-facing symptoms such as error rate and latency against SLOs, plus saturation that predicts outages. Keep cause-level metrics on dashboards, and review alerts after incidents."
+   }
+  ]
+ },
+ "cloud": {
+  "terms": [
+   {
+    "q": "What is IaaS, PaaS and SaaS?",
+    "a": "IaaS rents virtual infrastructure you manage above the hypervisor, PaaS manages the runtime for your code, SaaS is a finished application. Responsibility shifts to the provider as you go up."
+   },
+   {
+    "q": "What is a resource group in Azure?",
+    "a": "A logical container for related resources sharing a lifecycle, permissions and tags. Deleting the group deletes everything in it."
+   },
+   {
+    "q": "What is a managed identity?",
+    "a": "An Azure-managed identity for a resource, used to authenticate to other services without stored credentials. System-assigned lives with the resource; user-assigned is reusable."
+   },
+   {
+    "q": "What is a region versus an availability zone?",
+    "a": "A region is a geographic area. Zones are physically separate datacenters inside it, with independent power and network, used for in-region high availability."
+   },
+   {
+    "q": "What is autoscaling?",
+    "a": "Adding or removing instances from metrics or a schedule. Needs stateless instances, sensible min and max limits, and a cooldown to avoid flapping."
+   },
+   {
+    "q": "What is a shared responsibility model?",
+    "a": "The provider secures the cloud itself; you secure what you put in it, such as identities, data, configuration and guest OS patching depending on service type."
+   }
+  ],
+  "trouble": [
+   {
+    "q": "A VM in Azure can't be reached over RDP or SSH.",
+    "a": "Check the NSG rule and effective security rules, the VM's public or private path, OS firewall, and the service running. Use Network Watcher IP flow verify and serial console."
+   },
+   {
+    "q": "'AuthorizationFailed' when deploying.",
+    "a": "The identity lacks a role at that scope. Check role assignments with `az role assignment list`, grant least privilege at the right scope, and wait for propagation."
+   },
+   {
+    "q": "Unexpected cloud bill spike.",
+    "a": "Use cost analysis grouped by resource and tag, look for new or oversized resources, data egress, unattached disks and forgotten test environments, then add budgets and alerts."
+   },
+   {
+    "q": "Deployment fails with a quota error.",
+    "a": "The subscription or region quota for that SKU is exhausted. Request an increase, choose another size or region, or free unused resources."
+   }
+  ],
+  "scenarios": [
+   {
+    "q": "You must move an on-prem app to the cloud with minimal downtime. What is your approach?",
+    "a": "Assess dependencies, choose a strategy such as rehost, set up network and identity connectivity, replicate data, test in a staging copy, schedule a cutover with a rollback plan, and monitor afterward."
+   },
+   {
+    "q": "How would you secure a new cloud subscription?",
+    "a": "Apply RBAC with least privilege, enforce policy, enable MFA and conditional access, use private networking, centralize logging, turn on a security posture tool, and tag and budget resources."
+   }
+  ]
+ },
+ "onboarding": {
+  "terms": [
+   {
+    "q": "What is a CMDB?",
+    "a": "A configuration management database recording servers, applications and their relationships. Onboarding adds the new app so support and change teams can find owners and dependencies."
+   },
+   {
+    "q": "What is a go-live checklist?",
+    "a": "A gated list confirming build, security sign-off, monitoring, backups, access, DNS and certificates, runbook and rollback are ready before production cutover."
+   },
+   {
+    "q": "What is a cutover plan?",
+    "a": "A timed sequence of go-live steps with owners, validation points and a rollback trigger, rehearsed beforehand."
+   },
+   {
+    "q": "What is a service account versus a user account?",
+    "a": "A service account is a non-interactive identity for an application or service. It needs a named owner, least privilege and rotated or managed credentials."
+   },
+   {
+    "q": "What is an SLA versus an OLA?",
+    "a": "An SLA is a commitment to the customer. An OLA is an internal agreement between support teams that makes the SLA achievable."
+   },
+   {
+    "q": "What is a dependency map?",
+    "a": "A diagram of everything the app calls and is called by: databases, APIs, DNS, identity, file shares. It drives firewall rules, startup order and failure analysis."
+   }
+  ],
+  "trouble": [
+   {
+    "q": "The app works in test but fails in production on first deploy.",
+    "a": "Compare environments: firewall flows, DNS names, certificates, service account permissions, config values and data. A flow matrix and a pre-prod checklist catch most of this."
+   },
+   {
+    "q": "Monitoring is not covering the new app after go-live.",
+    "a": "Onboarding skipped monitoring. Add health checks, synthetic tests, host and service metrics, log shipping and alerts with owners, and make it a gate on the checklist."
+   },
+   {
+    "q": "Users can reach the app from some networks but not others.",
+    "a": "Check firewall rules for those source ranges, DNS views, proxy settings and routing. Test from the failing source with curl and compare with a working one."
+   },
+   {
+    "q": "Go-live certificate or DNS was not ready.",
+    "a": "Both have lead times. Start requests early, verify chains and names on a test VIP, lower DNS TTL ahead, and keep the change window for validation, not for waiting."
+   }
+  ],
+  "scenarios": [
+   {
+    "q": "A team asks you to onboard an app with a two-day deadline. What do you do?",
+    "a": "State what can be done safely, ask for requirements and dependencies, prioritize security, monitoring, backups and rollback, flag skipped items as accepted risks in writing, and agree a follow-up date."
+   },
+   {
+    "q": "How do you hand a new app over to the support team?",
+    "a": "Provide the runbook, architecture and flows, contacts and escalation path, monitoring and alerts, known issues, and run a walkthrough or shadow period before taking over on-call."
+   }
+  ]
+ },
+ "troubleshoot": {
+  "terms": [
+   {
+    "q": "What is latency versus jitter?",
+    "a": "Latency is one-way or round-trip delay. Jitter is the variation of that delay. Both hurt real-time traffic such as voice."
+   },
+   {
+    "q": "What is packet loss and retransmission?",
+    "a": "Packets that never arrive. TCP resends them, which reduces throughput and adds delay. Even 1 percent loss badly hurts long-distance transfers."
+   },
+   {
+    "q": "What is the bandwidth-delay product?",
+    "a": "Bandwidth times round-trip time: the amount of data in flight needed to fill a link. TCP window size must match it or throughput is capped."
+   },
+   {
+    "q": "What is a TCP reset (RST)?",
+    "a": "A packet that abruptly closes a connection, sent by a host with no listener or by a firewall or app that rejects the session."
+   },
+   {
+    "q": "What is strace and when do you use it?",
+    "a": "It traces system calls of a process, showing which files, sockets and syscalls it is stuck on. Useful for hangs and missing-file errors."
+   },
+   {
+    "q": "What is baseline comparison?",
+    "a": "Comparing current metrics or behavior with a known-good period or a working host, so you can separate real change from normal."
+   }
+  ],
+  "trouble": [
+   {
+    "q": "curl returns 'Could not resolve host'.",
+    "a": "DNS failure. Test `nslookup` or `dig` against the configured resolver and another, check `/etc/resolv.conf`, search domains, and whether a firewall blocks port 53."
+   },
+   {
+    "q": "A connection times out only from one host.",
+    "a": "Compare with a working host: route, firewall rules, source NAT, proxy settings and local firewall. Capture packets on the client to see whether SYN leaves and whether a reply returns."
+   },
+   {
+    "q": "Application is slow only at certain times.",
+    "a": "Correlate with batch jobs, backups, traffic peaks and resource saturation from metrics. Check queue lengths, database locks, and shared network or storage use at those times."
+   },
+   {
+    "q": "TLS handshake errors only for some clients.",
+    "a": "Check protocol and cipher mismatch, missing intermediate certificate, SNI support and clock skew. Reproduce with `openssl s_client` using specific TLS versions."
+   }
+  ],
+  "scenarios": [
+   {
+    "q": "A user says the application is down. What are your first five minutes?",
+    "a": "Confirm the symptom and scope, check monitoring and recent changes, test from your side, find which tier fails, apply the quickest safe mitigation, and keep stakeholders updated with facts."
+   },
+   {
+    "q": "You cannot reproduce an intermittent issue. How do you proceed?",
+    "a": "Add targeted logging and metrics, run continuous captures or synthetic probes, correlate timestamps across tiers, narrow by client, path and time, and test hypotheses one change at a time."
+   }
+  ]
+ },
+ "virt": {
+  "terms": [
+   {
+    "q": "What is a hypervisor, type 1 versus type 2?",
+    "a": "Software that runs VMs. Type 1 (ESXi, Hyper-V) runs on bare metal; type 2 (Workstation, VirtualBox) runs on a host OS."
+   },
+   {
+    "q": "What is a datastore?",
+    "a": "Storage presented to ESXi hosts where VM files live, typically VMFS on block storage or NFS on a NAS."
+   },
+   {
+    "q": "What is a VMware snapshot?",
+    "a": "A point-in-time delta of a VM's disk and optionally memory. It grows over time and slows the VM, so it is temporary protection, not a backup."
+   },
+   {
+    "q": "What is storage vMotion?",
+    "a": "Moving a running VM's disks between datastores without downtime, used for rebalancing or array maintenance."
+   },
+   {
+    "q": "What is memory ballooning and overcommit?",
+    "a": "The balloon driver reclaims guest memory when the host is short. Overcommit assigns more virtual RAM than physical; heavy use causes swapping and slowness."
+   },
+   {
+    "q": "What is multipathing?",
+    "a": "Multiple paths from host to storage for redundancy and throughput. A path policy such as round robin uses them, and a failed path is skipped automatically."
+   }
+  ],
+  "trouble": [
+   {
+    "q": "A VM is slow with high CPU ready time.",
+    "a": "Too many vCPUs or an overcommitted host. Right-size vCPU counts, spread VMs with DRS, and check CPU ready percentage in performance charts."
+   },
+   {
+    "q": "Datastore is almost full and VMs pause.",
+    "a": "Free space by deleting old snapshots, moving VMs with storage vMotion, or expanding the LUN. Check thin-provisioned overcommit and set datastore alarms."
+   },
+   {
+    "q": "Snapshot consolidation needed warning.",
+    "a": "Orphaned delta disks remain. Run Consolidate from the VM's snapshot menu when IO is low, ensure the datastore has free space, and check backup jobs that leave stale snapshots."
+   },
+   {
+    "q": "vMotion fails.",
+    "a": "Check the vMotion network and VMkernel ports, compatible CPUs or EVC mode, shared storage access, and VM devices attached to the host such as ISO or passthrough."
+   }
+  ],
+  "scenarios": [
+   {
+    "q": "A host fails in a cluster. What happens and what do you check afterwards?",
+    "a": "HA restarts the VMs on other hosts. Afterwards confirm all VMs are running, check capacity for another failure, investigate the host hardware logs, and fix or replace before returning it to service."
+   },
+   {
+    "q": "How do you migrate a physical server to a VM?",
+    "a": "Assess and size, use a converter or backup restore to create the VM, install tools and fix drivers, test in an isolated network, schedule cutover with final sync, keep the source for rollback, and decommission later."
+   }
+  ]
+ },
+ "security": {
+  "terms": [
+   {
+    "q": "What is the CIA triad?",
+    "a": "Confidentiality, integrity, availability: the three goals security controls protect. Most controls trade one against another."
+   },
+   {
+    "q": "What is defense in depth?",
+    "a": "Layering controls (network, host, identity, application, data) so failure of one does not expose the system."
+   },
+   {
+    "q": "What is a CVE and CVSS?",
+    "a": "A CVE is a public identifier for a vulnerability. CVSS scores severity from 0 to 10, but exposure and exploitability in your environment should drive priority."
+   },
+   {
+    "q": "What is PKI?",
+    "a": "Public key infrastructure: CAs, certificates and trust chains used to issue, validate and revoke identities for TLS, signing and authentication."
+   },
+   {
+    "q": "What is SIEM?",
+    "a": "A system that collects and correlates logs from across the estate to detect and investigate security events."
+   },
+   {
+    "q": "What is RBAC?",
+    "a": "Role-based access control: permissions are granted to roles, and users get roles. Easier to audit and keeps least privilege manageable."
+   }
+  ],
+  "trouble": [
+   {
+    "q": "Account locked out repeatedly.",
+    "a": "Find the source of bad attempts: a service with an old password, a mapped drive or mobile device. Check Event 4740 on the DC for the caller computer, and update the stored credential."
+   },
+   {
+    "q": "A scan flags weak TLS ciphers on a server.",
+    "a": "Disable TLS 1.0 and 1.1 and weak ciphers in the server or LB config, test with `nmap --script ssl-enum-ciphers` or `testssl.sh`, and check no legacy clients depend on them first."
+   },
+   {
+    "q": "Suspicious outbound traffic from a server.",
+    "a": "Isolate it from the network, preserve evidence with memory and disk images, identify the process and destination, rotate credentials it held, and follow the incident process."
+   },
+   {
+    "q": "Audit finds shared admin accounts.",
+    "a": "Replace with named accounts, use a PAM or vault with session recording, remove unused ones, enforce MFA, and log privileged access."
+   }
+  ],
+  "scenarios": [
+   {
+    "q": "You suspect a server has been compromised. What do you do?",
+    "a": "Escalate per the incident process, contain by isolating it without powering off, preserve logs and images, determine scope and entry point, eradicate and rebuild from a known-good image, rotate secrets and review lessons learned."
+   },
+   {
+    "q": "A developer wants a firewall port opened urgently. How do you handle it?",
+    "a": "Ask for source, destination, port, protocol, purpose and duration, check it against policy, raise a change, grant the narrowest rule with an expiry or review date, and log it."
+   }
+  ]
+ },
+ "scenarios": {
+  "terms": [
+   {
+    "q": "What is high availability versus scalability?",
+    "a": "HA keeps a service running when components fail, usually through redundancy. Scalability handles more load by adding capacity. A system can have one without the other."
+   },
+   {
+    "q": "What are RPO and RTO in a design?",
+    "a": "RPO is acceptable data loss measured in time, RTO is acceptable downtime. They set the backup, replication and failover design and its cost."
+   },
+   {
+    "q": "What is a single point of failure?",
+    "a": "Any component whose failure takes the service down, such as one load balancer, database, DNS server or power feed. Design reviews hunt for them."
+   },
+   {
+    "q": "What is capacity planning?",
+    "a": "Forecasting demand from growth and trends and comparing it with resource limits so you add capacity before saturation, not after."
+   },
+   {
+    "q": "What is technical debt in infrastructure?",
+    "a": "Shortcuts and aging systems, like manual builds or unsupported OS versions, that add future risk and cost. Track them and schedule paydown."
+   },
+   {
+    "q": "What is a stakeholder and why map them?",
+    "a": "Anyone affected by or influencing a change. Mapping them tells you who to consult, inform and get sign-off from."
+   }
+  ],
+  "trouble": [
+   {
+    "q": "A project is slipping and the team is overloaded.",
+    "a": "Reprioritize with the stakeholders, cut scope or phase delivery, remove blockers, protect the team from new work, and communicate a revised plan honestly."
+   },
+   {
+    "q": "Two teams disagree on a design.",
+    "a": "Write down requirements and constraints, compare options against them with data, run a short proof of concept if needed, and escalate for a decision with a clear recommendation if it stays deadlocked."
+   },
+   {
+    "q": "A migration weekend goes over time.",
+    "a": "Hold to the rollback trigger agreed in advance, roll back if validation is not met by that point, communicate, then run a post-incident review before retrying."
+   }
+  ],
+  "scenarios": [
+   {
+    "q": "How would you handle taking over an unstable environment?",
+    "a": "Stabilize first: find the top recurring incidents, add monitoring, document, back up, fix quick wins, build trust with the users, then plan larger changes in a prioritized roadmap."
+   },
+   {
+    "q": "Walk me through designing a system for a business that needs 99.9 percent availability.",
+    "a": "That is about 8.7 hours down per year. Remove single points of failure, use redundant tiers and zones, automate failover and deployments, monitor against an SLO, test restores and failovers, and document the runbook."
+   }
+  ]
+ }
+}
