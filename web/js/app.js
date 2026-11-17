@@ -5,13 +5,14 @@ import { voice } from './voice.js';
 import { VoiceSession, realtimeSupported } from './realtime.js';
 import { native, signedIn, signOut, renderGoogleButton, refreshAccount, onAccountChange, nativeSignIn, nativePurchase, nativeBuyLive, nativeRestore, listenNative, notifyBadge, notifyDaily, promptNotifications } from './auth.js';
 import { initContent, getCatalog, getManifest, roleById, topicMeta, ensureTopics, ensureForProfile, loadedTopics, reportUrl } from './content.js';
-import { diagramHtml } from './diagrams.js';
+import { diagramHtml, diagramFor } from './diagrams.js';
+import { ringOffset, nextStage, prevStage } from './animate.js';
 
 const DAY = 86400000;
 const app = document.getElementById('app');
 const S = { view: 'home', topic: null, ci: 0, deck: null, di: 0, reveal: false, busy: false, listening: false, chatContext: '',
   rt: null, rtMode: null, rtStatus: '', rtStarting: false, voiceServer: false, live: null, pendingUser: false, muted: false,
-  googleClientId: '', plans: null, paywall: false, draft: null, roleSearch: '', showPlans: false, fullPlan: false, allTopics: false, buying: null, buyBusy: false, healthLoaded: false, lastView: '', liveHint: null, suggestPending: false };
+  googleClientId: '', plans: null, paywall: false, draft: null, roleSearch: '', showPlans: false, fullPlan: false, allTopics: false, buying: null, buyBusy: false, healthLoaded: false, lastView: '', liveHint: null, suggestPending: false, dgStage: null, prevMap: null };
 
 /* ---------- helpers ---------- */
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -235,6 +236,9 @@ function homeView() {
   const today = plan[ti];
   const prog = store.progress();
   const map = knowledgeMap(relevant, p, prog);
+  // Remember this render's map so the next one can highlight tiles that moved up.
+  const prevMap = S.prevMap;
+  S.prevMap = Object.fromEntries(map.topics.map(t => [t.id, t.state]));
   const knownTotal = map.topics.reduce((n, t) => n + t.known, 0);
   const cardsTotal = map.topics.reduce((n, t) => n + t.total, 0);
   const due = dueCards(topics(), p, prog, Date.now(), 999).length;
@@ -278,10 +282,14 @@ function homeView() {
     </section>
     ${livePromo()}
     <section class="knowmap" aria-label="What you know">
-      <div class="nums"><span><b>What you know</b></span><span>${knownTotal} of ${cardsTotal} cards known</span></div>
-      <div class="tiles">${map.topics.map(t => `<button class="tile ${t.state}" data-act="learn" data-id="${t.id}" aria-label="${esc(t.name)}: ${t.state === 'strong' ? 'solid' : t.state === 'ok' ? 'getting there' : t.state === 'weak' ? 'shaky' : 'not started'}, ${t.known} of ${t.total} cards known">
+      <div class="nums"><span><b>What you know</b></span><span><b data-countup="${knownTotal}">${knownTotal}</b> of ${cardsTotal} cards known</span></div>
+      <div class="tiles">${map.topics.map(t => {
+        // A tile that moved up a state since the last render gets a brief highlight.
+        const order = { unseen: 0, weak: 1, ok: 2, strong: 3 };
+        const fresh = prevMap && prevMap[t.id] !== undefined && order[t.state] > order[prevMap[t.id]];
+        return `<button class="tile ${t.state}${fresh ? ' tile-fresh' : ''}" data-act="learn" data-id="${t.id}" aria-label="${esc(t.name)}: ${t.state === 'strong' ? 'solid' : t.state === 'ok' ? 'getting there' : t.state === 'weak' ? 'shaky' : 'not started'}, ${t.known} of ${t.total} cards known">
         <span class="t">${esc(t.name)}</span><span class="bar"><i style="width:${t.pct}%"></i></span>
-        <span class="m">${t.state === 'strong' ? 'Solid' : t.state === 'ok' ? 'Getting there' : t.state === 'weak' ? 'Shaky' : 'Not started'} · ${t.total ? `${t.known}/${t.total}` : 'no cards here'}</span></button>`).join('')}</div>
+        <span class="m">${t.state === 'strong' ? 'Solid' : t.state === 'ok' ? 'Getting there' : t.state === 'weak' ? 'Shaky' : 'Not started'} · ${t.total ? `${t.known}/${t.total}` : 'no cards here'}</span></button>`; }).join('')}</div>
       <p class="muted small">${map.counts.strong} solid · ${map.counts.ok} getting there · ${map.counts.weak} shaky · ${map.counts.unseen} not started</p>
     </section>
     <section>
@@ -312,7 +320,7 @@ function learnView() {
   return `<div class="stack">
     <div class="row between"><button class="back" data-act="home">${ic('left')}Plan</button><span class="muted small">${esc(t.name)}, ${S.ci + 1} of ${t.concepts.length}</span></div>
     <div class="segs">${t.concepts.map((_, i) => `<i class="${i <= S.ci ? 'on' : ''}"></i>`).join('')}</div>
-    ${S.ci === 0 ? diagramHtml(t.id) : ''}
+    ${S.ci === 0 ? diagramHtml(t.id, S.dgStage) : (diagramFor(t.id) ? `<button class="link quiet small" data-act="dgshow">How it works — see the diagram</button>` : '')}
     <article class="lesson" style="padding:14px 0 6px">
       <h1>${esc(c.t)}</h1>
       <div class="part body" style="margin-top:16px"><p class="lede" style="max-width:none">${fmt(c.what)}</p></div>
@@ -335,17 +343,25 @@ function deckView() {
   if (S.di >= d.cards.length) {
     const got = d.results.filter(Boolean).length;
     const pct = Math.round((got * 100) / d.cards.length);
+    // The topic with the most missed cards gets its diagram right here, so the
+    // fix is one look away instead of a hunt through the lessons.
+    const missed = {};
+    d.cards.forEach((c, i) => { if (!d.results[i]) missed[c.topic] = (missed[c.topic] || 0) + 1; });
+    const worst = Object.entries(missed).sort((a, b) => b[1] - a[1])[0]?.[0];
     return `<div class="stack" style="padding-top:30px">
-      <div class="score">${got}<small> of ${d.cards.length}</small></div>
+      <div class="score-ring"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="52"/><circle class="ring-prog" cx="60" cy="60" r="52" pathLength="100" style="stroke-dashoffset:${ringOffset(pct)}"/></svg><div class="score-num"><span class="n" data-countup="${got}">${got}</span><span class="muted small">of ${d.cards.length} · ${pct}%</span></div></div>
       <h2>${pct >= 80 ? 'A strong round.' : pct >= 50 ? 'Getting there.' : 'Better to find out now.'}</h2>
       <p class="lede">${pct >= 80 ? 'These cards come back later, spaced further apart each time.' : 'The cards you missed come back first next time. Rereading the lessons for those topics will help.'}</p>
+      ${worst && diagramFor(worst) ? `<section class="stack tight"><h3>The one to reread: ${esc(topicName(worst))}</h3>${diagramHtml(worst)}<div class="row"><button class="btn" data-act="learn" data-id="${worst}">Reread the ${esc(topicName(worst))} lesson</button></div></section>` : ''}
       <div class="row"><button class="btn primary" data-act="deck" data-id="">Practice another round</button><button class="btn" data-act="home">Back to plan</button></div></div>`;
   }
   const q = d.cards[S.di];
   const t = topicById(q.topic);
+  const singleTopic = d.cards.length && d.cards.every(c => c.topic === d.cards[0].topic) ? d.cards[0].topic : null;
   return `<div class="stack">
     <div class="row between"><button class="back" data-act="home">${ic('left')}Stop</button><span class="muted small">Card ${S.di + 1} of ${d.cards.length}</span></div>
     <div class="bar"><i style="width:${(S.di * 100) / d.cards.length}%"></i></div>
+    ${singleTopic && diagramFor(singleTopic) ? `<div class="row between"><span></span><button class="link quiet small" data-act="dgsheet" data-id="${singleTopic}">How it works — see the diagram</button></div>` : ''}
     <article class="card stacked flash" id="flash">
       <div class="card-head"><span>${esc(t?.name || q.topic)}</span><span class="level">${['', 'Fundamentals', 'Applied', 'Advanced'][q.l] || ''}</span></div>
       <p class="q">${fmt(q.q)}</p>
@@ -353,7 +369,8 @@ function deckView() {
       <div class="foot">${S.reveal ? `
         <div class="row"><button class="btn miss lg" data-act="grade" data-ok="0">Missed it</button><button class="btn got lg" data-act="grade" data-ok="1">Got it</button></div>
         <div class="row between small"><button class="link quiet" data-act="askq">Go deeper with the coach</button>${betaNote(t, `question: ${q.q}`)}</div>`
-      : '<button class="btn primary lg block" data-act="reveal">Show the answer</button><p class="muted small" style="text-align:center">Say your answer out loud first.</p>'}</div>
+      : '<button class="btn primary lg block" data-act="reveal">Show the answer</button><p class="muted small" style="text-align:center">Say your answer out loud first.</p>'}
+      <p class="muted small kbd-hint" style="text-align:center">Space to reveal · ← missed · → got it</p></div>
     </article>
   </div>`;
 }
@@ -704,6 +721,11 @@ function plansView() {
       <div style="margin:20px 0 22px">${ticks([`A spoken practice test built for your role and level, up to ${o.liveMin} minutes`, 'One question at a time, honest feedback after each answer', 'Hints as you go, and what a strong answer would add', 'Overall assessment at the end', 'Dropped call? Rejoin within the hour, same session', 'Works with Free or Pro'])}</div>
       <button class="btn block lg" data-act="buylive" ${dis}>${S.buyBusy === 'live' ? `Opening the ${storeName()}…` : credits ? `Buy another (you have ${credits})` : 'Buy a session'}</button>
     </section>
+    <section class="card">
+      <div class="card-head"><span>Every lesson opens with a moving picture</span></div>
+      <p class="muted small" style="margin:-6px 0 4px">Diagrams draw themselves, step by step, so the idea lands before the words do. This is a real one, from the Web Fundamentals lesson — tap through it:</p>
+      ${diagramHtml('web-fundamentals', S.dgStage)}
+    </section>
     <section class="stack">
       <div class="row between"><div><h3>Free</h3><p class="muted">Your day-by-day plan, every lesson and flashcard, and ${o.freeMsgs} messages plus ${o.freeVoice} voice minutes to try the coach.</p></div></div>
       <div class="row"><button class="btn" data-act="pickfree">${isPro ? 'Back to the app' : 'Continue on Free'}</button></div>
@@ -729,6 +751,24 @@ function topRight() {
 }
 
 function scrollEnd() { window.scrollTo(0, document.documentElement.scrollHeight); }
+
+// After a render, count the [data-countup] numbers up to their final value
+// (they are rendered at the final value, so nothing breaks if this never runs).
+function animateIn() {
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+  document.querySelectorAll('[data-countup]').forEach(el => {
+    const target = Number(el.dataset.countup);
+    if (!target) return;
+    const t0 = performance.now(), dur = 700;
+    const tick = now => {
+      const k = Math.min(1, (now - t0) / dur);
+      el.textContent = Math.round(target * (1 - Math.pow(1 - k, 2)));
+      if (k < 1) requestAnimationFrame(tick);
+    };
+    el.textContent = '0';
+    requestAnimationFrame(tick);
+  });
+}
 
 function render() {
   const p = profile();
@@ -762,6 +802,7 @@ function render() {
   }
   // Native app: keep the icon badge and the daily reminder in step with the plan.
   if (native() && key === 'home' && profile()) syncNativeHome();
+  animateIn();
 }
 
 /* ---------- purchases ---------- */
@@ -825,11 +866,35 @@ function startRoleDeck(id) {
 }
 
 async function openTopic(id) {
-  S.topic = id; S.ci = 0; S.view = 'learn'; render();
+  S.topic = id; S.ci = 0; S.dgStage = null; S.view = 'learn'; render();
   if (!topicById(id)) {
     try { await ensureTopics([id]); } catch { oops('Could not download this topic. Check your connection.'); }
     render();
   }
+}
+
+// Grade a flashcard: stamp the verdict on the card so the user sees it land,
+// then deal the next one. Extracted so the keyboard can grade too.
+function gradeCard(ok) {
+  if (S.grading || !S.deck || S.di >= S.deck.cards.length) return;
+  const q = S.deck.cards[S.di], prog = store.progress();
+  prog[q.id] = review(prog[q.id], ok); store.setProgress(prog);
+  S.grading = true;
+  const flash = document.getElementById('flash');
+  if (flash) {
+    flash.insertAdjacentHTML('beforeend', `<div class="verdict ${ok ? 'ok' : 'miss'}" aria-hidden="true">
+      <svg viewBox="0 0 64 64"><circle class="v-ring dg-draw" cx="32" cy="32" r="28" pathLength="100" style="animation-duration:.45s"/>
+      ${ok ? '<path class="v-mark dg-draw" d="M20 33 L28 41 L44 25" style="animation-delay:.35s;animation-duration:.3s"/>' : '<path class="v-mark dg-draw" d="M23 23 L41 41 M41 23 L23 41" style="animation-delay:.35s;animation-duration:.3s"/>'}</svg>
+      <span>${ok ? 'Got it' : 'Missed it — back soon'}</span></div>`);
+    // Let the stamp draw, then the card leaves to the side it was graded on.
+    setTimeout(() => flash.classList.add(ok ? 'out-r' : 'out-l'), 450);
+  }
+  setTimeout(() => {
+    S.grading = false; S.deck.results.push(ok); S.di++; S.reveal = false;
+    // First finished round: a sensible moment to ask about daily reminders.
+    if (S.di >= S.deck.cards.length && native() && !store.notifAsked()) { store.setNotifAsked(true); promptNotifications(); }
+    render();
+  }, 650);
 }
 
 function aiFailed(err) {
@@ -923,6 +988,18 @@ app.addEventListener('keydown', e => {
   if (form) form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
 });
 
+// Flashcards by keyboard: Space reveals, arrows grade. Only in the deck,
+// and never while typing or with a button focused.
+app.addEventListener('keydown', e => {
+  if (S.view !== 'deck' || !S.deck || S.di >= S.deck.cards.length) return;
+  if (e.target?.matches?.('input, textarea, select, button')) return;
+  if (e.key === ' ' || e.key === 'Enter') {
+    e.preventDefault();
+    if (!S.reveal) { S.reveal = true; render(); }
+  } else if (e.key === 'ArrowRight' && S.reveal) gradeCard(true);
+  else if (e.key === 'ArrowLeft' && S.reveal) gradeCard(false);
+});
+
 app.addEventListener('input', e => {
   if (e.target.id === 'chatInput') { e.target.style.height = 'auto'; e.target.style.height = Math.min(140, e.target.scrollHeight) + 'px'; }
   if (e.target.id !== 'roleSearch') return;
@@ -985,18 +1062,12 @@ document.addEventListener('click', async e => {
   else if (a === 'deck') startDeck(id ? id.split(',') : null);
   else if (a === 'roledeck') startRoleDeck(id);
   else if (a === 'reveal') { S.reveal = true; render(); }
-  else if (a === 'grade') {
-    if (S.grading) return;
-    const q = S.deck.cards[S.di], ok = b.dataset.ok === '1', prog = store.progress();
-    prog[q.id] = review(prog[q.id], ok); store.setProgress(prog);
-    // The card leaves the stack to the side it was graded on, then the next one is dealt.
-    S.grading = true;
-    document.getElementById('flash')?.classList.add(ok ? 'out-r' : 'out-l');
-    setTimeout(() => { S.grading = false; S.deck.results.push(ok); S.di++; S.reveal = false;
-      // First finished round: a sensible moment to ask about daily reminders.
-      if (S.di >= S.deck.cards.length && native() && !store.notifAsked()) { store.setNotifAsked(true); promptNotifications(); }
-      render(); }, 170);
-  }
+  else if (a === 'grade') gradeCard(b.dataset.ok === '1');
+  else if (a === 'dgprev') { S.dgStage = prevStage(S.dgStage); render(); }
+  else if (a === 'dgnext') { S.dgStage = nextStage(S.dgStage, (diagramFor(id)?.steps.length || 1)); render(); }
+  else if (a === 'dgreplay') { S.dgStage = null; render(); }
+  else if (a === 'dgshow') { S.ci = 0; S.dgStage = null; render(); }
+  else if (a === 'dgsheet') { sheet(`<div class="stack"><h2>${esc(topicName(id))}</h2>${diagramHtml(id, S.dgStage)}<button class="btn block" data-act="closesheet">Back to the cards</button></div>`); }
   else if (a === 'askcard') {
     const t = topicById(S.topic), c = t.concepts[S.ci];
     S.chatContext = cardContext(t, c); S.view = 'chat'; render();

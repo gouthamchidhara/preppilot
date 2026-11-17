@@ -244,6 +244,27 @@ details[open] summary::after { content: "–"; }
 @keyframes dg-in { from { opacity: 0; transform: translateY(4px) scale(.97); } }
 @keyframes dg-march { to { stroke-dashoffset: -16; } }
 @keyframes dg-sweep { 0%, 100% { transform: translateX(0); opacity: 0; } 15%, 85% { opacity: .18; } 50% { transform: translateX(164px); } }
+/* The travelling dot: rides the main path on a loop so the eye follows the flow. */
+.dg-dot { fill: var(--accent); offset-rotate: 0deg; animation: dg-travel 4s linear infinite; }
+@keyframes dg-travel { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+/* Stage focus: the active stage stands out, the rest dims. */
+.dg-box, .dg-line, .dg-step { transition: opacity .3s ease; }
+.dg-dim { opacity: .25; }
+.dg-active rect { stroke: var(--accent); stroke-width: 2; }
+/* Growing bars. */
+.dg-track { fill: var(--sunk); }
+.dg-grow { fill: var(--accent); transform-box: fill-box; transform-origin: left center; transform: scaleX(0); animation: dg-grow .8s cubic-bezier(.2, .7, .2, 1) forwards; }
+@keyframes dg-grow { to { transform: scaleX(1); } }
+/* The step-through player under each diagram. */
+.dg-controls { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.dg-stage { flex: 1; text-align: center; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* The knowledge map lives: bars grow in, tiles that moved up flash once. */
+.knowmap .bar i, .rowi .bar i { animation: bar-grow .7s ease both; }
+@keyframes bar-grow { from { width: 0; } }
+.tile-fresh { animation: tile-fresh 1.4s ease both; }
+@keyframes tile-fresh { 0% { box-shadow: 0 0 0 2px var(--accent); } 100% { box-shadow: 0 0 0 0 transparent; } }
+/* View changes fade in softly. */
+.view { animation: fade .2s ease both; }
 code { font-family: var(--mono); font-size: .86em; background: var(--code-bg); border: 1px solid var(--line); padding: 1px 5px; border-radius: 5px; overflow-wrap: anywhere; }
 pre { margin: 6px 0 0; background: var(--code-bg); border: 1px solid var(--line); color: var(--ink); font: 13px/1.6 var(--mono); padding: 13px 15px; border-radius: 8px; overflow-x: auto; white-space: pre; }
 pre code { background: none; border: 0; padding: 0; }
@@ -257,6 +278,21 @@ pre code { background: none; border: 0; padding: 0; }
 @keyframes outl { to { opacity: 0; transform: translateX(-28px) rotate(-1.5deg); } }
 @keyframes outr { to { opacity: 0; transform: translateX(28px) rotate(1.5deg); } }
 .level { font-size: 13px; color: var(--muted); }
+/* The grading verdict: a ring draws itself, then a check or a cross, on the card. */
+.flash .verdict { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: color-mix(in srgb, var(--paper) 78%, transparent); border-radius: 10px; animation: fade .18s ease both; }
+.flash .verdict svg { width: 84px; height: 84px; }
+.flash .verdict .v-ring, .flash .verdict .v-mark { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; }
+.flash .verdict.miss .v-ring, .flash .verdict.miss .v-mark { stroke: var(--muted); }
+.flash .verdict span { font-weight: 600; font-size: 15px; }
+/* The results ring: sweeps to the score. */
+.score-ring { position: relative; width: 132px; height: 132px; margin: 0 auto; }
+.score-ring svg { width: 100%; height: 100%; }
+.ring-track { fill: none; stroke: var(--line); stroke-width: 8; }
+.ring-prog { fill: none; stroke: var(--accent); stroke-width: 8; stroke-linecap: round; transform: rotate(-90deg); transform-origin: center; stroke-dasharray: 100; animation: ring-sweep 1s cubic-bezier(.2, .7, .2, 1) both; }
+@keyframes ring-sweep { from { stroke-dashoffset: 100; } }
+.score-num { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.score-num .n { font: 500 2.2rem/1 var(--serif); font-variant-numeric: tabular-nums; }
+@media (max-width: 760px) { .kbd-hint { display: none; } }
 .score { font: 500 3.2rem/1 var(--serif); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .score small { font-size: 1.4rem; color: var(--muted); }
 
