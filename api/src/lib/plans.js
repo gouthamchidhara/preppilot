@@ -3,14 +3,14 @@
 //   voice (gpt-realtime-mini)     ~ $0.02-0.04 per conversation minute (+ ~$0.003/min transcription)
 // Free:  15 messages + 2 voice minutes, lifetime            -> worst case ~ $0.10 per free user
 //        global free pool per day: 200 msgs + 10 voice min  -> worst case ~ $0.65/day across ALL free users
-// Pro:   $10.99/month (≈ $9.34 after Apple's 15%), 500 msgs + 45 voice min + two 30-min Live AI sessions -> worst case ~ $6/month
+// Pro:   $10.99/month (≈ $9.34 after Apple's 15%), unlimited msgs (fair use) + two 30-min Live AI sessions; no separate voice minutes -> worst case ~ $6/month
 const num = (k, d) => (process.env[k] !== undefined && process.env[k] !== '' ? Number(process.env[k]) : d);
 
 export function limits() {
   return {
     free: { msgs: num('FREE_MSGS', 15), voiceSec: num('FREE_VOICE_SEC', 120), period: 'lifetime' },
     // Pro messages are sold as unlimited; these are fair-use ceilings (a month, and a day) that normal use never reaches.
-    pro: { msgs: num('PRO_MSGS', 2000), msgsPerDay: num('PRO_MSGS_PER_DAY', 150), voiceSec: num('PRO_VOICE_SEC', 45 * 60), period: 'month' },
+    pro: { msgs: num('PRO_MSGS', 2000), msgsPerDay: num('PRO_MSGS_PER_DAY', 150), voiceSec: num('PRO_VOICE_SEC', 0), period: 'month' },
     freePoolPerDay: { msgs: num('FREE_DAILY_MSGS', 200), voiceSec: num('FREE_DAILY_VOICE_SEC', 600) },
     maxCallSec: num('MAX_CALL_SEC', 10 * 60),
     liveCallSec: num('LIVE_CALL_SEC', 60 * 60),

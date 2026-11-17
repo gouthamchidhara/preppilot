@@ -151,7 +151,7 @@ function offer() {
   const n = parseFloat(amount.replace(/[^\d.]/g, ''));
   return {
     freeMsgs: P?.free.msgs ?? 15, freeVoice: P?.free.voiceMin ?? 2,
-    proMsgs: P?.pro.msgs ?? 500, proVoice: P?.pro.voiceMin ?? 45, proLive: P?.pro.liveMin ?? 30, proLiveN: P?.pro.liveSessions ?? 2, proPrice: `${amount}/${per}`, proAmount: amount, proPer: per,
+    proMsgs: P?.pro.msgs ?? 500, proVoice: P?.pro.voiceMin ?? 0, proLive: P?.pro.liveMin ?? 30, proLiveN: P?.pro.liveSessions ?? 2, proPrice: `${amount}/${per}`, proAmount: amount, proPer: per,
     perDay: amount.trim().startsWith('$') && n > 0 && per === 'month' ? `About ${Math.round((n / 30) * 100)}¢ a day` : '',
     livePrice: P?.live?.price || '$15.99', liveMin: P?.live?.minutes ?? 60,
   };
@@ -428,6 +428,7 @@ async function saveProfile() {
 function livePromo() {
   const { credits, left } = liveState();
   const o = offer();
+  const isProUser = store.account()?.plan === 'pro' && !credits && left < 20;
   const [head, title, text, cta] = left >= 20
     ? ['Session in progress', 'Your practice test is still open', `${Math.ceil(left / 60)} minutes left. Rejoin and pick up where you stopped.`, '<button class="btn invert lg" data-act="livesetup">Rejoin the session</button>']
     : credits
@@ -435,10 +436,10 @@ function livePromo() {
       : (store.account()?.plan === 'pro') ? [`${store.account()?.proLiveLeft ?? o.proLiveN} of ${o.proLiveN} left this month`, `Live AI, ${o.proLive} minutes`, 'A spoken practice test, an open conversation, or talking points during your interview, without a break. For a full hour, add a one-time session.', '<button class="btn invert lg" data-act="livesetup">Start Live AI</button>']
       : [`${o.liveMin} minutes, one-time`, 'Live AI for 60 minutes', 'Run a spoken practice test the day before. Then, in the interview itself, leave it listening: a few talking points appear on screen as each question is asked.', '<button class="btn invert lg" data-act="plans">See pricing</button>'];
   return `<section class="card stacked live-hero" aria-label="Live AI">
-    <div class="card-head"><span>Live AI, 60 minutes</span><span>${esc(head)}</span></div>
+    <div class="card-head"><span>${isProUser ? `Live AI, ${o.proLive} minutes` : `Live AI, ${o.liveMin} minutes`}</span><span>${esc(head)}</span></div>
     <h2>${esc(title)}</h2>
     <p style="margin-top:8px">${esc(text)}</p>
-    <ul class="live-points"><li>Practice test with a verdict</li><li>Talking points during your interview</li><li>Continuous for the full hour</li></ul>
+    <ul class="live-points"><li>Practice test with a verdict</li><li>Talking points during your interview</li><li>${isProUser ? `No break for ${o.proLive} minutes` : 'Continuous for the full hour'}</li></ul>
     <div class="row" style="margin-top:18px">${cta}</div>
   </section>`;
 }
@@ -663,8 +664,8 @@ function voicePanel() {
   const { credits, left } = liveState();
   const o = offer();
   return `${livePromo()}<div class="rows">
-    <button class="mode" data-act="rtstart" data-mode="talk" ${dis}><span class="ico">${ic('mic')}</span><span class="main"><b>Talk it through</b><span class="d">A spoken conversation. Interrupt whenever you like.</span></span>${ic('right')}</button>
-    <button class="mode" data-act="rtstart" data-mode="listen" ${dis}><span class="ico">${ic('ear')}</span><span class="main"><b>Rehearse an answer</b><span class="d">Speak without being interrupted, then get it graded.</span></span>${ic('right')}</button>
+${store.account()?.plan === 'pro' ? '' : `    <button class="mode" data-act="rtstart" data-mode="talk" ${dis}><span class="ico">${ic('mic')}</span><span class="main"><b>Talk it through</b><span class="d">A spoken conversation. Interrupt whenever you like.</span></span>${ic('right')}</button>
+    <button class="mode" data-act="rtstart" data-mode="listen" ${dis}><span class="ico">${ic('ear')}</span><span class="main"><b>Rehearse an answer</b><span class="d">Speak without being interrupted, then get it graded.</span></span>${ic('right')}</button>`}
   </div>`;
 }
 
@@ -675,7 +676,7 @@ function usageMeters(a) {
   if (!a || a.unlimited || !a.limits) return '';
   return `<div class="meters">
     ${a.msgsUnlimited ? '<div><div class="meter-top"><span>AI messages</span><b>Unlimited</b></div><div class="bar"><i style="width:100%"></i></div></div>' : meter('AI messages left', a.msgsLeft, a.limits.msgs, `${a.msgsLeft} / ${a.limits.msgs}`)}
-    ${meter('Voice minutes left', a.voiceSecLeft, a.limits.voiceSec, `${mins(a.voiceSecLeft)} / ${mins(a.limits.voiceSec)}`)}
+    ${a.plan === 'pro' ? meter('Live AI sessions left', a.proLiveLeft ?? 0, offer().proLiveN, `${a.proLiveLeft ?? 0} of ${offer().proLiveN}`) : meter('Voice minutes left', a.voiceSecLeft, a.limits.voiceSec, `${mins(a.voiceSecLeft)} / ${mins(a.limits.voiceSec)}`)}
   </div>`;
 }
 
@@ -728,7 +729,7 @@ function paywallCard() {
       ${usageMeters(a)}<div class="row"><button class="btn primary" data-act="plans">See Live AI</button><button class="btn" data-act="unpaywall">Close</button></div></section>`;
   }
   return `<section class="panel stack"><h3>Your free trial is used up</h3>
-    <p class="muted">Pro gives you unlimited AI messages, ${o.proVoice} voice minutes and two 30-minute Live AI sessions every month. Your plan and flashcards stay free either way.</p>
+    <p class="muted">Pro gives you unlimited AI messages and two 30-minute Live AI sessions every month. Your plan and flashcards stay free either way.</p>
     <div class="row"><button class="btn primary" data-act="plans">See pricing</button><button class="btn quiet" data-act="unpaywall">Not now</button></div></section>`;
 }
 
@@ -745,7 +746,7 @@ function allowanceCard(a) {
     ${usageMeters(a)}<p class="muted small">Live AI: ${a.proLiveLeft ?? o.proLiveN} of ${o.proLiveN} sessions of ${o.proLive} minutes left this month. Need a full hour? A one-time session is ${esc(o.livePrice)}.</p></section>`;
   return `<section class="panel stack tight"><b>Free to try</b>
     ${usageMeters(a)}
-    <p class="muted small">Pro (${esc(o.proPrice)}): unlimited AI messages, ${o.proVoice} voice minutes and ${o.proLiveN === 2 ? 'two' : o.proLiveN} ${o.proLive}-minute Live AI sessions a month. <button class="link" data-act="plans">See pricing</button></p></section>`;
+    <p class="muted small">Pro (${esc(o.proPrice)}): unlimited AI messages and ${o.proLiveN === 2 ? 'two' : o.proLiveN} ${o.proLive}-minute Live AI sessions a month. <button class="link" data-act="plans">See pricing</button></p></section>`;
 }
 
 function chatView() {
@@ -1098,7 +1099,7 @@ function plansView() {
     ['Terminology, troubleshooting, real scenarios', no, yes, '–'],
     ['Animated diagrams for every topic', no, yes, '–'],
     ['AI messages about your prep', `${o.freeMsgs} to try`, 'Unlimited', '–'],
-    ['Voice practice', `${o.freeVoice} min to try`, `${o.proVoice} min a month`, `${o.liveMin} min, continuous`],
+    ['Voice practice', `${o.freeVoice} min to try`, `In your Live AI sessions`, `${o.liveMin} min, continuous`],
     ['Uninterrupted Live AI', no, `${o.proLiveN} × ${o.proLive} min a month`, `${o.liveMin} min, once`],
     ['Spoken practice test with a verdict', no, yes, yes],
     ['Talking points during your real interview', no, yes, yes],

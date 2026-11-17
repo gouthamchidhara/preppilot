@@ -216,7 +216,7 @@ When ready to submit for App Review (not just TestFlight):
 
 | Product ID | Type | Price | Description |
 |---|---|---|---|
-| `pro_monthly` | Subscription (auto-renew) | $10.99/month | Unlimited AI messages (fair use: 150 a day, 2,000 a month) + 45 voice min + two 30-min Live AI sessions a month |
+| `pro_monthly` | Subscription (auto-renew) | $10.99/month | Unlimited AI messages (fair use: 150 a day, 2,000 a month) + two 30-min Live AI sessions a month |
 | `mock_session_60min` | Consumable | $15.99 | One 60-min Live coach practice test (rejoinable within the hour) |
 
 ## Troubleshooting

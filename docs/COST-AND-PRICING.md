@@ -159,3 +159,7 @@ Recommendation: raise Live AI to $14.99 (we keep about $9 to $11) and Pro to $9.
 - Cost per reply is capped: 8 messages of history, 1,500 characters per message, 450 output tokens, code snippets of about 25 lines.
 - Worst case at the ceiling: 2,000 messages × about $0.0012 = about $2.40 a month. A realistic heavy user (30 a day) is about $1.
 - Pro at $10.99 (we receive $9.34): heaviest possible user, everything used, costs about $5.70 to $8.40, so still a small profit. Typical users cost $1 to $3. $10.99 is enough; do not go lower.
+
+
+### Pro without separate voice minutes (owner decision)
+Pro's 45 voice minutes are removed; Pro voice is the two 30-minute Live AI sessions a month. Worst-case Pro cost drops to about $4 to $6 (messages at the ceiling plus both sessions), typical $1 to $3. Talk and Rehearse remain on Free's 2-minute trial; Pro uses Live AI's open-conversation and practice modes for the same thing.
