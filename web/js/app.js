@@ -7,7 +7,7 @@ import { native, signedIn, signOut, renderGoogleButton, refreshAccount, onAccoun
 import { initContent, getCatalog, getManifest, roleById, topicMeta, ensureTopics, ensureForProfile, loadedTopics, reportUrl } from './content.js';
 import { diagramHtml, diagramFor, storyView, registerDiagramSpec } from './diagrams.js';
 import { todayKey, recordActivity, streakDays, lastNDays } from './stats.js';
-import { ringOffset, nextStage, prevStage, storyReveal, sceneName, storyPieces } from './animate.js';
+import { ringOffset, nextStage, prevStage, sceneName } from './animate.js';
 
 const DAY = 86400000;
 const app = document.getElementById('app');
