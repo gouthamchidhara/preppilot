@@ -86,9 +86,22 @@ function betaNote(t, where) {
 // Pro (or admin / beta code): everything. Topics the user wrote or imported are always open.
 // This is a client-side gate on public study content; the AI itself is enforced on the server.
 const FREE_TOPICS = 3;
-// Free flashcards: the first FREE_CARDS questions of every topic in the user's roles, locked topics included.
+// Free flashcards: FREE_CARDS per technology (role) the user picked, a fixed shuffled sample across
+// that role's topics. Pro: every card, in workflow order.
 const FREE_CARDS = 10;
-const cardIndex = id => Number(String(id).slice(String(id).lastIndexOf('-') + 1));
+function seeded(seed) { let h = 2166136261; for (const c of seed) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return () => ((h = Math.imul(h ^ (h >>> 15), 2246822507) ^ Math.imul(h ^ (h >>> 13), 3266489909)) >>> 0) / 4294967296; }
+function shuffle(list, rnd = Math.random) { const a = [...list]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function freeCardIds() {
+  const p = profile();
+  if (!p) return new Set();
+  const ids = new Set();
+  for (const rid of effectiveRoles(migrateProfile(p))) {
+    const role = roleById(rid);
+    const pool = topics().filter(t => role?.topics?.[t.id] && !['behavioral', 'scenarios'].includes(t.id)).flatMap(t => t.qa.map((_, i) => `${t.id}-${i}`));
+    shuffle(pool, seeded(rid + store.clientId())).slice(0, FREE_CARDS).forEach(id => ids.add(id));
+  }
+  return ids;
+}
 const hasPro = () => { const a = store.account(); return !!(a?.unlimited || a?.plan === 'pro' || store.accessCode()); };
 function freeTopicIds() {
   const p = profile();
@@ -495,6 +508,7 @@ function homeView() {
       </div>
     </section>` : ''}
     ${quickCard(relevant)}
+    ${fieldSection(relevant)}
     ${livePromo()}
     ${freshCard()}
     <section class="knowmap" aria-label="What you know">
@@ -542,7 +556,7 @@ function lockedTopicView(t) {
     <section class="card live-hero stack">
       <h2>Unlock all ${all.length} of your topics</h2>
       <p>Free opens ${open.length ? open.map(x => esc(x.name)).join(', ') : `your first ${FREE_TOPICS} topics`}. Pro opens every lesson, every flashcard and every animated diagram for your role, plus the coach.</p>
-      <div class="row"><button class="btn invert lg" data-act="plans">See pricing</button>${t.qa.length ? `<button class="btn quiet invert-quiet" data-act="deck" data-id="${t.id}">Try ${Math.min(FREE_CARDS, t.qa.length)} cards free</button>` : ''}</div>
+      <div class="row"><button class="btn invert lg" data-act="plans">See pricing</button>${t.qa.length ? `<button class="btn quiet invert-quiet" data-act="deck" data-id="">Try your free cards</button>` : ''}</div>
     </section>
   </div>`;
 }
@@ -579,6 +593,7 @@ function learnView() {
       ${last ? `<button class="btn primary grow" data-act="deck" data-id="${t.id}">Test yourself</button>` : '<button class="btn primary grow" data-act="cnext">Next lesson</button>'}
     </div>
     ${!last && c.hook ? `<button class="hook" data-act="cnext"><span class="label">Next</span><span>${esc(c.hook)}</span>${ic('right')}</button>` : ''}
+    ${last && t.field ? `<div class="row">${['trouble', 'scenarios'].filter(k => t.field[k]?.length).map(k => `<button class="btn" data-act="fielddeck" data-k="${k}" data-id="${t.id}">${hasPro() ? '' : ic('lock')}${FIELD_KINDS[k]}: ${t.field[k].length} cards</button>`).join('')}</div>` : ''}
     ${last ? `<p class="muted small" style="margin-top:2px">That's the whole story, and the picture is finished. Test yourself while it's fresh.</p>${t.upNext ? `<div class="hook static"><span class="label">After this</span><span>${esc(t.upNext)}</span></div>` : ''}` : ''}
   </div>`;
 }
@@ -599,7 +614,7 @@ function deckView() {
       <h2>${pct >= 80 ? 'A strong round.' : pct >= 50 ? 'Getting there.' : 'Better to find out now.'}</h2>
       <p class="lede">${pct >= 80 ? 'These cards come back later, spaced further apart each time.' : 'The cards you missed come back first next time. Rereading the lessons for those topics will help.'}</p>
       ${worst && diagramFor(worst) ? `<section class="stack tight"><h3>The one to reread: ${esc(topicName(worst))}</h3>${diagramTeaser(worst, diagramHtml(worst))}<div class="row"><button class="btn" data-act="learn" data-id="${worst}">Reread the ${esc(topicName(worst))} lesson</button></div></section>` : ''}
-      ${d.free ? `<section class="card live-hero stack"><h2>That was ${d.cards.length} cards.</h2><p>Free shows the first ${FREE_CARDS} cards of each topic. Pro opens all ${d.total} in this set, every lesson and every diagram.</p><div class="row"><button class="btn invert" data-act="plans">Unlock every card</button></div></section>` : ''}
+      ${d.free ? `<section class="card live-hero stack"><h2>That was your free round.</h2><p>Free gives you ${FREE_CARDS} cards for each technology you picked, shuffled. Pro opens all ${d.total}, in the order you work, plus troubleshooting and real scenarios from the field.</p><div class="row"><button class="btn invert" data-act="plans">Unlock every card</button></div></section>` : ''}
       <div class="row"><button class="btn ${d.free ? '' : 'primary'}" data-act="deck" data-id="">Practice another round</button><button class="btn" data-act="home">Back to plan</button></div></div>`;
   }
   const q = d.cards[S.di];
@@ -608,9 +623,10 @@ function deckView() {
   return `<div class="stack">
     <div class="row between"><button class="back" data-act="home">${ic('left')}Stop</button><span class="muted small">Card ${S.di + 1} of ${d.cards.length}</span></div>
     <div class="bar"><i style="width:${(S.di * 100) / d.cards.length}%"></i></div>
+    ${d.free && S.di === 0 ? `<p class="note small row between"><span>Shuffled on Free. Pro takes you through every card in your workflow’s order.</span><button class="link" data-act="plans">See Pro</button></p>` : ''}
     ${singleTopic && diagramFor(singleTopic) ? `<div class="row between"><span></span><button class="link quiet small" data-act="dgsheet" data-id="${singleTopic}">How it works — see the diagram</button></div>` : ''}
     <article class="card stacked flash" id="flash">
-      <div class="card-head"><span>${esc(t?.name || q.topic)}</span><span class="level">${['', 'Fundamentals', 'Applied', 'Advanced'][q.l] || ''}</span></div>
+      <div class="card-head"><span>${esc(t?.name || q.topic)}</span><span class="level">${q.kind ? FIELD_KINDS[q.kind] : ['', 'Fundamentals', 'Applied', 'Advanced'][q.l] || ''}</span></div>
       <p class="q">${fmt(q.q)}</p>
       ${S.reveal ? `<div class="ans">${fmt(q.a)}</div>` : ''}
       <div class="foot">${S.reveal ? `
@@ -1062,7 +1078,8 @@ function plansView() {
   const rows = [
     ['Topics in the order that matters for your role', yes, yes, '–'],
     ['Lessons', `First ${FREE_TOPICS} topics`, 'Every topic', '–'],
-    ['Flashcards', `First ${FREE_CARDS} of each topic`, 'All of them', '–'],
+    ['Flashcards', `${FREE_CARDS} per technology, shuffled`, 'All, in workflow order', '–'],
+    ['Terminology, troubleshooting, real scenarios', no, yes, '–'],
     ['Animated diagrams for every topic', no, yes, '–'],
     ['Coach messages', `${o.freeMsgs} to try`, `${o.proMsgs} a month`, '–'],
     ['Voice practice', `${o.freeVoice} min to try`, `${o.proVoice} min a month`, `${o.liveMin} min, continuous`],
@@ -1280,12 +1297,41 @@ function onPurchased(acc) {
 
 /* ---------- actions ---------- */
 // ids = topics the user explicitly chose (may be outside their role); null = everything relevant.
+const FIELD_KINDS = { terms: 'Terminology', trouble: 'Troubleshooting', scenarios: 'Real scenario' };
+// Field cards: the words, the breakages and the real situations of each technology. Pro only.
+function fieldCards(kind, topicId) {
+  const p = profile();
+  const list = topicId ? [topicById(topicId)].filter(Boolean) : rankTopics(topics(), p);
+  return list.flatMap(t => (t.field?.[kind] || []).map((c, i) => ({ id: `${t.id}-f-${kind}-${i}`, topic: t.id, q: c.q, a: c.a, l: 2, kind })));
+}
+function startFieldDeck(kind, topicId) {
+  if (!hasPro()) { S.showPlans = true; return render(); }
+  const cards = fieldCards(kind, topicId);
+  if (!cards.length) return oops('Field cards for these topics are on their way.');
+  S.deck = { cards: topicId ? cards : shuffle(cards).slice(0, 20), results: [], free: false, total: cards.length };
+  S.di = 0; S.reveal = false; S.view = 'deck'; render();
+}
+function fieldSection(relevant) {
+  const has = k => relevant.some(t => t.field?.[k]?.length);
+  if (!['terms', 'trouble', 'scenarios'].some(has)) return '';
+  const sample = relevant.flatMap(t => (t.field?.trouble || []).slice(0, 1).map(c => ({ t, c })))[0];
+  const tiles = [['terms', 'Terminology', 'The words you will hear, in workflow order'], ['trouble', 'Troubleshooting', 'Real errors, their cause and the fix'], ['scenarios', 'Real scenarios', 'What interviewers ask about actual work']];
+  return `<section class="stack">
+    <div class="sec-head"><h3>From the field</h3>${hasPro() ? '' : '<span class="tag">Pro</span>'}</div>
+    <div class="l-grid">${tiles.filter(([k]) => has(k)).map(([k, n, d]) => `<button class="l-tile field-tile" data-act="fielddeck" data-k="${k}">${ic(hasPro() ? 'right' : 'lock')}<b>${n}</b><span>${d}</span><span class="muted small">${fieldCards(k).length} cards</span></button>`).join('')}</div>
+    ${!hasPro() && sample ? `<div class="teaser" style="min-height:120px"><div class="teaser-blur" aria-hidden="true" inert><p><b>${esc(sample.c.q)}</b></p><p class="muted">${esc(sample.c.a)}</p></div><div class="teaser-over"><b>${ic('lock')}${esc(sample.c.q)}</b><span class="muted small">Troubleshooting and real scenarios for ${esc(sample.t.name)} and every other topic come with Pro.</span><button class="btn primary" data-act="plans">See pricing</button></div></div>` : ''}
+  </section>`;
+}
+
 function startDeck(ids) {
   const list = ids ? topics().filter(t => ids.includes(t.id)) : topics();
   const pro = hasPro();
-  // Free: up to 10 cards in a row, drawn from the first 10 of each topic. Pro: everything, 20 a round.
+  // Free: the user's fixed sample of 10 cards per technology, shuffled. Pro: everything, in workflow order, 20 a round.
   let cards = dueCards(list, profile(), store.progress(), Date.now(), 999, { relevantOnly: !ids });
-  if (!pro) cards = cards.filter(c => topicById(c.topic)?.custom || topicById(c.topic)?.private || cardIndex(c.id) < FREE_CARDS);
+  if (!pro) {
+    const allowed = freeCardIds();
+    cards = shuffle(cards.filter(c => topicById(c.topic)?.custom || topicById(c.topic)?.private || allowed.has(c.id)));
+  }
   S.deck = { cards: cards.slice(0, pro ? 20 : FREE_CARDS), results: [], free: !pro, total: list.reduce((n, t) => n + t.qa.length, 0) };
   S.di = 0; S.reveal = false; S.view = 'deck'; render();
 }
@@ -1548,6 +1594,7 @@ document.addEventListener('click', async e => {
   else if (a === 'qcnext') { S.qc = null; render(); }
   else if (a === 'pickmode') { captureDraft(); S.pickMode = b.dataset.m; render(); }
   else if (a === 'suggestroles') suggestRoles();
+  else if (a === 'fielddeck') startFieldDeck(b.dataset.k, b.dataset.id || null);
   else if (a === 'toggletopics') { S.allTopics = !S.allTopics; const y = window.scrollY; render(); window.scrollTo({ top: y }); }
   else if (a === 'home') { S.view = 'home'; render(); }
   else if (a === 'learn') openTopic(id);

@@ -45,13 +45,14 @@ export async function ensureTopics(ids) {
   const packs = new Set([...ids].map(id => meta.get(id)?.pack).filter(Boolean));
   await Promise.all([...packs].filter(id => !loaded.has(id)).map(async id => {
     const p = manifest.packs.find(x => x.id === id);
-    const [data, flow, meaning] = await Promise.all([
+    const [data, flow, meaning, field] = await Promise.all([
       getJson(`content/packs/${id}.json?v=${p.version}`),
       getJson(`content/flow/${id}.json?v=${p.version}`).catch(() => ({})),
       getJson(`content/meaning/${id}.json?v=${p.version}`).catch(() => ({})),
+      getJson(`content/field/${id}.json?v=${p.version}`).catch(() => ({})),
     ]);
     for (const [tid, m] of Object.entries(meaning)) registerDiagramMeaning(tid, m);
-    loaded.set(id, attachWeights(data.topics.map(t => applyFlow(t, flow[t.id])), catalog));
+    loaded.set(id, attachWeights(data.topics.map(t => ({ ...applyFlow(t, flow[t.id]), ...(field[t.id] ? { field: field[t.id] } : {}) })), catalog));
   }));
 }
 
