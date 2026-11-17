@@ -12,8 +12,8 @@
       { "q": "panic: assignment to entry in nil map.", "a": "The map was declared but not initialized. Create it with `make(map[K]V)` or a literal before writing; reading from a nil map is safe, writing is not." },
       { "q": "panic: runtime error: invalid memory address or nil pointer dereference.", "a": "A nil pointer or nil interface was used. Check for nil before use, return errors instead of nil values, and read the stack trace for the line." },
       { "q": "A nil error check fails even though the function returned a nil pointer.", "a": "An interface holding a typed nil pointer is not nil. Return a plain `nil` error rather than a typed nil value." },
-      { "q": "Loop variable captured by closure has the wrong value.", "a": "Before Go 1.22 all iterations shared one loop variable. Copy it (`i := i`) or pass it as an argument; with Go 1.22 and later each iteration has its own." },
-      { "q": "Appending to a slice changes another slice unexpectedly.", "a": "Slices share a backing array when capacity allows. Use `copy` or `slices.Clone`, or the full slice expression `s[a:b:b]` to force a new allocation on append." }
+      { "q": "Loop variable captured by closure has the wrong value.", "a": "With language versions before Go 1.22, loop-declared variables were shared across iterations. Copy the value or pass it as an argument. With Go 1.22+ language semantics, variables declared by the loop have per-iteration bindings; assigning to a predeclared variable still shares it." },
+      { "q": "Appending to a slice changes another slice unexpectedly.", "a": "Slices can share a backing array. Use `slices.Clone` or copy into a new slice to isolate it. `s[a:b:b]` clamps capacity to length, so appending one or more elements allocates a new backing array; writes to existing elements still share the old array." }
     ],
     "scenarios": [
       { "q": "You build an HTTP service in Go. How do you structure error handling?", "a": "Return errors up the stack with context (`fmt.Errorf(\"load user: %w\", err)`), map them to status codes at the handler with `errors.Is` and `errors.As`, and log once at the boundary." },
@@ -26,9 +26,9 @@
       { "q": "What is a channel and `select`?", "a": "A typed conduit between goroutines. `select` waits on several channel operations at once and runs the one ready, with `default` for non-blocking and `time.After` for timeouts." },
       { "q": "What is `sync.Mutex` vs `sync.RWMutex`?", "a": "`Mutex` gives exclusive access to shared data. `RWMutex` allows many concurrent readers or one writer, useful when reads dominate." },
       { "q": "What is `context` and its main functions?", "a": "A carrier for cancellation, deadlines and request values across API boundaries: `WithCancel`, `WithTimeout`, `WithDeadline`. Pass it as the first parameter and honor `ctx.Done()`." },
-      { "q": "What is `errgroup`?", "a": "`golang.org/x/sync/errgroup` runs goroutines and returns the first error, cancelling the shared context; `SetLimit` bounds concurrency." },
+      { "q": "What is `errgroup`?", "a": "`golang.org/x/sync/errgroup` waits for a group of goroutines and returns the first non-nil error. Use `errgroup.WithContext` to get a context cancelled on the first error or when Wait returns; workers must honor it. `SetLimit` bounds concurrency." },
       { "q": "What are `sync/atomic` and `sync.Map` for?", "a": "`atomic` gives lock-free counters and flags. `sync.Map` is a concurrent map suited to write-once, read-many or disjoint key sets; otherwise a mutex plus map is usually simpler." },
-      { "q": "What does `GOMAXPROCS` control?", "a": "The number of OS threads that can execute Go code at once. It defaults to the number of CPUs; in containers, make sure it respects the CPU limit." }
+      { "q": "What does `GOMAXPROCS` control?", "a": "The maximum number of OS threads executing Go code simultaneously, not the total number of threads. Its default depends on the Go version and available CPU resources; check container CPU quotas and any explicit override." }
     ],
     "trouble": [
       { "q": "fatal error: all goroutines are asleep - deadlock!", "a": "Every goroutine is blocked, such as sending on an unbuffered channel with no receiver or a forgotten `Unlock`. Ensure each send has a receiver, close channels from the sender and check `WaitGroup.Add` and `Done` balance." },

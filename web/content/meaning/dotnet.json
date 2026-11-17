@@ -2,7 +2,7 @@
  "csharp-core": {
   "analogy": {
    "name": "A photocopy vs a shared doc link",
-   "line": "Passing a value type hands over a photocopy; edits stay with the copy. Passing a reference shares the link; everyone edits the same document."
+   "line": "By default, arguments are copied: a value type is a photocopy; a reference type is a copied link to the same document. Editing the document is shared, but replacing your link is not."
   }
  }
 }

@@ -24,7 +24,7 @@ module.exports = {
       supportsTablet: true,
       usesAppleSignIn: true,
       infoPlist: {
-        NSMicrophoneUsageDescription: 'PrepPilot uses the microphone so you can practice interview answers out loud with the AI coach.',
+        NSMicrophoneUsageDescription: 'PrepPilot streams microphone audio to Azure OpenAI for voice practice and Live AI sessions. Audio may include other people nearby; get their permission before sharing it.',
         ITSAppUsesNonExemptEncryption: false,
       },
     },

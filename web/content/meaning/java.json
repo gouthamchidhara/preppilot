@@ -8,7 +8,7 @@
  "jvm": {
   "analogy": {
    "name": "Desk, filing cabinet, archive",
-   "line": "New papers land on the desk (Eden) and most are binned quickly. What survives a few clear-outs gets filed (survivor), then archived (old generation), which is cleaned rarely and slowly."
+   "line": "With generational collectors, new papers start on the desk (young generation); survivors may move to the archive (old generation). The exact layout and cleanup strategy depend on the collector."
   }
  }
 }

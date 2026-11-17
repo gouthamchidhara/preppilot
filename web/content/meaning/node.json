@@ -8,7 +8,7 @@
  "typescript": {
   "analogy": {
    "name": "Spell check that vanishes when you print",
-   "line": "Types are checked while you write, then erased in the JavaScript that ships. Nothing checks them at runtime."
+   "line": "Types are checked while you write, then erased in the JavaScript that ships. To check incoming data at runtime, add explicit validation."
   }
  },
  "express-nest": {

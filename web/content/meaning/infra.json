@@ -32,7 +32,7 @@
  "k8s": {
   "analogy": {
    "name": "An air traffic control tower",
-   "line": "The tower (control plane) decides where each plane goes, ground crew at each gate (kubelet) handle it, and the gate number (Service) stays the same whichever plane is parked there."
+   "line": "The tower schedules planes (Pods) onto runways (nodes), ground crews (kubelets) keep them running, and a stable arrivals desk (Service) directs visitors to the current planes."
   }
  },
  "monitoring": {

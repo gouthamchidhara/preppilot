@@ -20,7 +20,7 @@
  "web-fundamentals": {
   "analogy": {
    "name": "Calling someone from your contacts",
-   "line": "You know the name, the contacts list gives the number (DNS), the call connects and both sides confirm who they are (TCP + TLS), then you talk (HTTP)."
+   "line": "The contacts list gives the number (DNS), the call connects (TCP), you check the server is who it claims to be and agree on encryption (TLS), then exchange messages (HTTP)."
   }
  }
 }

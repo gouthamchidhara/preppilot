@@ -2,7 +2,19 @@
 
 Written 17 November 2026. Work branch: `claude/eloquent-pasteur-wdc9yd` (Azure currently serves this branch). Tick items as they are done and commit the change, so whoever picks this up next sees the current state.
 
-Owner focus: items 7, 8, 9, 10 and 11.
+Owner handles item 7. The assistant is handling the other items, with owner input for sign-in, secrets, legal agreements and purchases.
+
+## Execution status (17 November 2026)
+
+- Working on `claude/eloquent-pasteur-wdc9yd`; local `main` contains the fetched upstream changes, but the latest launch work has not been published to `origin/main`.
+- Native iOS icon/splash updated from the current paper-plane brand: 1024 x 1024 RGB PNGs, no alpha. A new native build/upload is still pending.
+- Privacy text now reflects role suggestions, guide submissions, audio streaming, fresh scenarios and actual account-deletion retention. App Store privacy answers still need checking.
+- Azure checks: OAuth audiences match the public app configuration; session secret is at least 32 characters; AI/storage settings exist; model deployments succeeded. This does not substitute for device sign-in or sandbox purchase testing.
+- Beta `ACCESS_CODE` is absent. Sweeper is Running, enabled on a one-minute schedule, and its storage/OpenAI settings match the API. Runtime timer state recorded Last `2026-11-17T15:16:00Z`, Next `2026-11-17T15:17:00Z`.
+- Missing Azure settings: `REVENUECAT_SECRET_KEY`, `ACS_EMAIL_ENDPOINT`, `ACS_EMAIL_KEY`, `ACS_EMAIL_SENDER`, `SUGGESTIONS_EMAIL`. `payments: true` in health only confirms webhook-auth configuration, not a working purchase/refresh.
+- Budget is configured at $20/month with actual-80% and forecast-100% alerts. Alert delivery and real per-session cost comparison are not yet verified.
+- Support domain/mailbox selection is pending; no domain or mailbox has been purchased. Store products, offering, webhook and agreements still require dashboard verification. Never paste secret keys into chat.
+- Spot-checked Go and JavaScript/TypeScript field cards and their lesson flow/Next hooks; reviewed all 26 analogies. Corrected Go loop capture, slice sharing, errgroup and scheduler explanations, plus TLS, Kubernetes, JVM, C# and TypeScript analogies. Validators pass: 924 field cards and 98 flow/meaning entries; 73 tests pass.
 
 ## Must do before launch
 
@@ -23,27 +35,27 @@ Owner focus: items 7, 8, 9, 10 and 11.
 ### 3. New iOS build
 - [ ] Build and upload a new build. The current TestFlight build predates changes in `mobile/App.tsx` (purchase package selection, cancelled-purchase signal, light and dark colours, app icon badge and daily notifications).
 - How: `docs/IOS-RELEASE-RUNBOOK.md` sets up the one-click "iOS release" workflow (`.github/workflows/ios-release.yml`); `docs/DEPLOY-AND-SUBMIT.md` has the manual commands.
-- [ ] Native icon and splash images in `mobile/assets/` still show the old blue "P"; replace before submitting.
+- [x] Replace the old blue "P" in the native iOS icon and splash images in `mobile/assets/`.
 
 ### 4. Update the privacy policy (`web/privacy.html`)
-- [ ] Still dated 16 November 2026 and still says "coach". Add:
+- [x] Update the date and AI wording, and document:
   - Pasted experience or résumé summary is sent to Azure OpenAI to suggest roles (signed-in users, on request only).
-  - Guide suggestions are stored (Table Storage) and emailed to the team.
-  - Live AI "During your interview" mode streams microphone audio, which can include the other people on the call, to Azure OpenAI for the length of the session; nothing is recorded or stored by PrepPilot.
+  - Guide suggestions are stored (Table Storage) and emailed to the team when email delivery is configured.
+  - Live AI "During your interview" mode streams microphone audio, which can include the other people on the call, to Azure OpenAI for the length of the session; PrepPilot does not record or store audio, but retains call metadata for accounting.
   - "Fresh from the field" scenarios are generated per role and contain no user data.
 - [ ] Make the App Store privacy answers (App Privacy section) match the policy.
 
 ### 5. Turn off the beta access code
-- [ ] Remove or empty `ACCESS_CODE` in the Azure Static Web App settings. Anyone with the code gets unlimited AI and every locked topic.
+- [x] Remove or empty `ACCESS_CODE` in the Azure Static Web App settings. Anyone with the code gets unlimited AI and every locked topic.
 
 ### 6. Check the Azure settings
-- [ ] Sign-in: `GOOGLE_CLIENT_IDS`, `GOOGLE_WEB_CLIENT_ID`, `APPLE_AUDIENCES`, `SESSION_SECRET` (long and random).
-- [ ] AI: `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_REALTIME_DEPLOYMENT`, `AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT`.
-- [ ] Storage: `STORAGE_CONNECTION_STRING` (users, usage, calls, suggestions, fresh scenarios; new tables are created on first use).
+- [x] Sign-in: `GOOGLE_CLIENT_IDS`, `GOOGLE_WEB_CLIENT_ID`, `APPLE_AUDIENCES`, `SESSION_SECRET` (at least 32 characters; audiences checked against app configuration).
+- [x] AI: `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_REALTIME_DEPLOYMENT`, `AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT`.
+- [x] Storage: `STORAGE_CONNECTION_STRING` (users, usage, calls, suggestions, fresh scenarios; new tables are created on first use).
 - [ ] Billing: `REVENUECAT_WEBHOOK_AUTH`, `REVENUECAT_SECRET_KEY`.
 - [ ] Guide-suggestion email: `ACS_EMAIL_ENDPOINT`, `ACS_EMAIL_KEY`, `ACS_EMAIL_SENDER`, `SUGGESTIONS_EMAIL` (palpriya0825@gmail.com). Without these, suggestions are stored but no email is sent.
 - [ ] `ADMIN_EMAILS`: only addresses that should get unlimited access.
-- [ ] Price labels: leave `PRO_PRICE_LABEL` and `LIVE_PRICE_LABEL` unset (defaults are $10.99/month and $15.99) or set them to match the store exactly.
+- [x] Price labels: leave `PRO_PRICE_LABEL` and `LIVE_PRICE_LABEL` unset (defaults are $10.99/month and $15.99) or set them to match the store exactly.
 - Quick check: `curl <live site>/api/health` shows `voice: true`, `payments: true`, the Google client id, and the plan numbers.
 
 ## Owner focus
@@ -54,7 +66,7 @@ Owner focus: items 7, 8, 9, 10 and 11.
 - Where: the option is in `liveSetupSheet()` in `web/js/app.js`; the wording also appears in `livePromo()`, the landing page, and the Pricing table and "Live AI in your interview" section in `plansView()`. The native app sets `window.PP_PLATFORM` to `ios`.
 
 ### 8. Check the sweeper is deployed and running
-- [ ] Confirm the Function App `func-pp-sweeper-<suffix>` exists in `rg-preppilot` and its timer runs every minute (`sweeper/src/functions/sweep.js`).
+- [x] Confirm the Function App `func-pp-sweeper-<suffix>` exists in `rg-preppilot` and its timer runs every minute (`sweeper/src/functions/sweep.js`).
 - Why: it hangs up voice calls whose paid time is over. The browser stops on time on its own, but a modified client could keep a call open without the sweeper.
 - Note: the normal deploy (`deploy.yml`) ships only `web/` and `api/`; the sweeper is defined in `infra/main.bicep` and deployed by `deploy.ps1`. It needs the same `STORAGE_CONNECTION_STRING` and Azure OpenAI settings as the API.
 
@@ -68,7 +80,7 @@ Owner focus: items 7, 8, 9, 10 and 11.
 - [ ] Use its URL in App Store Connect (Support URL) and link it from Profile and Pricing.
 
 ### 11. Spot-check the AI-written content
-- [ ] Read 10 to 15 cards from your own technologies in each new file type and fix anything wrong:
+- [x] Read 10 to 15 cards from selected technologies in each new file type and fix anything wrong:
   - `web/content/field/<pack>.json`: terminology, troubleshooting and real scenarios (about 900 cards, written by helper agents; Git was checked).
   - `web/content/flow/<pack>.json`: lesson order and the "Next" line on each card.
   - `scripts/analogies.mjs`: the 26 analogies (rerun `node scripts/analogies.mjs` after editing).
@@ -87,4 +99,4 @@ Owner focus: items 7, 8, 9, 10 and 11.
 - Product and pricing reasoning: `docs/PRODUCT-STRATEGY.md`, `docs/COST-AND-PRICING.md`.
 - Content rules: `docs/CONTENT-BRIEF.md`, `docs/FIELD-BRIEF.md`.
 - Deploy and store submission: `docs/DEPLOY-AND-SUBMIT.md`, `docs/IOS-RELEASE-RUNBOOK.md`.
-- Tests: `npm test` (72 tests). Local run: `npm run dev`, then http://localhost:5173.
+- Tests: `npm test` (73 tests). Local run: `npm run dev`, then http://localhost:5173.
