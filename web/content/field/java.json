@@ -1,0 +1,89 @@
+{
+  "java-core": {
+    "terms": [
+      { "q": "What are `javac`, bytecode and the classpath?", "a": "`javac` compiles `.java` to `.class` bytecode, which the JVM runs. The classpath lists directories and JARs where the JVM and compiler look for classes (`-cp` or `CLASSPATH`)." },
+      { "q": "What is a JAR and a fat JAR?", "a": "A JAR is a zip of classes and resources with a manifest. A fat (uber) JAR bundles dependencies too, so `java -jar app.jar` runs standalone; Spring Boot builds one." },
+      { "q": "What is a package and the `public`, `protected`, default access levels?", "a": "A package namespaces classes. `public` is visible everywhere, `protected` to the package and subclasses, default (no modifier) to the package only, `private` to the class." },
+      { "q": "What is the Collections Framework vs Streams?", "a": "Collections (`List`, `Set`, `Map`) store data. Streams describe a pipeline of operations (`filter`, `map`, `collect`) over a source; they are lazy and do not store data." },
+      { "q": "What are records and sealed classes?", "a": "A record is a concise immutable data carrier with generated accessors, `equals`, `hashCode` and `toString`. A sealed type restricts which classes may extend it, enabling exhaustive pattern matching." },
+      { "q": "What is JUnit?", "a": "The standard Java unit testing framework. JUnit 5 uses `@Test`, `@BeforeEach`, assertions and `@ParameterizedTest`, usually run by Maven or Gradle." }
+    ],
+    "trouble": [
+      { "q": "NullPointerException. How do you find and fix the cause?", "a": "Read the stack trace to the exact line (helpful messages name the null variable in modern Java). Fix the source of the null, use `Optional` or `Objects.requireNonNull`, and avoid returning null collections." },
+      { "q": "ConcurrentModificationException while iterating a list.", "a": "The collection was modified during iteration. Use `Iterator.remove()`, `removeIf`, collect changes then apply, or a concurrent collection if threads are involved." },
+      { "q": "Two equal objects do not match in a HashMap or HashSet.", "a": "`equals` and `hashCode` are not consistent or not overridden, or a mutable key changed after insertion. Override both together using the same fields, and prefer immutable keys." },
+      { "q": "ClassCastException or unchecked warning after mixing raw types.", "a": "Raw generics bypass compile-time checks. Parameterize types (`List<String>`), avoid raw use and fix unsafe casts instead of suppressing the warning." },
+      { "q": "`==` on strings gives false even though they look equal.", "a": "`==` compares references. Use `equals()` (or `equalsIgnoreCase`) for content; the string pool only makes literals look identical." }
+    ],
+    "scenarios": [
+      { "q": "A method works but is hard to test because it creates its own dependencies. What do you do?", "a": "Inject dependencies through the constructor, depend on interfaces, and substitute fakes or Mockito mocks in tests. Keep static and time or random access behind an injectable seam." },
+      { "q": "You must process a 5 GB file in Java. How?", "a": "Stream it line by line with `Files.lines` or a `BufferedReader`, avoid loading it into memory, process in batches and close resources with try-with-resources." },
+      { "q": "A shared counter gives wrong totals under load. How do you fix it?", "a": "A race on non-atomic updates. Use `AtomicLong`, `LongAdder`, a lock, or confine state to one thread; verify with a concurrency test." }
+    ]
+  },
+  "jvm": {
+    "terms": [
+      { "q": "What are `-Xms` and `-Xmx`?", "a": "Initial and maximum heap size. Setting them equal avoids resizing pauses. In containers, `-XX:MaxRAMPercentage` sizes the heap relative to the memory limit." },
+      { "q": "What is a GC pause and GC log?", "a": "A GC pause is when application threads stop for collection. Enable logging with `-Xlog:gc*` to see frequency, duration and heap before and after." },
+      { "q": "What are young and old generations?", "a": "New objects go to the young generation, collected often and cheaply. Survivors are promoted to the old generation, collected less often. Premature promotion causes costly old collections." },
+      { "q": "Which collectors exist: Serial, Parallel, G1, ZGC?", "a": "Serial is single-threaded for small heaps. Parallel maximizes throughput. G1 is the balanced default. ZGC and Shenandoah target very low pause times on big heaps." },
+      { "q": "What are JFR and `jcmd`?", "a": "Java Flight Recorder is a low-overhead profiler built into the JVM. `jcmd <pid>` sends diagnostic commands such as `Thread.print`, `GC.heap_dump` and `JFR.start`." },
+      { "q": "What is class loading and the classloader hierarchy?", "a": "Classes are loaded lazily by bootstrap, platform and application classloaders, delegating to the parent first. Duplicate classes on the classpath lead to conflicting or wrong versions loading." }
+    ],
+    "trouble": [
+      { "q": "java.lang.OutOfMemoryError: Java heap space.", "a": "The live set exceeds the heap. Capture a dump (`-XX:+HeapDumpOnOutOfMemoryError`), analyze it in Eclipse MAT for the dominant retainers, fix the leak, then size the heap if needed." },
+      { "q": "java.lang.OutOfMemoryError: Metaspace.", "a": "Too many classes loaded, often from classloader leaks on redeploys or dynamic proxies and generation. Find the loader leak, and cap or raise `-XX:MaxMetaspaceSize` as a safeguard." },
+      { "q": "StackOverflowError.", "a": "Recursion that is too deep or infinite, or cyclic calls such as `toString` referencing each other. Fix the base case, convert to iteration, or raise `-Xss` only if the depth is legitimate." },
+      { "q": "NoClassDefFoundError or NoSuchMethodError at runtime.", "a": "The class existed at compile time but a different version or none is on the runtime classpath. Run `mvn dependency:tree`, remove conflicting versions and align dependencies." },
+      { "q": "Container is killed (OOMKilled) while heap looks fine.", "a": "Total process memory includes metaspace, thread stacks, direct buffers and native memory, not just heap. Lower the heap percentage, set limits explicitly and use `-XX:NativeMemoryTracking`." }
+    ],
+    "scenarios": [
+      { "q": "A service has long pauses every few minutes. What do you do?", "a": "Turn on GC logging, correlate pauses with collections, check allocation rate and old-gen growth, tune or switch collector (G1 pause goals, ZGC), and reduce garbage at the hot allocation sites." },
+      { "q": "CPU is at 100 percent on one instance. How do you diagnose it?", "a": "Find the hot thread with `top -H`, convert its id to hex, match it in a `jstack` thread dump, or sample with JFR or async-profiler to find the hot method." },
+      { "q": "Memory use grows steadily over days. What is your approach?", "a": "Take two heap dumps hours apart, compare retained size by class in MAT, trace GC roots of the growing objects (caches without eviction, listeners, ThreadLocals) and fix the retention." }
+    ]
+  },
+  "spring": {
+    "terms": [
+      { "q": "What is a Spring bean and the ApplicationContext?", "a": "A bean is an object managed by the Spring container. The `ApplicationContext` creates, wires and manages their lifecycle from annotations and configuration." },
+      { "q": "What do `@Component`, `@Service`, `@Repository`, `@Configuration` mean?", "a": "`@Component` marks a scanned bean. `@Service` and `@Repository` are specializations (`@Repository` adds exception translation). `@Configuration` classes declare beans via `@Bean` methods." },
+      { "q": "What are Spring profiles?", "a": "Named sets of beans and properties activated with `spring.profiles.active`, such as `dev` or `prod`, with files like `application-prod.yml`." },
+      { "q": "What is Spring Data JPA?", "a": "A layer over JPA where you declare a repository interface (`JpaRepository<T, ID>`) and get CRUD plus derived query methods without writing the implementation." },
+      { "q": "What is Actuator?", "a": "A Boot module exposing operational endpoints (`/actuator/health`, `metrics`, `info`) used for health checks, monitoring and readiness probes." },
+      { "q": "What is AOP in Spring?", "a": "Aspect-oriented programming through proxies that add cross-cutting behavior (transactions, security, logging) around method calls. It is why self-invocation can bypass annotations." }
+    ],
+    "trouble": [
+      { "q": "NoSuchBeanDefinitionException or UnsatisfiedDependencyException.", "a": "No bean of that type is registered or several match. Check component scan packages and stereotype annotations, add the missing bean, or disambiguate with `@Primary` or `@Qualifier`." },
+      { "q": "BeanCurrentlyInCreationException: circular dependency.", "a": "Two beans depend on each other through constructors. Redesign to break the cycle (extract a third bean, use events), instead of enabling circular references." },
+      { "q": "LazyInitializationException.", "a": "A lazy JPA association was accessed after the session closed. Fetch what you need inside the transaction (`join fetch`, entity graph), or map to a DTO inside the service." },
+      { "q": "@Transactional does not roll back or does not apply.", "a": "Proxies skip self-invocation and non-public methods, and by default only runtime exceptions roll back. Call through another bean, or set `rollbackFor` for checked exceptions." },
+      { "q": "Port 8080 was already in use or the app fails to start with a config error.", "a": "Change `server.port`, or free the port. For binding errors, read the failure analyzer message, check property names against `@ConfigurationProperties`, and enable `--debug` for the auto-configuration report." }
+    ],
+    "scenarios": [
+      { "q": "An endpoint is slow due to many queries. How do you fix it?", "a": "Enable SQL logging, confirm N+1, use fetch joins or `@EntityGraph`, project to DTOs, add pagination and indexes, and measure again. Cache only after the query shape is right." },
+      { "q": "You need to deploy the same Boot app to dev, staging and prod. How do you configure it?", "a": "Keep one artifact, vary configuration through profiles and environment variables, load secrets from a vault or the platform rather than from the repo, and set health probes via Actuator." },
+      { "q": "How do you test a Boot service layer and a REST controller?", "a": "Unit test services with plain JUnit and Mockito, controllers with `@WebMvcTest` and `MockMvc`, repositories with `@DataJpaTest`, and use Testcontainers for integration tests against a real database." }
+    ]
+  },
+  "java-build": {
+    "terms": [
+      { "q": "What are `pom.xml` and `build.gradle`?", "a": "The project descriptors. `pom.xml` declares coordinates (groupId, artifactId, version), dependencies and plugins. `build.gradle(.kts)` defines plugins, dependencies and tasks in Groovy or Kotlin." },
+      { "q": "What is a local repository vs a remote repository?", "a": "Maven caches artifacts in `~/.m2/repository`. Remote repositories such as Maven Central or an internal Nexus or Artifactory supply them, configured in `pom.xml` or `settings.xml`." },
+      { "q": "`mvn package` vs `install` vs `deploy`?", "a": "`package` builds the JAR in `target/`. `install` also copies it to the local repository. `deploy` publishes it to a remote repository." },
+      { "q": "What is the Gradle wrapper?", "a": "`gradlew` and its properties file pin the Gradle version and download it on demand, so every developer and CI uses the same build tool. Commit it." },
+      { "q": "What is SNAPSHOT vs release version?", "a": "A SNAPSHOT is a mutable in-development version that can be republished. A release version is immutable, so builds stay reproducible." },
+      { "q": "What is Maven `dependencyManagement` vs `dependencies`?", "a": "`dependencyManagement` only fixes versions and scopes for use by child modules. Only `dependencies` actually adds to the classpath." }
+    ],
+    "trouble": [
+      { "q": "Could not resolve dependencies or artifact not found.", "a": "Wrong coordinates, a missing repository, or credentials. Verify the version exists, check `settings.xml` mirrors and auth, and retry with `-U` to force update checks." },
+      { "q": "Source option 5 is no longer supported or invalid target release.", "a": "The compiler level does not match the JDK. Set `maven.compiler.release` (or a Gradle toolchain) to the intended version and run with that JDK." },
+      { "q": "Build works locally but fails in CI.", "a": "Differences in JDK, cached artifacts, environment variables or test order. Pin the JDK and wrapper, build clean, and run the same command locally: `./mvnw -B clean verify`." },
+      { "q": "Dependency convergence or duplicate class problem.", "a": "Transitive versions conflict. Use `mvn dependency:tree` or `gradle dependencies`, exclude the unwanted one, and pin the version through a BOM or constraint." }
+    ],
+    "scenarios": [
+      { "q": "You need to cut a release of a library. What are the steps?", "a": "Set a non-SNAPSHOT version, run the full build and tests, tag the commit, publish to the artifact repository (signed if Central), then bump to the next SNAPSHOT. Automate it with the release plugin or CI." },
+      { "q": "Builds got slow. How do you speed them up?", "a": "Enable Gradle build cache and parallelism or `mvn -T 1C`, skip needless modules with `-pl -am`, avoid running integration tests on every build, and cache the dependency directory in CI." },
+      { "q": "How do you keep dependencies current and safe?", "a": "Use Dependabot or Renovate for update PRs, run OWASP dependency-check or a similar scanner in CI, review the dependency tree regularly and remove unused libraries." }
+    ]
+  }
+}

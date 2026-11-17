@@ -1,0 +1,45 @@
+{
+  "go-core": {
+    "terms": [
+      { "q": "What are `go.mod` and `go.sum`?", "a": "`go.mod` declares the module path, Go version and requirements. `go.sum` stores checksums of dependencies so downloads are verified. Manage them with `go mod init` and `go mod tidy`." },
+      { "q": "What is a package vs a module?", "a": "A package is a directory of Go files compiled together. A module is a collection of packages versioned together, identified by the path in `go.mod`." },
+      { "q": "`go build` vs `go run` vs `go install`?", "a": "`go build` compiles to a binary, `go run` compiles and runs a temporary binary, and `go install` builds and puts the binary into `GOBIN`." },
+      { "q": "What are zero values and the `:=` operator?", "a": "Declared variables default to a zero value (0, \"\", nil, false). `:=` declares and initializes inside functions with inferred type." },
+      { "q": "What is an interface and the empty interface?", "a": "A set of method signatures satisfied implicitly by any type with those methods. `any` (`interface{}`) accepts any value but needs a type assertion or switch to use it." },
+      { "q": "What are `go vet`, `gofmt` and `golangci-lint`?", "a": "`gofmt` enforces standard formatting, `go vet` finds suspicious constructs, and `golangci-lint` runs many linters together. All are typically run in CI." }
+    ],
+    "trouble": [
+      { "q": "panic: assignment to entry in nil map.", "a": "The map was declared but not initialized. Create it with `make(map[K]V)` or a literal before writing; reading from a nil map is safe, writing is not." },
+      { "q": "panic: runtime error: invalid memory address or nil pointer dereference.", "a": "A nil pointer or nil interface was used. Check for nil before use, return errors instead of nil values, and read the stack trace for the line." },
+      { "q": "A nil error check fails even though the function returned a nil pointer.", "a": "An interface holding a typed nil pointer is not nil. Return a plain `nil` error rather than a typed nil value." },
+      { "q": "Loop variable captured by closure has the wrong value.", "a": "Before Go 1.22 all iterations shared one loop variable. Copy it (`i := i`) or pass it as an argument; with Go 1.22 and later each iteration has its own." },
+      { "q": "Appending to a slice changes another slice unexpectedly.", "a": "Slices share a backing array when capacity allows. Use `copy` or `slices.Clone`, or the full slice expression `s[a:b:b]` to force a new allocation on append." }
+    ],
+    "scenarios": [
+      { "q": "You build an HTTP service in Go. How do you structure error handling?", "a": "Return errors up the stack with context (`fmt.Errorf(\"load user: %w\", err)`), map them to status codes at the handler with `errors.Is` and `errors.As`, and log once at the boundary." },
+      { "q": "How do you ship a small container image for a Go service?", "a": "Multi-stage build: compile a static binary with `CGO_ENABLED=0 go build` in a golang image, then copy it into `scratch` or distroless, running as a non-root user." },
+      { "q": "A function is hard to test because it calls an external API. What do you do?", "a": "Define a small interface where it is consumed, inject it, and use a fake in table-driven tests; for HTTP clients, `httptest.NewServer` provides a real local server." }
+    ]
+  },
+  "go-concurrency": {
+    "terms": [
+      { "q": "What is a channel and `select`?", "a": "A typed conduit between goroutines. `select` waits on several channel operations at once and runs the one ready, with `default` for non-blocking and `time.After` for timeouts." },
+      { "q": "What is `sync.Mutex` vs `sync.RWMutex`?", "a": "`Mutex` gives exclusive access to shared data. `RWMutex` allows many concurrent readers or one writer, useful when reads dominate." },
+      { "q": "What is `context` and its main functions?", "a": "A carrier for cancellation, deadlines and request values across API boundaries: `WithCancel`, `WithTimeout`, `WithDeadline`. Pass it as the first parameter and honor `ctx.Done()`." },
+      { "q": "What is `errgroup`?", "a": "`golang.org/x/sync/errgroup` runs goroutines and returns the first error, cancelling the shared context; `SetLimit` bounds concurrency." },
+      { "q": "What are `sync/atomic` and `sync.Map` for?", "a": "`atomic` gives lock-free counters and flags. `sync.Map` is a concurrent map suited to write-once, read-many or disjoint key sets; otherwise a mutex plus map is usually simpler." },
+      { "q": "What does `GOMAXPROCS` control?", "a": "The number of OS threads that can execute Go code at once. It defaults to the number of CPUs; in containers, make sure it respects the CPU limit." }
+    ],
+    "trouble": [
+      { "q": "fatal error: all goroutines are asleep - deadlock!", "a": "Every goroutine is blocked, such as sending on an unbuffered channel with no receiver or a forgotten `Unlock`. Ensure each send has a receiver, close channels from the sender and check `WaitGroup.Add` and `Done` balance." },
+      { "q": "Goroutine leak: goroutine count grows over time.", "a": "Goroutines are blocked forever on channels or I/O. Give each a way to exit via `context` cancellation or a done channel, and diagnose with the `pprof` goroutine profile." },
+      { "q": "WARNING: DATA RACE reported by the race detector.", "a": "Unsynchronized concurrent access to shared memory. Guard it with a mutex, use channels or atomics, or avoid sharing. Run `go test -race ./...` in CI." },
+      { "q": "panic: send on closed channel or close of closed channel.", "a": "Only the sender side should close, and only once. Use a single owner for closing, or `sync.Once`; receivers detect closure with `v, ok := <-ch`." }
+    ],
+    "scenarios": [
+      { "q": "You need to process 10,000 jobs with at most 20 concurrent workers. How?", "a": "Create a jobs channel, start 20 worker goroutines ranging over it, feed jobs then close the channel, and wait with a `WaitGroup` or `errgroup`. Pass a `context` so workers stop on failure." },
+      { "q": "A downstream call hangs and ties up requests. What do you change?", "a": "Add timeouts: a `context.WithTimeout` per call and `http.Client.Timeout`, retry idempotent calls with backoff and limits, and consider circuit breaking so failures do not pile up." },
+      { "q": "How do you shut down a Go server gracefully?", "a": "Listen for `SIGTERM` with `signal.NotifyContext`, call `server.Shutdown(ctx)` with a timeout so in-flight requests finish, stop background workers through the context and close resources." }
+    ]
+  }
+}

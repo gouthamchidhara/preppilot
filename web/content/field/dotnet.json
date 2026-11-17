@@ -1,0 +1,89 @@
+{
+  "csharp-core": {
+    "terms": [
+      { "q": "What are the .NET SDK, `dotnet` CLI and a `.csproj`?", "a": "The SDK includes the compiler and CLI (`dotnet new`, `build`, `run`, `test`, `publish`). The `.csproj` is the XML project file with target framework, packages and settings." },
+      { "q": "What is NuGet?", "a": "The .NET package manager. Packages are referenced with `<PackageReference>` in the project, restored with `dotnet restore` and added using `dotnet add package`." },
+      { "q": "What is a record vs a class?", "a": "A record provides value-based equality, `with` expressions and a concise syntax, best for immutable data. A class has reference equality by default." },
+      { "q": "What are `var`, `dynamic` and `object`?", "a": "`var` is compile-time inferred static typing. `object` is the base type needing casts. `dynamic` defers member binding to runtime and skips compile-time checks." },
+      { "q": "What is a delegate, `Func` and `Action`?", "a": "A delegate is a type-safe method reference. `Func<>` returns a value, `Action<>` returns void. Lambdas are commonly assigned to them, and events are built on delegates." },
+      { "q": "What is `IDisposable` and `using`?", "a": "`IDisposable.Dispose` releases unmanaged resources deterministically. `using` (statement or declaration) calls it automatically at the end of scope, and `await using` handles `IAsyncDisposable`." }
+    ],
+    "trouble": [
+      { "q": "NullReferenceException. How do you handle it?", "a": "An object was null when used. Enable nullable reference types to catch it at compile time, check with `is not null` or `?.`, and fix where the null originates." },
+      { "q": "InvalidOperationException: Collection was modified during enumeration.", "a": "A list changed inside `foreach`. Iterate over a copy (`ToList()`), collect changes then apply them, or use `RemoveAll`." },
+      { "q": "Async deadlock when calling `.Result` or `.Wait()`.", "a": "Blocking on a task while holding a synchronization context can deadlock. Use `async` all the way, `await` instead of blocking, and `ConfigureAwait(false)` in library code." },
+      { "q": "async void method crashes the app and exceptions are lost.", "a": "Exceptions in `async void` cannot be awaited or caught by callers. Return `Task` except for event handlers." },
+      { "q": "LINQ query runs multiple times or on stale data.", "a": "Deferred execution re-evaluates on each enumeration and sees the source at that time. Materialize once with `ToList()` or `ToArray()` when you need a snapshot." }
+    ],
+    "scenarios": [
+      { "q": "You have to call several services in parallel and combine results. How?", "a": "Start the tasks without awaiting, then `await Task.WhenAll(...)`, handle exceptions (the first is rethrown, inspect the tasks for others), pass a `CancellationToken` and cap concurrency with `SemaphoreSlim` if needed." },
+      { "q": "A method needs unit tests but uses `DateTime.Now` and static helpers. What do you do?", "a": "Inject abstractions: `TimeProvider` for time and interfaces for helpers. Then pass fakes in tests, keeping production wiring in the DI container." },
+      { "q": "A report endpoint loads a million rows and is slow. How do you fix it?", "a": "Stream or page the results, project only needed columns, push filtering to the database, avoid materializing everything and use `IAsyncEnumerable` for large responses." }
+    ]
+  },
+  "aspnet-core": {
+    "terms": [
+      { "q": "What are `Program.cs` and the host builder?", "a": "`Program.cs` creates the `WebApplication`, registers services in the DI container and defines the middleware pipeline and endpoints. Kestrel is the built-in web server." },
+      { "q": "What is `appsettings.json` and configuration providers?", "a": "Layered configuration: `appsettings.json`, then environment-specific file, user secrets, environment variables and command line, with later sources overriding earlier ones." },
+      { "q": "What is routing and endpoint mapping?", "a": "Routing matches requests to endpoints, such as attribute routes (`[HttpGet(\"{id}\")]`) or `app.MapGet`. Authorization and filters attach to the matched endpoint." },
+      { "q": "What are action filters vs middleware?", "a": "Middleware wraps every request in the pipeline. Filters run only around MVC or minimal API endpoints and have access to action context such as model state and results." },
+      { "q": "What are `IOptions<T>`, `IOptionsSnapshot` and `IOptionsMonitor`?", "a": "Typed settings access. `IOptions` is read once as a singleton, `IOptionsSnapshot` re-reads per request (scoped), `IOptionsMonitor` supplies current values and change notifications to singletons." },
+      { "q": "What is `IHttpClientFactory`?", "a": "A factory that manages `HttpClient` handler lifetimes and pooling, avoiding socket exhaustion and stale DNS, with typed clients and Polly or resilience handlers." }
+    ],
+    "trouble": [
+      { "q": "InvalidOperationException: Unable to resolve service for type X.", "a": "The service is not registered. Add it with `AddScoped`, `AddSingleton` or `AddTransient` in startup, and check constructor parameter types and interface registrations." },
+      { "q": "Cannot consume scoped service from singleton.", "a": "A longer-lived service depends on a shorter-lived one (captive dependency). Change lifetimes, or create a scope with `IServiceScopeFactory` inside the singleton." },
+      { "q": "API returns 401 or 403 for a valid token.", "a": "401 means unauthenticated: check the scheme, issuer, audience, signing key, clock skew and that `UseAuthentication` runs before `UseAuthorization`. 403 means authenticated but policy or role failed." },
+      { "q": "CORS error from the browser to the API.", "a": "Add `AddCors` with a policy for the origin, methods and headers, and call `UseCors` in the right place in the pipeline (before authorization and endpoints)." },
+      { "q": "Works in Development and fails in Production.", "a": "Different environment config: `ASPNETCORE_ENVIRONMENT`, missing environment variables or secrets, HTTPS and proxy headers, or file paths. Check logs and use `ForwardedHeaders` behind a proxy." }
+    ],
+    "scenarios": [
+      { "q": "You need to add structured logging and tracing for an API. How?", "a": "Use `ILogger` with structured message templates and a sink like Serilog or OpenTelemetry exporters, add correlation ids and traces for incoming and outgoing HTTP, and avoid logging secrets." },
+      { "q": "How do you version a public API without breaking clients?", "a": "Use API versioning (URL segment or header), keep old versions running while clients migrate, make additive changes where possible and publish deprecation timelines." },
+      { "q": "How do you deploy an ASP.NET Core app with zero downtime?", "a": "Containerize it, add health checks for readiness and liveness, use rolling or blue-green deploys behind a load balancer, and handle graceful shutdown so in-flight requests complete." }
+    ]
+  },
+  "efcore": {
+    "terms": [
+      { "q": "What is a migration and the snapshot?", "a": "A migration is generated C# describing a schema change, created with `dotnet ef migrations add Name`. The model snapshot records the current model so EF can diff the next migration." },
+      { "q": "Code-first vs database-first?", "a": "Code-first defines entities and generates the schema through migrations. Database-first scaffolds entities from an existing database with `dotnet ef dbcontext scaffold`." },
+      { "q": "What is change tracking and `SaveChanges`?", "a": "The context tracks entity states (Added, Modified, Deleted) and `SaveChanges` sends the pending changes in one transaction." },
+      { "q": "What are navigation properties and foreign keys?", "a": "Navigation properties link related entities in code (`Order.Customer`), while foreign key properties hold the column value. EF configures relationships by convention or Fluent API." },
+      { "q": "What is the Fluent API vs data annotations?", "a": "Both configure the model. Annotations are attributes on entities, while the Fluent API in `OnModelCreating` is more powerful and keeps entities clean." },
+      { "q": "Why register DbContext as scoped?", "a": "A context is not thread-safe and tracks state, so it is meant to be short-lived. Scoped gives one per web request, and `AddDbContextPool` can reuse instances." }
+    ],
+    "trouble": [
+      { "q": "The instance of entity type cannot be tracked because another instance with the same key is already tracked.", "a": "Two objects with the same key are attached to one context. Load once and update that instance, use `AsNoTracking` for read paths, or attach consistently." },
+      { "q": "A second operation was started on this context before a previous operation completed.", "a": "A `DbContext` was used concurrently, often a missing `await` or parallel tasks sharing it. Await each call and use a separate context per concurrent operation." },
+      { "q": "A migration fails to apply or there are pending model changes.", "a": "The database and the snapshot diverged. Inspect with `dotnet ef migrations list`, fix or remove the last unapplied migration, and never edit applied migrations; add a new one instead." },
+      { "q": "DbUpdateConcurrencyException on save.", "a": "A row changed since you read it, detected by a concurrency token such as `rowversion`. Reload, merge or ask the user to retry, and decide a policy for client or database wins." },
+      { "q": "Query translated slowly or LINQ could not be translated.", "a": "Part of the expression cannot become SQL. Rewrite using supported members, move non-translatable parts after `AsEnumerable` deliberately, and inspect SQL with logging or `ToQueryString()`." }
+    ],
+    "scenarios": [
+      { "q": "An endpoint that lists orders with customers is slow. How do you investigate?", "a": "Log the SQL, spot N+1 or over-fetching, use `Include` or better a projection to a DTO with `Select`, add `AsNoTracking`, add an index on the filter columns and paginate." },
+      { "q": "How do you run migrations safely in production?", "a": "Generate an idempotent SQL script (`dotnet ef migrations script --idempotent`) or a migration bundle, review it, run it as a separate deploy step with a backup, and keep changes backward compatible with the running version." },
+      { "q": "You need to rename a column without losing data. What do you do?", "a": "Use `RenameColumn` in the migration, not drop and add; scaffolded migrations may guess wrong, so edit it. For zero-downtime, add the new column, backfill, switch the code, then remove the old one in a later release." }
+    ]
+  },
+  "dotnet-runtime": {
+    "terms": [
+      { "q": "What is a target framework moniker (TFM)?", "a": "The identifier such as `net8.0` or `netstandard2.0` set with `<TargetFramework>` that selects the APIs and runtime your project builds for." },
+      { "q": "Framework-dependent vs self-contained deployment?", "a": "Framework-dependent needs the .NET runtime installed and gives a small package. Self-contained bundles the runtime, so it runs anywhere but is larger." },
+      { "q": "What is `dotnet publish` and Native AOT?", "a": "`publish` produces deployable output. Native AOT compiles ahead of time to a native binary, giving fast startup and low memory but with restrictions on reflection and dynamic code." },
+      { "q": "What is IL and the JIT compiler?", "a": "C# compiles to Intermediate Language in assemblies. The JIT compiles IL to machine code at runtime, and tiered compilation first emits quick code then re-optimizes hot methods." },
+      { "q": "What are `dotnet-counters`, `dotnet-trace` and `dotnet-dump`?", "a": "Diagnostic CLI tools. `counters` shows live metrics, `trace` collects performance traces and `dump` captures and analyzes memory dumps of a running process." },
+      { "q": "What is `Task` vs `ValueTask`, and the thread pool?", "a": "The thread pool runs queued work items and tasks, adjusting threads dynamically. `ValueTask` avoids an allocation when results are often synchronous." }
+    ],
+    "trouble": [
+      { "q": "High memory use that never goes down.", "a": "Could be a leak (static references, event handlers, unbounded caches) or just GC holding memory. Check `dotnet-counters` for GC heap size and gen2 collections, then capture a dump and analyze roots." },
+      { "q": "Requests slow down under load while CPU is low.", "a": "Typical of thread pool starvation from sync-over-async blocking. Look for `.Result` and `.Wait()`, check thread pool queue length in counters, and make the code async end to end." },
+      { "q": "You must find where allocations come from.", "a": "Use `dotnet-trace` or Visual Studio and PerfView allocation profiling, find hot allocation sites, then reduce with pooling (`ArrayPool`), `Span<T>`, avoiding closures and boxing." },
+      { "q": "Application crashes with an unhandled exception and no useful log.", "a": "Capture a dump on crash (`DOTNET_DbgEnableMiniDump`), subscribe to `AppDomain.UnhandledException` and log it, and add a global exception handler in the host." }
+    ],
+    "scenarios": [
+      { "q": "A service in a container is OOMKilled. What do you check?", "a": "Compare the container memory limit to GC heap behavior. .NET respects cgroup limits, so tune `GCHeapHardLimit` or switch GC mode, look for large object allocations and leaks, and set requests and limits sensibly." },
+      { "q": "Startup is too slow for a serverless function. Options?", "a": "Use ReadyToRun or Native AOT, trim unused dependencies, avoid heavy work at startup, lazy initialize services and measure cold start before and after." },
+      { "q": "How do you upgrade an app from .NET Framework to modern .NET?", "a": "Run the .NET Upgrade Assistant and analyzer to find incompatibilities, move libraries to .NET Standard or multi-targeting first, replace unsupported APIs, upgrade project by project, and test thoroughly before cutover." }
+    ]
+  }
+}
