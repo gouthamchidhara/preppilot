@@ -239,59 +239,78 @@ function heroAnim() {
       <circle class="ha-dot" r="4" cx="180" cy="84"/>
     </g>
     <g class="ha-s3">
-      <text class="ha-lbl" x="112" y="48">Live AI · listening</text>
+      <text class="ha-lbl" x="112" y="48">Practising out loud</text>
       ${Array.from({ length: 13 }, (_, i) => `<rect class="ha-wave" style="--i:${i}" x="${118 + i * 10}" y="64" width="5" height="34" rx="2.5"/>`).join('')}
       <text class="ha-q" x="112" y="128">“Tell me about a time</text><text class="ha-q" x="112" y="144">prod went down.”</text>
       ${['Situation: 2 a.m. page, 5xx', 'Rolled back in 4 min', 'Fixed the alert, wrote RCA'].map((t, i) => `<g class="ha-pt" style="--i:${i}"><circle cx="117" cy="${170 + i * 22}" r="2.5"/><text class="ha-a" x="126" y="${174 + i * 22}">${t}</text></g>`).join('')}
     </g>
   </svg>
-  <div class="ha-caption"><span class="c1">Cards that come back when you miss them</span><span class="c2">Pictures that draw themselves</span><span class="c3">Live AI for 60 minutes</span></div></div>`;
+  <div class="ha-caption"><span class="c1">Cards that come back when you miss them</span><span class="c2">Pictures that draw themselves</span><span class="c3">Practise your answers out loud</span></div></div>`;
 }
+
+// Lanes people recognise, each pointing at the topics a newcomer would expect to see.
+const LANES = [
+  ['Java', ['java-core', 'spring']],
+  ['React', ['react', 'js-core']],
+  ['Python', ['python-core']],
+  ['SQL & data', ['sql', 'spark']],
+  ['Cloud & DevOps', ['docker', 'k8s', 'git']],
+  ['AI & LLMs', ['llm-apps', 'ml-fundamentals']],
+];
 
 function landingView() {
   const demo = S.demo;
   const q = demo?.q;
-  return `<div class="stack loose landing">
-    ${heroAnim()}
-    <section class="head">
-      <h1>Flashcards, moving diagrams and a live AI for your next tech interview.</h1>
-      <p class="lede" style="margin-top:12px">Not a course. You already know this stuff; PrepPilot puts it back on the tip of your tongue, one or two lines at a time, in the same order you work: for a Java developer, write the code, build it, test it, ship it, keep it running. So the next card is the one you would expect.</p>
-      <div class="row" style="margin-top:20px"><button class="btn primary lg" data-act="startonboard">Build my plan</button><span class="muted small">Free to start. No card needed.</span></div>
+  return `<div class="landing">
+    <section class="l-hero">
+      <div class="l-copy">
+        <h1 class="l-title">Your interview is coming up. Let’s make sure it all comes back to you.</h1>
+        <p class="l-sub">Quick flashcards for the tech you already work with, Java, React, Python, SQL, cloud and AI, one or two lines each, in the order you actually work.</p>
+        <div class="row l-cta"><button class="btn primary lg" data-act="startonboard">Get started, it’s free</button></div>
+        <p class="muted small">No card needed. Takes about a minute.</p>
+      </div>
+      ${heroAnim()}
     </section>
-    ${q ? `<section class="card stacked flash" id="flash">
-      <div class="card-head"><span>A real card from ${esc(demo.topicName)}</span><button class="link quiet small" data-act="demoshuffle">Show another</button></div>
-      <p class="q">${fmt(q.q)}</p>
-      ${demo.reveal ? `<div class="ans">${fmt(q.a)}</div>` : ''}
-      <div class="foot">${demo.reveal ? '<p class="muted small">In the app you mark it Got it or Missed it, and the ones you miss come back first.</p>' : '<button class="btn primary block" data-act="demoreveal">Show the answer</button>'}</div>
-    </section>` : '<p class="muted">Loading a sample card…</p>'}
-    ${demo?.dg ? `<section class="stack tight"><h3>Every topic has a picture that draws itself</h3>${diagramHtml(demo.dg, S.dgStages[demo.dg] ?? null, { autoplay: true })}</section>` : ''}
-    <section class="stack">
-      <h3>How it works</h3>
-      <div class="rows">
-        <div class="rowi static"><span class="when">1</span><span class="main"><span class="t">Tell it what you are interviewing for</span><span class="d">Search ${getCatalog().roles.length} roles, or paste a few lines about your experience.</span></span></div>
-        <div class="rowi static"><span class="when">2</span><span class="main"><span class="t">Refresh it in your workflow's order</span><span class="d">One or two lines per card, following the way you already work, so it comes back to you on the call.</span></span></div>
-        <div class="rowi static"><span class="when">3</span><span class="main"><span class="t">Say it out loud</span><span class="d">Practise answers with the AI coach, or book Live AI for 60 minutes.</span></span></div>
+
+    <section class="l-try">
+      <h2 class="l-h2">Try a card</h2>
+      <div class="chips l-lanes" role="tablist" aria-label="Pick a technology">${LANES.map(([n], i) => `<button class="chip ${demo?.lane === i ? 'on' : ''}" role="tab" aria-selected="${demo?.lane === i}" data-act="demolane" data-i="${i}">${esc(n)}</button>`).join('')}</div>
+      ${q ? `<article class="card stacked flash l-card" id="flash">
+        <div class="card-head"><span>${esc(demo.topicName)}</span><button class="link quiet small" data-act="demoshuffle">Another one</button></div>
+        <p class="q">${fmt(q.q)}</p>
+        ${demo.reveal ? `<div class="ans">${fmt(q.a)}</div>` : ''}
+        <div class="foot">${demo.reveal ? '<p class="muted small">Knew it? In the app you tap Got it. Didn’t? It comes back first next time.</p>' : '<button class="btn primary block" data-act="demoreveal">Show the answer</button>'}</div>
+      </article>` : '<p class="muted">Loading a card…</p>'}
+    </section>
+
+    <section class="l-why">
+      <h2 class="l-h2">Why it works</h2>
+      <div class="l-grid">
+        <div class="l-tile">${ic('cards')}<b>Short on purpose</b><span>Not a course. Each card is the line you want ready when the interviewer asks.</span></div>
+        <div class="l-tile">${ic('right')}<b>In your workflow’s order</b><span>Write it, build it, test it, ship it, run it. The next card is the one you’d expect.</span></div>
+        <div class="l-tile">${ic('refresh')}<b>Misses come back</b><span>Cards you get wrong return first, so the weak spots get the time.</span></div>
+        <div class="l-tile">${ic('mic')}<b>Say it out loud</b><span>Practise answers by voice, or book a full hour with Live AI before the big day.</span></div>
       </div>
     </section>
-    <section class="card live-hero stack"><h2>Live AI for 60 minutes</h2>
-      <p>A spoken practice test for your role with a verdict at the end, or talking points on screen while your interviewer asks the questions. One-time, no subscription.</p>
-      <div class="row"><button class="btn invert" data-act="startonboard">Start with my role</button></div></section>
+
+    <section class="l-end">
+      <h2 class="l-h2">Pick your role and start</h2>
+      <p class="muted">Search ${getCatalog().roles.length} roles, or paste a few lines about your experience and we’ll pick for you.</p>
+      <div class="row" style="justify-content:center"><button class="btn primary lg" data-act="startonboard">Get started, it’s free</button></div>
+    </section>
   </div>`;
 }
-// A random real card (and a diagram) from a different technology each time.
-async function loadDemo() {
-  const packs = getManifest().packs.filter(p => p.topics.length);
+// A real beginner-friendly card from a popular technology.
+async function loadDemo(lane) {
   const pick = a => a[Math.floor(Math.random() * a.length)];
-  const prev = S.demo?.topicId;
-  let t = null;
-  const tech = packs.map(p => ({ ...p, topics: p.topics.filter(x => !['behavioral', 'scenarios'].includes(x.id)) })).filter(p => p.topics.length);
-  for (let i = 0; i < 6 && (!t || t.id === prev); i++) t = pick(pick(tech).topics);
-  try { await ensureTopics([t.id]); } catch { return; }
-  const full = topicById(t.id);
-  if (!full?.qa?.length) return;
-  const basic = full.qa.filter(q => q.l <= 2);
-  const withDiagram = getManifest().packs.flatMap(p => p.topics).filter(x => diagramFor(x.id) && x.id !== t.id);
-  S.demo = { topicId: t.id, topicName: full.name, q: pick(basic.length ? basic : full.qa), reveal: false, dg: S.demo?.dg || pick(withDiagram)?.id };
+  const li = Number.isInteger(lane) ? lane : Number.isInteger(S.demo?.lane) ? S.demo.lane : Math.floor(Math.random() * LANES.length);
+  const ids = LANES[li][1];
+  try { await ensureTopics(ids); } catch { return; }
+  const pool = ids.map(topicById).filter(Boolean).flatMap(t => t.qa.filter(q => q.l === 1).map(q => ({ t, q })));
+  if (!pool.length) return;
+  let c = pick(pool);
+  for (let k = 0; k < 4 && pool.length > 1 && c.q.q === S.demo?.q?.q; k++) c = pick(pool);
+  S.demo = { lane: li, topicName: c.t.name, q: c.q, reveal: false };
   if (!profile() && !S.onboard) render();
 }
 
@@ -1524,6 +1543,7 @@ document.addEventListener('click', async e => {
   else if (a === 'startonboard') { S.onboard = true; render(); }
   else if (a === 'demoreveal') { if (S.demo) { S.demo.reveal = true; render(); } }
   else if (a === 'demoshuffle') loadDemo();
+  else if (a === 'demolane') loadDemo(Number(b.dataset.i));
   else if (a === 'qcreveal') { if (S.qc) { S.qc.reveal = true; render(); } }
   else if (a === 'qcnext') { S.qc = null; render(); }
   else if (a === 'pickmode') { captureDraft(); S.pickMode = b.dataset.m; render(); }
