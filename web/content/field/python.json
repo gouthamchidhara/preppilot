@@ -1,0 +1,85 @@
+{
+"python-core": {
+"terms": [
+{"q":"What is the difference between `is` and `==`?","a":"`==` compares values using `__eq__`. `is` compares object identity, whether both names refer to the same object. Use `is` for `None` checks."},
+{"q":"What is an iterable vs an iterator?","a":"An iterable can produce an iterator via `__iter__`. An iterator has `__next__` and keeps position, raising StopIteration when exhausted. Generators are iterators."},
+{"q":"What is a decorator?","a":"A callable that takes a function and returns a wrapped replacement, applied with `@name`. Use `functools.wraps` to preserve the wrapped function's metadata."},
+{"q":"What are dunder methods?","a":"Special methods with double underscores that hook into language behavior, such as `__init__`, `__repr__`, `__eq__`, `__len__` and `__enter__`."},
+{"q":"What does `__slots__` do?","a":"Declares a fixed set of attributes, replacing the per-instance `__dict__`, which saves memory and blocks accidental new attributes."},
+{"q":"What is the LEGB rule?","a":"Name lookup order: Local, Enclosing function, Global, then Built-in. Use `nonlocal` or `global` to rebind names from outer scopes."}
+],
+"trouble": [
+{"q":"A function default like `def f(x, items=[])` keeps old data between calls. Why?","a":"Defaults are evaluated once at definition, so the same list is shared. Use `items=None` and create a new list inside the function."},
+{"q":"You get `UnboundLocalError` for a variable you read from the outer scope. Why?","a":"Assigning to the name anywhere in the function makes it local for the whole function. Declare `global` or `nonlocal`, or pass it as an argument."},
+{"q":"Modifying a list while looping over it skips elements. What is the fix?","a":"Mutating a list during iteration shifts indexes. Iterate over a copy (`for x in items[:]`), build a new list with a comprehension, or collect removals and apply after."},
+{"q":"A threaded CPU-bound program is no faster than single-threaded. Why?","a":"The GIL lets only one thread run Python bytecode at a time. Use `multiprocessing` or `ProcessPoolExecutor`, or native extensions that release the GIL."},
+{"q":"A dict key lookup raises `TypeError: unhashable type`. What does it mean?","a":"The key is a mutable type such as a list or dict. Use an immutable equivalent like a tuple or frozenset."}
+],
+"scenarios": [
+{"q":"A script holds a huge list in memory and is killed. How do you refactor it?","a":"Stream with generators or iterators, process in chunks, avoid building intermediate lists, and read files line by line. Use `itertools` for lazy pipelines."},
+{"q":"You must make a class usable as a dictionary key and sortable. What do you implement?","a":"Define `__eq__` and `__hash__` consistently on immutable fields, and ordering via `__lt__` or `@dataclass(frozen=True, order=True)`. Equal objects must have equal hashes."},
+{"q":"Production code swallows errors with bare `except:`. How would you improve it?","a":"Catch specific exceptions, log with traceback using `logger.exception`, re-raise or wrap with `raise ... from e`, and avoid hiding KeyboardInterrupt. Use custom exceptions for domain errors."}
+]
+},
+"python-web": {
+"terms": [
+{"q":"What is WSGI vs ASGI?","a":"WSGI is the synchronous Python web server interface used by Flask and classic Django. ASGI supports async, WebSockets and long-lived connections, used by FastAPI and async Django."},
+{"q":"What is an ORM?","a":"An object-relational mapper that maps tables to classes and queries to method calls, such as Django ORM or SQLAlchemy. It speeds development but can hide inefficient queries."},
+{"q":"What is a Pydantic model?","a":"A class with typed fields that validates and converts data on creation. FastAPI uses it for request bodies, responses and OpenAPI docs."},
+{"q":"Gunicorn and Uvicorn: what do they do?","a":"Application servers that run the app in production. Gunicorn manages worker processes for WSGI; Uvicorn serves ASGI apps, often as Gunicorn workers with `-k uvicorn.workers.UvicornWorker`."},
+{"q":"What is CSRF and how does Django handle it?","a":"Cross-site request forgery tricks a logged-in browser into sending unwanted requests. Django's CSRF middleware requires a token on unsafe methods for session-authenticated forms."}
+],
+"trouble": [
+{"q":"A Django list endpoint makes hundreds of queries. How do you fix it?","a":"It is an N+1 problem. Use `select_related` for foreign keys and `prefetch_related` for many relations, confirm with `django-debug-toolbar` or `assertNumQueries`."},
+{"q":"FastAPI returns 422 Unprocessable Entity. What does it mean?","a":"Request validation failed: the body, query or path parameters did not match the declared types or constraints. The response detail lists the failing fields."},
+{"q":"An async FastAPI endpoint blocks all other requests. Why?","a":"A blocking call, such as a sync database driver or `requests`, runs on the event loop. Use async libraries, or declare the endpoint with plain `def` so it runs in a threadpool."},
+{"q":"A Django deploy returns 400 Bad Request for every request. What is the likely cause?","a":"With `DEBUG=False`, the host is not in `ALLOWED_HOSTS`. Add the domain or load balancer host name."},
+{"q":"A migration conflicts between two branches. What do you do?","a":"Two migrations share the same parent. Run `makemigrations --merge` or rebase one migration to depend on the other, and test on a copy of the data."}
+],
+"scenarios": [
+{"q":"An endpoint takes three seconds. How do you find out why?","a":"Measure first: profile with logging or APM, check query count and slow queries, look for external calls and serialization time. Fix with indexes, eager loading, caching and pagination, and move heavy work to a background task."},
+{"q":"Design authentication for a REST API used by a mobile app and a web app.","a":"Use short-lived access tokens such as JWT or OAuth2 with refresh tokens, HTTPS only, hashed passwords, rate limiting, and token revocation. For browser sessions, cookies with HttpOnly, Secure and SameSite flags are safer than localStorage."},
+{"q":"You must send emails after signup without slowing the response. How?","a":"Enqueue the job on a task queue such as Celery or RQ, or use FastAPI background tasks for light work. Make the task idempotent with retries, and store the outcome for monitoring."}
+]
+},
+"python-async": {
+"terms": [
+{"q":"What is the difference between `asyncio.run` and `await`?","a":"`asyncio.run(main())` starts an event loop and runs a coroutine to completion, normally called once at the entry point. `await` suspends the current coroutine until another awaitable finishes."},
+{"q":"What is a Task vs a coroutine?","a":"A coroutine object does nothing until awaited. A Task wraps it and schedules it on the loop immediately, via `asyncio.create_task`, so it runs concurrently."},
+{"q":"What is `asyncio.gather` vs `TaskGroup`?","a":"`gather` runs awaitables concurrently and returns results, with weaker error handling. `asyncio.TaskGroup` (3.11+) cancels siblings when one fails and raises an ExceptionGroup."},
+{"q":"What is a semaphore used for in async code?","a":"`asyncio.Semaphore(n)` limits how many coroutines enter a section at once, such as capping concurrent HTTP requests to avoid overwhelming a service."},
+{"q":"What is `run_in_executor` or `asyncio.to_thread`?","a":"A way to run blocking synchronous code in a thread pool so the event loop stays free, and await its result."}
+],
+"trouble": [
+{"q":"You see `RuntimeWarning: coroutine was never awaited`. What happened?","a":"A coroutine function was called without `await` or scheduling, so it never ran. Add `await`, or wrap with `asyncio.create_task`."},
+{"q":"`asyncio.run()` raises `cannot be called from a running event loop`. Why?","a":"You are already inside a loop, as in Jupyter. Use `await` directly, or `nest_asyncio` in notebooks, rather than nesting loops."},
+{"q":"Tasks created with `create_task` vanish or are never finished. Why?","a":"The loop holds only weak references, so tasks can be garbage collected, and unawaited exceptions are lost. Keep references in a set, or use a TaskGroup, and await or add done callbacks."},
+{"q":"A slow request hangs the whole async app. How do you diagnose it?","a":"Enable asyncio debug mode (`PYTHONASYNCIODEBUG=1`) which logs slow callbacks, look for blocking calls like `time.sleep` or sync I/O, and replace them with async equivalents or `to_thread`."}
+],
+"scenarios": [
+{"q":"You must call 1,000 URLs concurrently without overloading the target. How do you do it?","a":"Use an async HTTP client such as httpx or aiohttp with one shared session, a semaphore or connection limits to cap concurrency, timeouts and retries with backoff, and gather the results while handling per-request failures."},
+{"q":"Choose between asyncio, threads and processes for three workloads: web scraping, image resizing, a legacy blocking library.","a":"Scraping is I/O bound with many connections, so asyncio. Image resizing is CPU bound, so processes. The blocking library is best placed in a thread pool, called via `to_thread`, if it releases the GIL or mostly waits on I/O."},
+{"q":"How do you shut down an async service gracefully?","a":"Handle SIGTERM, stop accepting new work, cancel or await in-flight tasks with a deadline, catch CancelledError to clean up and re-raise it, then close clients and connections."}
+]
+},
+"python-packaging": {
+"terms": [
+{"q":"What is a wheel vs an sdist?","a":"A wheel (`.whl`) is a prebuilt distribution installed without running a build. An sdist is a source archive that must be built on install, which can need compilers."},
+{"q":"What is a build backend?","a":"The tool declared under `[build-system]` in `pyproject.toml` that builds the package, for example setuptools, hatchling or flit. Frontends like `pip` and `build` call it."},
+{"q":"What is an editable install?","a":"`pip install -e .` links the project into the environment so code changes take effect without reinstalling. Used in development."},
+{"q":"What are extras and dependency groups?","a":"Extras are optional dependency sets installed with `pip install pkg[dev]`. Dependency groups (PEP 735) define development-only sets that are not published with the package."},
+{"q":"What does a pytest fixture do?","a":"A function marked with `@pytest.fixture` that provides setup and teardown for tests, injected by naming it as a parameter. Scope can be function, module or session."}
+],
+"trouble": [
+{"q":"`pip install` works locally but fails in CI with a dependency conflict. What do you do?","a":"Local and CI resolved different versions. Pin with a lock file (uv lock, pip-tools, Poetry), install from it in CI, and read the resolver message with `pip install -v` to see which constraints clash."},
+{"q":"`ModuleNotFoundError` for your own package when running tests. Why?","a":"The package is not on `sys.path`: not installed, wrong working directory or missing `__init__.py` in a flat layout. Install it editable, and prefer the `src/` layout so tests use the installed package."},
+{"q":"`pip` says `externally-managed-environment`. What does it mean?","a":"The system Python is protected by the distribution (PEP 668). Create a virtual environment with `python -m venv .venv` or use `pipx` or `uv` for tools."},
+{"q":"Packages installed globally pollute a project. How do you prevent it?","a":"Always use an isolated virtual environment per project and check with `which python`. Record dependencies in `pyproject.toml` and a lock file."}
+],
+"scenarios": [
+{"q":"Set up a new Python project for a team. What do you include?","a":"A `pyproject.toml` with metadata and dependencies, a lock file, a `src/` layout, ruff for lint and format, mypy or pyright, pytest with coverage, pre-commit hooks, and a CI job that installs from the lock and runs checks."},
+{"q":"A release shipped with a broken dependency upgrade. How do you prevent it going forward?","a":"Pin and lock dependencies, upgrade through automated PRs such as Dependabot or Renovate that run the full test suite, and keep constraint ranges sensible. Roll back by reinstalling the previous lock."},
+{"q":"You need to publish an internal library. What are the steps?","a":"Define metadata and version in `pyproject.toml`, build with `python -m build`, test the wheel in a clean environment, upload with `twine` or `uv publish` to a private index, tag the release, and document the changelog."}
+]
+}
+}
