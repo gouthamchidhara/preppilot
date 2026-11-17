@@ -9,6 +9,7 @@ const ROLES = JSON.parse(readFileSync(new URL('./roles.json', import.meta.url)))
 export const FRESH_TTL_MS = Number(process.env.FRESH_TTL_HOURS || 6) * 3600000;
 const str = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
 
+export const ROLE_LIST = ROLES;
 export function roleById(id) { return ROLES.find(r => r.id === id) || null; }
 
 export function sanitizeFresh(raw) {

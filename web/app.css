@@ -499,3 +499,11 @@ pre code { background: none; border: 0; padding: 0; }
 .hook:not(.static):hover { border-color: var(--line-strong); border-left-color: var(--accent); }
 .analogy { margin: 6px 0 10px; font: 400 .98rem/1.5 var(--serif); color: var(--ink-soft); }
 .analogy b { font-weight: 600; color: var(--ink); }
+
+/* role picker */
+.seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 10px; padding: 3px; gap: 3px; align-self: flex-start; }
+.seg button { border: 0; background: none; border-radius: 7px; padding: 7px 12px; font: 600 13.5px var(--sans); color: var(--muted); cursor: pointer; }
+.seg button[aria-selected=true] { background: var(--btn); color: var(--btn-ink); }
+.chips.picked .chip { display: inline-flex; align-items: center; gap: 6px; }
+.chips.picked .chip svg { width: 13px; height: 13px; }
+.allroles summary { font-size: 14px; }

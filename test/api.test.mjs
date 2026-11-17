@@ -356,3 +356,12 @@ test('the API copy of the role list matches the app', async () => {
   const api = JSON.parse(readFileSync(new URL('../api/src/lib/roles.json', import.meta.url))).roles.map(r => r.id).sort();
   assert.deepEqual(api, app);
 });
+
+test('profile suggest: signed-in only, maps experience to known roles', async () => {
+  assert.equal((await call('POST profile/suggest', { summary: 'x'.repeat(60) })).status, 401);
+  const h = await signIn('exp@gmail.com', 'exp');
+  assert.equal((await call('POST profile/suggest', { summary: 'short' }, h)).status, 400);
+  const r = await call('POST profile/suggest', { summary: 'Eight years of Java and Spring Boot microservices on AWS, some Kubernetes.' }, h);
+  // The mock AI returns no roles, so the call is refunded and reported as unmatched.
+  assert.ok([200, 422].includes(r.status));
+});

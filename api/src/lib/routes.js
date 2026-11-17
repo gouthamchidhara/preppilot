@@ -15,6 +15,7 @@ export const ROUTES = {
   'POST suggestions': h.handleSuggestion,
   'POST billing/revenuecat': h.handleRevenueCatWebhook,
   'POST fresh': h.handleFresh,
+  'POST profile/suggest': h.handleProfileSuggest,
   'POST billing/refresh': h.handleBillingRefresh,
   'POST telemetry/role': h.handleRoleTelemetry,
 };

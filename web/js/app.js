@@ -89,7 +89,8 @@ const FREE_TOPICS = 3;
 const hasPro = () => { const a = store.account(); return !!(a?.unlimited || a?.plan === 'pro' || store.accessCode()); };
 function freeTopicIds() {
   const p = profile();
-  return new Set(p ? rankTopics(topics(), p).filter(t => !t.custom && !t.private).slice(0, FREE_TOPICS).map(t => t.id) : []);
+  // Behavioral is open to everyone and does not use up one of the free technical topics.
+  return new Set(p ? ['behavioral', ...rankTopics(topics(), p).filter(t => !t.custom && !t.private && !['behavioral', 'scenarios'].includes(t.id)).slice(0, FREE_TOPICS).map(t => t.id)] : []);
 }
 function isLocked(id) {
   if (hasPro()) return false;
@@ -170,7 +171,9 @@ function pickNudge(topic, due) {
 function nextTopic(p = profile()) {
   if (!p) return null;
   const prog = store.progress();
-  const list = rankTopics(topics(), p).filter(t => !isLocked(t.id));
+  const all = rankTopics(topics(), p).filter(t => !isLocked(t.id));
+  // Lead with the user's technology; the soft-skill topics come after.
+  const list = [...all.filter(t => !['behavioral', 'scenarios'].includes(t.id)), ...all.filter(t => ['behavioral', 'scenarios'].includes(t.id))];
   return list.find(t => { const r = readiness([t], p, prog); return r.total && r.pct < 80; }) || list[0] || null;
 }
 
@@ -211,6 +214,52 @@ function captureDraft() {
   if (extras.length) S.draft.extras = extras.filter(b => b.classList.contains('on')).map(b => b.dataset.id);
 }
 
+function landingView() {
+  const demo = S.demo;
+  const q = demo?.q;
+  return `<div class="stack loose landing">
+    <section class="head" style="padding-top:12px">
+      <h1>Flashcards, moving diagrams and a live AI for your next tech interview.</h1>
+      <p class="lede" style="margin-top:12px">Pick your role or paste your experience. PrepPilot puts the topics in the order interviewers care about, drills you on what you miss, and talks with you out loud for up to an hour.</p>
+      <div class="row" style="margin-top:20px"><button class="btn primary lg" data-act="startonboard">Build my plan</button><span class="muted small">Free to start. No card needed.</span></div>
+    </section>
+    ${q ? `<section class="card stacked flash" id="flash">
+      <div class="card-head"><span>A real card from ${esc(demo.topicName)}</span><button class="link quiet small" data-act="demoshuffle">Show another</button></div>
+      <p class="q">${fmt(q.q)}</p>
+      ${demo.reveal ? `<div class="ans">${fmt(q.a)}</div>` : ''}
+      <div class="foot">${demo.reveal ? '<p class="muted small">In the app you mark it Got it or Missed it, and the ones you miss come back first.</p>' : '<button class="btn primary block" data-act="demoreveal">Show the answer</button>'}</div>
+    </section>` : '<p class="muted">Loading a sample card…</p>'}
+    ${demo?.dg ? `<section class="stack tight"><h3>Every topic has a picture that draws itself</h3>${diagramHtml(demo.dg, S.dgStages[demo.dg] ?? null, { autoplay: true })}</section>` : ''}
+    <section class="stack">
+      <h3>How it works</h3>
+      <div class="rows">
+        <div class="rowi static"><span class="when">1</span><span class="main"><span class="t">Tell it what you are interviewing for</span><span class="d">Search ${getCatalog().roles.length} roles, or paste a few lines about your experience.</span></span></div>
+        <div class="rowi static"><span class="when">2</span><span class="main"><span class="t">Learn in the order that matters</span><span class="d">Short lessons that lead into each other, then flashcards that remember what you miss.</span></span></div>
+        <div class="rowi static"><span class="when">3</span><span class="main"><span class="t">Say it out loud</span><span class="d">Practise answers with the AI coach, or book Live AI for 60 minutes.</span></span></div>
+      </div>
+    </section>
+    <section class="card live-hero stack"><h2>Live AI for 60 minutes</h2>
+      <p>A spoken practice test for your role with a verdict at the end, or talking points on screen while your interviewer asks the questions. One-time, no subscription.</p>
+      <div class="row"><button class="btn invert" data-act="startonboard">Start with my role</button></div></section>
+  </div>`;
+}
+// A random real card (and a diagram) from a different technology each time.
+async function loadDemo() {
+  const packs = getManifest().packs.filter(p => p.topics.length);
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const prev = S.demo?.topicId;
+  let t = null;
+  const tech = packs.map(p => ({ ...p, topics: p.topics.filter(x => !['behavioral', 'scenarios'].includes(x.id)) })).filter(p => p.topics.length);
+  for (let i = 0; i < 6 && (!t || t.id === prev); i++) t = pick(pick(tech).topics);
+  try { await ensureTopics([t.id]); } catch { return; }
+  const full = topicById(t.id);
+  if (!full?.qa?.length) return;
+  const basic = full.qa.filter(q => q.l <= 2);
+  const withDiagram = getManifest().packs.flatMap(p => p.topics).filter(x => diagramFor(x.id) && x.id !== t.id);
+  S.demo = { topicId: t.id, topicName: full.name, q: pick(basic.length ? basic : full.qa), reveal: false, dg: S.demo?.dg || pick(withDiagram)?.id };
+  if (!profile() && !S.onboard) render();
+}
+
 function welcome() {
   return `<section class="head" style="padding:18px 0 26px">
     <h1>Prepare for the interview you actually have.</h1>
@@ -229,13 +278,24 @@ function onboardingView(existing) {
   const extras = [...new Set(roles.flatMap(role => role.extras || []))];
   const roleBtn = r => `<button type="button" class="chip ${d.roleIds.includes(r.id) ? 'on' : ''}" aria-pressed="${d.roleIds.includes(r.id)}" data-act="pickrole" data-id="${r.id}" data-search="${esc((r.name + ' ' + (r.keywords || '')).toLowerCase())}">${esc(r.name)}</button>`;
   const step = (n, body) => `<div class="step"><div class="n">${n}</div><div class="stack">${body}</div></div>`;
-  return `${existing ? '' : welcome()}
+  return `
   <form class="stack" id="profileForm" style="gap:26px">
     ${existing ? '<div class="head"><h2>Your prep profile</h2><p class="muted">Saving rebuilds your plan. This stays on your device.</p></div>' : ''}
-    ${step(1, `<fieldset class="stack"><legend>Which roles are you interviewing for?</legend>
-      <input id="roleSearch" value="${esc(S.roleSearch)}" placeholder="Search roles: java, react, kubernetes" autocomplete="off" aria-label="Search roles">
+    ${step(1, `<fieldset class="stack"><legend>What are you interviewing for?</legend>
+      ${d.roleIds.length ? `<div class="chips picked">${d.roleIds.map(id => `<button type="button" class="chip on" data-act="pickrole" data-id="${esc(id)}" aria-label="Remove ${esc(id === 'other' ? 'Other' : roleById(id)?.name || id)}">${esc(id === 'other' ? (d.otherRole || 'Other') : roleById(id)?.name || id)} ${ic('x')}</button>`).join('')}</div>` : ''}
+      <div class="seg" role="tablist" aria-label="How to choose">
+        <button type="button" role="tab" aria-selected="${S.pickMode !== 'paste'}" data-act="pickmode" data-m="search">Search roles</button>
+        <button type="button" role="tab" aria-selected="${S.pickMode === 'paste'}" data-act="pickmode" data-m="paste">Paste my experience</button>
+      </div>
+      ${S.pickMode === 'paste' ? `<div class="stack tight">
+        <textarea id="expSummary" rows="5" maxlength="1500" placeholder="Paste your résumé summary or a few lines about your experience: years, main languages, cloud, tools. Leave out project details and anything private.">${esc(S.expSummary || '')}</textarea>
+        <div class="row"><button type="button" class="btn" data-act="suggestroles" ${S.busy ? 'disabled' : ''}>${S.busy ? 'Reading it…' : 'Suggest my roles'}</button><span class="muted small">Picks your roles and level. Uses 1 coach message.</span></div>
+      </div>` : `<input id="roleSearch" value="${esc(S.roleSearch)}" placeholder="Type a role or a tech: java, react, kubernetes, spark" autocomplete="off" aria-label="Search roles">
+      <details class="allroles" ${S.roleSearch ? 'open' : ''}><summary class="muted" style="font-weight:500">${S.roleSearch ? 'Matching roles' : 'Or browse all roles'}</summary>
+      <div class="stack" style="margin-top:12px">
       ${cat.families.map(f => `<div class="rolefam"><div class="label">${esc(f.name)}</div><div class="chips">${cat.roles.filter(r => r.family === f.id).map(roleBtn).join('')}</div></div>`).join('')}
       <div class="chips"><button type="button" class="chip ${d.roleIds.includes('other') ? 'on' : ''}" aria-pressed="${d.roleIds.includes('other')}" data-act="pickrole" data-id="other" data-search="other not listed">Other / not listed</button></div>
+      </div></details>`}
       ${d.roleIds.length > 1 ? '<p class="note" role="status">Your plan will combine these roles. You can still practice one role at a time from the plan.</p>' : ''}
       ${d.roleIds.includes('other') ? `<label>Your role<input name="otherRole" maxlength="60" value="${esc(d.otherRole || '')}" placeholder="e.g. Salesforce developer" required></label>
         <label>Closest role above (picks your starter topics)<select name="baseRoleId" data-act="baserole" required><option value="">Choose…</option>${cat.roles.map(r => `<option value="${r.id}" ${d.baseRoleId === r.id ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}</select></label>` : ''}
@@ -254,6 +314,27 @@ function onboardingView(existing) {
     </fieldset>`)}
     <button class="btn primary lg block" type="submit">${existing ? 'Save profile' : 'Build my plan'}</button>` : ''}
   </form>`;
+}
+
+async function suggestRoles() {
+  const el = document.getElementById('expSummary');
+  const text = (el?.value || '').trim();
+  S.expSummary = text;
+  if (text.length < 40) return oops('Paste a few lines: years of experience, main languages, cloud and tools.');
+  captureDraft();
+  if (!signedIn()) { sheet(signInCard('Sign in so the AI can read it')); return mountGoogleButton(); }
+  S.busy = true; render();
+  try {
+    const r = await ai.post('/api/profile/suggest', { summary: text });
+    const ids = (r.roleIds || []).filter(id => roleById(id));
+    if (!ids.length) throw new Error('Could not match that to a role. Try searching instead.');
+    S.draft.roleIds = [...new Set([...S.draft.roleIds.filter(id => id !== 'other'), ...ids])];
+    if (r.level) S.draft.level = r.level;
+    if (!S.draft.background) S.draft.background = text.slice(0, 600);
+    S.pickMode = 'search';
+    toast(`Picked ${ids.map(id => roleById(id).name).join(', ')}. Change anything below.`);
+  } catch (e) { aiFailed(e); }
+  S.busy = false; render();
 }
 
 async function saveProfile() {
@@ -294,6 +375,26 @@ function livePromo() {
   </section>`;
 }
 
+// One real card from the user's own stack, different each time, answerable in place.
+function quickCard(relevant) {
+  const open = relevant.filter(t => !isLocked(t.id) && t.qa.length);
+  if (!open.length) return '';
+  if (!S.qc || !open.some(t => t.id === S.qc.topic)) {
+    const t = open[Math.floor(Math.random() * open.length)];
+    const tiers = LEVELS.find(l => l.id === profile()?.level)?.tiers || [1, 2, 3];
+    const pool = t.qa.map((q, i) => [q, i]).filter(([q]) => tiers.includes(q.l));
+    const [, i] = (pool.length ? pool : t.qa.map((q, k) => [q, k]))[Math.floor(Math.random() * (pool.length || t.qa.length))];
+    S.qc = { topic: t.id, i, reveal: false };
+  }
+  const t = topicById(S.qc.topic), q = t.qa[S.qc.i];
+  return `<section class="card stacked flash" style="min-height:0">
+    <div class="card-head"><span>Quick card: ${esc(t.name)}</span><button class="link quiet small" data-act="qcnext">Another</button></div>
+    <p class="q">${fmt(q.q)}</p>
+    ${S.qc.reveal ? `<div class="ans">${fmt(q.a)}</div>` : ''}
+    <div class="foot">${S.qc.reveal ? '<div class="row"><button class="btn" data-act="qcnext">Another card</button></div>' : '<button class="btn block" data-act="qcreveal">Show the answer</button>'}</div>
+  </section>`;
+}
+
 function homeView() {
   const p = profile();
   const relevant = rankTopics(topics(), p);
@@ -329,9 +430,8 @@ function homeView() {
       <div class="label">${esc(roleIds.map(label).join(' and '))}</div>
       <h1>${started ? 'Pick up where you left off.' : 'What do you want to get sharp on?'}</h1>
     </section>
-    ${livePromo()}
     ${nt ? `<section class="card stacked">
-      <div class="card-head"><span>Up next</span>${hasPro() ? '' : `<span>${FREE_TOPICS} of ${relevant.length} topics open</span>`}</div>
+      <div class="card-head"><span>Up next</span>${hasPro() ? '' : `<span>${relevant.length - relevant.filter(t => isLocked(t.id)).length} of ${relevant.length} topics open</span>`}</div>
       <h2>${esc(nt.name)}</h2>
       <p class="muted" style="margin-top:8px">${esc(nextHint)}</p>
       <div class="row" style="margin-top:20px">
@@ -340,6 +440,8 @@ function homeView() {
         ${hasPro() ? '' : `<button class="btn quiet" data-act="plans">${ic('lock')}Unlock all ${relevant.length} topics</button>`}
       </div>
     </section>` : ''}
+    ${quickCard(relevant)}
+    ${livePromo()}
     ${freshCard()}
     <section class="knowmap" aria-label="What you know">
       <div class="nums"><span><b>What you know</b></span><span><b data-countup="${knownTotal}">${knownTotal}</b> of ${cardsTotal} cards known</span></div>
@@ -1030,7 +1132,7 @@ function animateIn(changed) {
 function render() {
   const p = profile();
   if (S.view === 'stats') S.view = 'settings'; // Stats now lives inside Profile.
-  const key = S.showPlans ? 'plans' : !p ? 'onboard' : S.view === 'deck' && !S.deck ? 'home' : S.view;
+  const key = S.showPlans ? 'plans' : !p ? (S.onboard ? 'onboard' : 'landing') : S.view === 'deck' && !S.deck ? 'home' : S.view;
   const changed = key !== S.lastView;
   S.lastView = key;
   const input = document.getElementById('chatInput');
@@ -1042,6 +1144,7 @@ function render() {
   // home, not on every background re-render.
   S._stagger = changed && key === 'home';
   const html = key === 'plans' ? plansView()
+    : key === 'landing' ? landingView()
     : key === 'onboard' ? onboardingView(null)
     : key === 'learn' ? learnView()
     : key === 'deck' ? deckView()
@@ -1066,6 +1169,7 @@ function render() {
   // Native app: keep the icon badge and the daily reminder in step with the plan.
   if (native() && key === 'home' && profile()) syncNativeHome();
   if (key === 'home' && profile()) loadFresh();
+  if (key === 'landing' && !S.demo) loadDemo();
   // The plans-screen diagram plays itself when the screen opens; anywhere
   // else the player stops so timers never outlive their screen.
   if (key === 'plans' && changed) startDgAutoplay();
@@ -1292,8 +1396,10 @@ document.addEventListener('submit', async e => {
 
 function filterRoles() {
   const q = S.roleSearch.trim().toLowerCase();
-  document.querySelectorAll('#profileForm [data-act=pickrole]').forEach(b => { b.hidden = !!q && !b.dataset.search.includes(q) && b.dataset.id !== 'other'; });
+  document.querySelectorAll('#profileForm .allroles [data-act=pickrole]').forEach(b => { b.hidden = !!q && !(b.dataset.search || '').includes(q) && b.dataset.id !== 'other'; });
   document.querySelectorAll('#profileForm .rolefam').forEach(f => { f.hidden = ![...f.querySelectorAll('[data-act=pickrole]')].some(b => !b.hidden); });
+  const all = document.querySelector('#profileForm .allroles');
+  if (all && q) { all.open = true; const sm = all.querySelector('summary'); if (sm) sm.textContent = 'Matching roles'; }
 }
 
 app.addEventListener('keydown', e => {
@@ -1317,6 +1423,7 @@ app.addEventListener('keydown', e => {
 
 app.addEventListener('input', e => {
   if (e.target.id === 'chatInput') { e.target.style.height = 'auto'; e.target.style.height = Math.min(140, e.target.scrollHeight) + 'px'; }
+  if (e.target.id === 'expSummary') S.expSummary = e.target.value;
   if (e.target.id !== 'roleSearch') return;
   S.roleSearch = e.target.value;
   filterRoles();
@@ -1374,6 +1481,13 @@ document.addEventListener('click', async e => {
     return;
   }
   if (a === 'closesheet') closeSheet();
+  else if (a === 'startonboard') { S.onboard = true; render(); }
+  else if (a === 'demoreveal') { if (S.demo) { S.demo.reveal = true; render(); } }
+  else if (a === 'demoshuffle') loadDemo();
+  else if (a === 'qcreveal') { if (S.qc) { S.qc.reveal = true; render(); } }
+  else if (a === 'qcnext') { S.qc = null; render(); }
+  else if (a === 'pickmode') { captureDraft(); S.pickMode = b.dataset.m; render(); }
+  else if (a === 'suggestroles') suggestRoles();
   else if (a === 'toggletopics') { S.allTopics = !S.allTopics; const y = window.scrollY; render(); window.scrollTo({ top: y }); }
   else if (a === 'home') { S.view = 'home'; render(); }
   else if (a === 'learn') openTopic(id);
