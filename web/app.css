@@ -22,8 +22,10 @@
   --btn-ink: #fafbfa;
   --code-bg: #f1f3f2;
   --shadow: 0 1px 2px rgba(28, 36, 38, .06), 0 8px 24px rgba(28, 36, 38, .06);
-  --serif: "Newsreader", "Iowan Old Style", Georgia, serif;
-  --sans: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* The platform's own UI font everywhere (SF Pro on Apple, Segoe UI on Windows, Roboto on Android):
+     what native iOS apps, ChatGPT and Claude use. Nothing to download. --serif kept as a name only. */
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif: var(--sans);
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --tabs: 58px;
   color-scheme: light;
@@ -1134,3 +1136,8 @@ html:has(.swipe-screen), body:has(.swipe-screen) { overscroll-behavior: none; }
 .ai-tab .ai-hello h2 { font: 600 1.6rem/1.25 var(--chat-font); letter-spacing: -.02em; }
 .ai-tab .composer { border-radius: 26px; }
 .ai-tab .composer textarea { font-size: 1rem; }
+
+/* With one UI font, headings get the tighter tracking and weight iOS uses. */
+h1, h2, h3, .l-title, .ls-title, .flash .q, .sw-q { letter-spacing: -.02em; }
+h1, .ls-title, .l-title { font-weight: 700 !important; }
+h2, h3 { font-weight: 650; }
