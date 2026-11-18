@@ -1040,3 +1040,31 @@ html:has(.swipe-screen), body:has(.swipe-screen) { overscroll-behavior: none; }
 .ts-s { font-size: 12px; } .ts-m { font-size: 15px; } .ts-l { font-size: 19px; }
 .pf-more > summary { cursor: pointer; font-weight: 600; color: var(--ink-soft); padding: 6px 0; }
 .btn.small { padding: 6px 12px; font-size: 13px; min-height: 0; }
+
+/* ---------- AI tab: chat first, Live AI always one tap away ---------- */
+.ai-tab { gap: 14px !important; }
+.ai-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ai-head h1 { margin: 0; }
+.switch.small { font-size: 13px; }
+.live-strip { display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 14px; border-radius: 16px; background: var(--ink); color: var(--paper); box-shadow: 0 8px 22px rgba(0,0,0,.12); }
+.live-strip .grow { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.live-strip b { font-size: 15px; }
+.live-strip span { font-size: 12.5px; opacity: .75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.live-strip .btn.invert { flex: none; background: var(--paper); color: var(--ink); border-color: var(--paper); padding: 9px 16px; }
+.ls-wave { flex: none; display: inline-flex; align-items: center; gap: 3px; width: 34px; height: 34px; justify-content: center; border-radius: 50%; background: color-mix(in srgb, var(--paper) 14%, transparent); }
+.ls-wave i { width: 3px; height: 14px; border-radius: 3px; background: currentColor; animation: l-wave 1s ease-in-out infinite; animation-delay: calc(var(--w) * -.15s); }
+@media (prefers-reduced-motion: reduce) { .ls-wave i { animation: none; } }
+.ai-prompts { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 6px; }
+.ai-prompts .chip { display: inline-flex; align-items: center; gap: 6px; }
+.ai-prompts .chip .ic { width: 15px; height: 15px; }
+.fresh-chip { border-color: var(--accent); color: var(--accent); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.live-nudge { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px; border: 1px dashed var(--accent); border-radius: 14px; background: var(--accent-soft); color: var(--ink); text-align: left; font: 500 14px var(--sans); cursor: pointer; }
+.live-nudge .ic { flex: none; width: 18px; height: 18px; color: var(--accent); }
+.live-nudge span { flex: 1; }
+
+/* Home search: quick picks appear only while the search box is focused and empty */
+.ls-picks { display: none; gap: 0; border: 1px solid var(--line-strong); border-radius: 16px; background: var(--paper); overflow: hidden; }
+.ls-picks > span { padding: 10px 16px 4px; }
+.ls:focus-within .ls-picks { display: grid; animation: jf-in .18s ease-out both; }
+.ls-picks .ls-item > .ic:first-child { flex: none; width: 18px; height: 18px; color: var(--accent); }
+.ls-picks .ls-item { border-top: 1px solid var(--line); }

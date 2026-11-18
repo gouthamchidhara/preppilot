@@ -715,8 +715,33 @@ function lsSearch(q) {
   }
   return out.sort((a, b) => b.score - a.score).slice(0, 6);
 }
+// Shown when the search box is focused and empty: fresh questions and the field decks.
+function lsPicksHtml() {
+  const n = newCards().length;
+  const has = k => fieldCards(k).length;
+  const picks = [
+    n ? ['newdeck', '', 'spark', `New this month`, `${n} fresh question${n === 1 ? '' : 's'} from what developers are hitting now`] : null,
+    has('trouble') ? ['fielddeck', 'trouble', 'alert', 'Troubleshooting', 'Real errors, the cause and the fix'] : null,
+    has('scenarios') ? ['fielddeck', 'scenarios', 'target', 'Real scenarios', 'What interviewers ask about actual work'] : null,
+    has('terms') ? ['fielddeck', 'terms', 'book', 'Terminology', 'The words you will hear'] : null,
+  ].filter(Boolean);
+  if (!picks.length) return '';
+  return `<div class="ls-picks"><span class="muted small">Quick picks</span>${picks.map(([act, k, icon, t, d]) => `<button class="ls-item" data-act="${act}" data-k="${k}">${ic(icon)}<span class="main"><b>${t}</b><span>${esc(d)}</span></span>${hasPro() || act === 'newdeck' ? ic('right') : '<span class="tag">Pro</span>'}</button>`).join('')}</div>`;
+}
+// Questions added by the daily refresh (marked with the month), from the user's own topics.
+function newCards() {
+  const since = new Date(Date.now() - 45 * 864e5).toISOString().slice(0, 7);
+  return rankTopics(topics(), profile()).flatMap(t => t.qa.map((q, i) => ({ id: `${t.id}-${i}`, topic: t.id, ...q, box: store.progress()[`${t.id}-${i}`]?.box ?? 0 })).filter(q => q.new && q.new >= since));
+}
+function startNewDeck() {
+  const cards = newCards();
+  if (!cards.length) return oops('No new questions in your topics yet. Check back tomorrow.');
+  S.lsLabel = 'New this month'; S.swStreak = 0;
+  S.deck = { cards: interviewRound(cards, { mix: deckMode() === 'swipe', limit: 20 }), results: [], free: false, total: cards.length, mode: deckMode(), ids: null };
+  S.di = 0; S.reveal = false; S.view = 'deck'; render();
+}
 function lsResultsHtml(q) {
-  if (lsNorm(q).length < 2) return '';
+  if (lsNorm(q).length < 2) return lsPicksHtml();
   const r = lsSearch(q);
   if (!r.length) return `<div class="ls-empty"><span>No flashcards on “${esc(q)}” yet.</span><button class="btn" data-act="quick" data-q="${esc(`Quiz me on ${q}, one question at a time, easy first`)}">Ask the AI coach instead</button></div>`;
   return `<div class="ls-list" role="listbox">${r.map(t => `<button class="ls-item" role="option" data-act="lsgo" data-id="${t.id}">
@@ -987,7 +1012,7 @@ function deckView() {
   const singleTopic = !swipe && d.cards.length && d.cards.every(c => c.topic === d.cards[0].topic) ? d.cards[0].topic : null;
   const intro = swipe && lsGet('pp.swipeIntro', '') !== '1';
   return `<div class="stack ${swipe ? 'swipe-mode' : ''}">
-    ${S.lsLabel && d.ids ? `<p class="ls-now">${ic('search')}${esc(S.lsLabel)}</p>` : ''}
+    ${S.lsLabel ? `<p class="ls-now">${ic('search')}${esc(S.lsLabel)}</p>` : ''}
     <div class="deck-top"><button class="back" data-act="${d.jf ? 'jobfocus' : 'home'}">${ic('left')}${d.jf ? 'Job focus' : 'Stop'}</button><span class="deck-count">${S.di + 1}<i>/</i>${d.cards.length}</span>${d.jf ? '<span></span>' : modeToggle(false)}</div>
     <div class="bar"><i style="width:${(S.di * 100) / d.cards.length}%"></i></div>
     ${d.free && S.di === 0 ? `<p class="note small row between"><span>Shuffled on Free. Pro takes you through every card in your workflow’s order.</span><button class="link" data-act="plans">See Pro</button></p>` : ''}
@@ -1034,7 +1059,7 @@ function swipeView() {
   const intro = lsGet('pp.swipeIntro', '') !== '1';
   const streak = S.swStreak || 0;
   return `<div class="stack swipe-screen">
-    ${S.lsLabel && d.ids ? `<p class="ls-now">${ic('search')}${esc(S.lsLabel)}</p>` : ''}
+    ${S.lsLabel ? `<p class="ls-now">${ic('search')}${esc(S.lsLabel)}</p>` : ''}
     <div class="deck-top"><button class="back" data-act="${d.jf ? 'jobfocus' : 'home'}">${ic('left')}${d.jf ? 'Job focus' : 'Stop'}</button><span class="deck-count" id="swCount">${S.di + 1}<i>/</i>${d.cards.length}</span>${d.jf ? '<span></span>' : modeToggle(true)}</div>
     <div class="sw-dots" aria-hidden="true">${d.cards.map((_, i) => `<i class="${i < S.di ? (d.results[i] ? 'ok' : 'no') : i === S.di ? 'now' : ''}"></i>`).join('')}</div>
     <div class="sw-stage" id="swStage">${swStageHtml()}${intro ? `<div class="sw-intro"><div class="sw-hand" aria-hidden="true"><i></i></div><b>Swipe right on what you know</b><span>Tap to flip. <b>Right</b> if you know it, <b>left</b> if you don’t, <b>up</b> if you know it cold. No ghosting.</span><button class="btn primary" data-act="swipeintro">Let’s play</button></div>` : ''}
@@ -1298,31 +1323,54 @@ function allowanceCard(a) {
     <p class="muted small">Pro (${esc(o.proPrice)}): unlimited AI messages and ${o.proLiveN === 2 ? 'two' : o.proLiveN} ${o.proLive}-minute Live AI sessions a month. <button class="link" data-act="plans">See pricing</button></p></section>`;
 }
 
+// The Live AI offer, one slim row that is always on the AI tab: the paid product, never buried.
+function liveStrip() {
+  const { credits, left } = liveState();
+  const a = store.account(), o = offer();
+  const pro = a?.plan === 'pro';
+  const [sub, label, act] = isAdmin() ? ['Admin · no limits', 'Start', 'livesetup']
+    : left >= 20 ? [`Session open · ${Math.ceil(left / 60)} min left`, 'Rejoin', 'livesetup']
+    : credits ? [`${credits} session${credits > 1 ? 's' : ''} ready · voice, graded`, 'Start', 'livesetup']
+    : pro ? [`${a?.proLiveLeft ?? o.proLiveN} of ${o.proLiveN} left this month · ${o.proLive} min each`, 'Start', 'livesetup']
+    : [`${o.liveMin} min · spoken, scored · ${o.livePrice}`, 'Try it', 'plans'];
+  return `<section class="live-strip" aria-label="Live AI mock interview">
+    <span class="ls-wave" aria-hidden="true">${Array.from({ length: 5 }, (_, i) => `<i style="--w:${i}"></i>`).join('')}</span>
+    <div class="grow"><b>Live AI mock interview</b><span>${esc(sub)}</span></div>
+    <button class="btn invert" data-act="${act}">${label}</button></section>`;
+}
+
 function chatView() {
   const msgs = store.chat();
-  const quick = ['Quiz me on my weakest topic', 'Grade my answer to the last question', 'Explain the hardest topic in my plan simply', 'What would a senior panel ask about my background?'];
   const live = S.live ? `<div class="msg assistant" id="liveMsg">${md(S.live.text) || '<span class="dots"><i></i><i></i><i></i></span>'}</div>` : '';
-  const canUse = signedIn();
+  if (!signedIn()) return signInCard();
   const a = store.account();
   const bubble = m => m.role === 'user' && m.content === '🎙 …' ? `<div class="msg user heard" id="heardMsg">${esc(S.heard || '') || '🎙 …'}</div>` : isNotice(m) ? `<div class="msg sys">${fmt(m.content.replace(/^(ℹ️|⚠️)\s*/, ''))}</div>` : `<div class="msg ${m.role}">${m.role === 'assistant' ? md(m.content) : fmt(m.content)}</div>`;
-  if (!canUse) return signInCard();
-  const lowFree = a?.plan === 'free' && !S.paywall && (a.msgsLeft <= 5 || a.voiceSecLeft < 30);
   const started = msgs.length || live;
-  return `<div class="stack chat" style="gap:18px">
-    <div class="row between"><h1>Talk to AI</h1>
-      <div class="row" style="gap:16px">${S.rt ? '' : `<label class="switch"><input type="checkbox" id="speakToggle" ${store.speak() ? 'checked' : ''}>Read replies aloud</label>`}
-      ${msgs.length ? '<button class="link quiet small" data-act="clearchat">Clear chat</button>' : ''}</div></div>
-    ${S.rt || started ? '' : allowanceCard(a)}
-    ${S.paywall ? paywallCard() : voicePanel()}
-    ${S.rt || started ? '' : `${freshCard()}${fieldSection(rankTopics(topics(), profile()))}`}
+  const lowFree = a?.plan === 'free' && !S.paywall && a.msgsLeft <= 5;
+  const f = S.fresh;
+  const prompts = [
+    ['Quiz me on my weakest topic', 'Quiz me on my weakest topic, one question at a time, easy first'],
+    ['Grade an answer', 'I will give you my answer to an interview question. Grade it strictly and tell me what is missing.'],
+    ['Explain something simply', 'Explain the hardest topic in my plan simply, with one example'],
+    ['Senior panel questions', 'What would a senior panel ask about my background?'],
+  ];
+  // After a few messages, one gentle nudge towards saying it out loud.
+  const nudge = !S.rt && msgs.filter(m => m.role === 'assistant').length >= 3 && !isAdmin() ? `<button class="live-nudge" data-act="${liveState().credits || store.account()?.plan === 'pro' ? 'livesetup' : 'plans'}">${ic('mic')}<span>Ready to say it out loud? <b>Run a Live AI mock interview</b></span>${ic('right')}</button>` : '';
+  return `<div class="stack chat ai-tab">
+    <div class="ai-head"><h1>AI coach</h1>
+      <div class="row" style="gap:14px">${S.rt ? '' : `<label class="switch small"><input type="checkbox" id="speakToggle" ${store.speak() ? 'checked' : ''}>Read aloud</label>`}${msgs.length ? '<button class="link quiet small" data-act="clearchat">Clear</button>' : ''}</div></div>
+    ${S.rt ? voicePanel() : S.paywall ? paywallCard() : liveStrip()}
     ${S.rtMode === 'live' && S.liveHint ? liveHintCard() : ''}
-    ${lowFree && !S.rt ? `<p class="note row between"><span>${a.msgsLeft} message${a.msgsLeft === 1 ? '' : 's'} and ${mins(a.voiceSecLeft)} voice minutes left in your free trial.</span><button class="link" data-act="plans">See Pro</button></p>` : ''}
     ${S.chatContext ? `<p class="note row between"><span>Talking about <b>${esc(S.chatContext.split('\n')[0])}</b></span><button class="link quiet" data-act="dropctx">Remove</button></p>` : ''}
-    <div class="msgs" id="msgs">${started ? msgs.map(bubble).join('') : `<div class="stack" style="padding-top:10px"><p class="muted">Or type a question. A few to start with:</p>
-      <div class="rows">${quick.map(q => `<button class="rowi" data-act="quick" data-q="${esc(q)}"><span class="main"><span class="t" style="font-weight:400">${esc(q)}</span></span></button>`).join('')}</div></div>`}
+    <div class="msgs" id="msgs">${started ? msgs.map(bubble).join('') : `<div class="msg assistant">Hi! Ask me anything about your prep, or pick one to start.</div>
+      <div class="ai-prompts">${prompts.map(([l, q]) => `<button class="chip" data-act="quick" data-q="${esc(q)}">${esc(l)}</button>`).join('')}
+        ${f?.title ? `<button class="chip fresh-chip" data-act="quick" data-q="${esc(`Interview me on this real scenario. ${f.situation} ${f.question} Ask one question at a time.`)}">${ic('spark')}Today’s scenario: ${esc(f.title)}</button>` : ''}
+        ${S.voiceServer && realtimeSupported ? `<button class="chip" data-act="rtstart" data-mode="talk">${ic('mic')}Talk it through</button>` : ''}</div>`}
     ${live}${S.busy ? '<div class="msg assistant"><span class="dots"><i></i><i></i><i></i></span></div>' : ''}</div>
+    ${nudge}
+    ${lowFree && !S.rt ? `<p class="note row between small"><span>${a.msgsLeft} free message${a.msgsLeft === 1 ? '' : 's'} left.</span><button class="link" data-act="plans">See Pro</button></p>` : ''}
     <form id="chatForm" class="composer">
-      <textarea id="chatInput" rows="1" maxlength="2000" placeholder="${S.rt ? 'Or type your reply' : 'Ask AI anything about your prep'}" aria-label="Message"></textarea>
+      <textarea id="chatInput" rows="1" maxlength="2000" placeholder="${S.rt ? 'Or type your reply' : 'Message the AI coach'}" aria-label="Message"></textarea>
       ${S.rt ? '' : `<button type="button" class="iconbtn ${S.listening ? 'on' : 'plain'}" data-act="mic" ${voice.canListen ? '' : 'disabled'} aria-label="${S.listening ? 'Stop dictation' : 'Dictate'}" title="${voice.canListen ? 'Dictate' : 'Dictation is not supported here'}">${ic(S.listening ? 'stop' : 'mic')}</button>`}
       <button class="iconbtn primary" type="submit" ${S.busy ? 'disabled' : ''} aria-label="Send">${ic('send')}</button>
     </form>
@@ -2326,6 +2374,7 @@ document.addEventListener('click', async e => {
   else if (a === 'editprofile') { S.editProfile = !S.editProfile; render(); }
   else if (a === 'textsize') { setTextSize(b.dataset.v); render(); }
   else if (a === 'prefmode') { setDeckMode(b.dataset.v); render(); }
+  else if (a === 'newdeck') startNewDeck();
   else if (a === 'deck') { S.lsLabel = d0label(id); startDeck(id ? id.split(',') : null); }
   else if (a === 'lsgo') { const t = getManifest().packs.flatMap(pk => pk.topics).find(x => x.id === id); lsStart([id], t?.name); }
   else if (a === 'deckmode') {
