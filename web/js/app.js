@@ -410,6 +410,20 @@ function landingView() {
       </article>` : '<p class="muted">Loading a card…</p>'}
     </section>
 
+    <section class="l-jf" aria-label="Job focus">
+      <p class="l-tag">## got a job post? <span class="tag">Pro</span></p>
+      <h2 class="l-h2">Paste the job. Get the five things it will test.</h2>
+      <p class="muted">We read the requirements, pick the top 5 skills and give you three quick cards for each. A cheat sheet for this one interview, not another course.</p>
+      <div class="jfa" aria-hidden="true">
+        <div class="jfa-post">
+          <p class="jfa-h">Senior Backend Engineer</p>
+          <p>You will build services in <mark style="--k:0">Java 17</mark> on <mark style="--k:1">Spring Boot</mark>, stream events through <mark style="--k:2">Kafka</mark>, model data in <mark style="--k:3">PostgreSQL</mark> and deploy on <mark style="--k:4">AWS</mark>. Experience with on-call and code review.</p>
+        </div>
+        <div class="jfa-chips">${['Java 17', 'Spring Boot', 'Kafka', 'PostgreSQL', 'AWS'].map((n, i) => `<span class="jfa-chip" style="--k:${i}"><b>${i + 1}</b>${n}</span>`).join('')}</div>
+        <div class="jfa-card"><span class="jfa-t">Kafka · card 1 of 3</span><b>How do you keep order for one customer?</b><span>Key messages by customer ID: same key, same partition, order kept.</span></div>
+      </div>
+    </section>
+
     <section class="l-why">
       <p class="l-tag">## why it works</p>
       <h2 class="l-h2">Built for the night before, not a semester</h2>
@@ -626,6 +640,7 @@ function homeView() {
         ${hasPro() ? '' : `<button class="btn quiet" data-act="plans">${ic('lock')}Unlock all ${relevant.length} topics</button>`}
       </div>
     </section>` : ''}
+    ${jobFocusEntry()}
     ${quickCard(relevant)}
     ${fieldSection(relevant)}
     ${livePromo()}
@@ -656,6 +671,78 @@ function homeView() {
       <div class="stack" style="margin-top:16px">${others.map(pk => `<div class="rolefam"><div class="label">${esc(pk.name)}</div><div class="chips">${pk.topics.map(t => `<button class="chip" data-act="learn" data-id="${t.id}">${esc(t.name)}</button>`).join('')}</div></div>`).join('')}</div>
     </details>
   </div>`;
+}
+
+/* ---------- Job focus (Pro): paste a job post, get the 5 skills it will test as quick cards ---------- */
+const JF_KEY = 'pp.jobfocus';
+const JF_SAMPLE = { role: 'Backend Engineer (example)', sample: true, stack: [
+  { name: 'Java 17', why: 'The service code is Java; expect language and collections questions.', cards: [
+    { q: 'How does a HashMap find a value?', a: 'It hashes the key to pick a bucket, then compares keys with equals inside it. Average O(1); a crowded bucket becomes a tree, so the worst case is O(log n).' },
+    { q: 'What do records give you?', a: 'Immutable data classes with constructor, accessors, equals, hashCode and toString generated. Good for DTOs.' },
+    { q: 'Checked vs unchecked exceptions?', a: 'Checked must be declared or caught (IOException). Unchecked extend RuntimeException and signal programming errors.' } ] },
+  { name: 'Spring Boot', why: 'Every microservice in the posting runs on it.', cards: [
+    { q: 'What does @SpringBootApplication do?', a: 'Combines @Configuration, @EnableAutoConfiguration and @ComponentScan, so beans are found and auto-configured from the classpath.' },
+    { q: 'Constructor or field injection?', a: 'Constructor: dependencies are explicit, final and easy to test without Spring.' },
+    { q: 'How do you handle errors in a REST API?', a: 'A @RestControllerAdvice with @ExceptionHandler methods mapping exceptions to status codes and a consistent error body.' } ] },
+  { name: 'Kafka', why: 'Services talk through events; ordering and delivery come up.', cards: [
+    { q: 'How do consumer groups share work?', a: 'Each partition goes to one consumer in the group, so parallelism is capped by the partition count.' },
+    { q: 'How do you keep order for one customer?', a: 'Use the customer ID as the message key: same key, same partition, order kept.' },
+    { q: 'At-least-once delivery means what for you?', a: 'Duplicates can happen, so consumers must be idempotent, for example by tracking processed IDs.' } ] },
+  { name: 'PostgreSQL', why: 'Primary data store; expect indexing and transactions.', cards: [
+    { q: 'When does an index not help?', a: 'Low-selectivity columns, functions on the column, or leading wildcards like LIKE \'%x\'.' },
+    { q: 'What is MVCC?', a: 'Readers see a snapshot and never block writers; old row versions are cleaned up by VACUUM.' },
+    { q: 'How do you find a slow query?', a: 'EXPLAIN ANALYZE to see the plan, look for sequential scans and bad row estimates, then index or rewrite.' } ] },
+  { name: 'AWS', why: 'Deploys run there; know the core services.', cards: [
+    { q: 'SQS vs SNS?', a: 'SQS is a queue one consumer pulls from; SNS pushes one message to many subscribers. Often SNS fans out into SQS.' },
+    { q: 'How do you give a service access to S3?', a: 'An IAM role attached to the task or instance with least-privilege policy; never hard-coded keys.' },
+    { q: 'What makes a deploy highly available?', a: 'Multiple availability zones behind a load balancer, health checks and auto scaling.' } ] },
+] };
+function jfSaved() { try { return JSON.parse(localStorage.getItem(JF_KEY) || 'null'); } catch { return null; } }
+function jfSave(d) { try { d ? localStorage.setItem(JF_KEY, JSON.stringify(d)) : localStorage.removeItem(JF_KEY); } catch { /* storage blocked: keep in memory only */ } }
+
+function jobFocusEntry() {
+  return `<section class="jf-entry">
+    <span class="jf-ico" aria-hidden="true">${ic('target')}</span>
+    <div><b>Job focus${hasPro() ? '' : ' <span class="tag">Pro</span>'}</b><span class="muted small">Paste the job post. See the 5 skills it will test, three cards each.</span></div>
+    <button class="btn" data-act="jobfocus">Open</button></section>`;
+}
+
+function jobFocusView() {
+  const J = S.jf || (S.jf = { result: jfSaved(), sel: 0, busy: false, text: '' });
+  const pro = hasPro();
+  const r = J.result || (pro ? null : JF_SAMPLE);
+  const head = `<div class="row between"><button class="back" data-act="home">${ic('left')}Plan</button><span class="tag">${ic(pro ? 'target' : 'lock')} Pro</span></div>`;
+  if (!r) return `<div class="stack jf">${head}
+    <h1>Prep for this exact job</h1>
+    <p class="lede">Paste the job description. We pick the 5 skills it is most likely to test and give you three quick cards for each. Nothing more.</p>
+    <textarea id="jfText" class="jf-text" rows="9" maxlength="6000" placeholder="Paste the job description or its requirements section…" ${J.busy ? 'disabled' : ''}>${esc(J.text)}</textarea>
+    <div class="row"><button class="btn primary" data-act="jfgo" ${J.busy ? 'disabled' : ''}>${J.busy ? 'Reading the job post…' : 'Show my top 5'}</button><span class="muted small">Uses 5 AI messages.</span></div>
+    ${J.busy ? `<div class="jf-skel" aria-hidden="true">${'<i></i>'.repeat(5)}</div>` : ''}
+  </div>`;
+  const sel = Math.min(J.sel || 0, r.stack.length - 1);
+  const t = r.stack[sel];
+  return `<div class="stack jf">${head}
+    ${r.sample ? `<div class="jf-sample"><b>This is an example.</b><span>With Pro, paste your own job post and get cards for it.</span><button class="btn primary" data-act="plans">Unlock with Pro</button></div>` : ''}
+    <div><div class="label">Top 5 for</div><h1 class="jf-role">${esc(r.role || 'this job')}</h1></div>
+    <div class="chips jf-chips" role="tablist">${r.stack.map((x, i) => `<button class="chip ${i === sel ? 'on' : ''}" role="tab" aria-selected="${i === sel}" data-act="jfpick" data-i="${i}" style="--k:${i}"><b>${i + 1}</b> ${esc(x.name)}</button>`).join('')}</div>
+    <p class="jf-why">${esc(t.why)}</p>
+    <div class="jf-cards" key="${sel}">${t.cards.map((c, i) => `<details class="card jf-card" style="--k:${i}"><summary><span class="jf-n">${i + 1}</span><span class="q">${esc(c.q)}</span></summary><p class="ans">${esc(c.a)}</p></details>`).join('')}</div>
+    ${r.sample ? '' : `<div class="row"><button class="btn quiet" data-act="jfnew">${ic('refresh')}New job post</button></div>`}
+  </div>`;
+}
+
+async function jobFocusGo() {
+  const J = S.jf; const ta = document.getElementById('jfText');
+  J.text = (ta?.value || '').trim();
+  if (J.text.length < 80) return oops('Paste a bit more of the job description: the requirements section works best.');
+  J.busy = true; render();
+  try {
+    const d = await ai.post('/api/jobfocus', { text: J.text });
+    J.result = { role: d.role, stack: d.stack }; J.sel = 0; jfSave(J.result);
+  } catch (e) {
+    if (e.code === 'pro') S.showPlans = true;
+    else oops(e.message || 'Could not read that job post. Try again.');
+  } finally { J.busy = false; render(); }
 }
 
 function lockedTopicView(t) {
@@ -1399,6 +1486,7 @@ function render() {
     : key === 'deck' ? deckView()
     : key === 'chat' ? chatView()
     : key === 'custom' ? customView()
+    : key === 'focus' ? jobFocusView()
     : key === 'settings' ? settingsView()
     : homeView();
   app.innerHTML = `<div class="${changed ? 'view' : ''}">${html}</div>`;
@@ -1708,6 +1796,7 @@ app.addEventListener('keydown', e => {
 app.addEventListener('input', e => {
   if (e.target.id === 'chatInput') { e.target.style.height = 'auto'; e.target.style.height = Math.min(140, e.target.scrollHeight) + 'px'; }
   if (e.target.id === 'expSummary') S.expSummary = e.target.value;
+  if (e.target.id === 'jfText' && S.jf) S.jf.text = e.target.value;
   if (e.target.id !== 'roleSearch') return;
   S.roleSearch = e.target.value;
   filterRoles();
@@ -1810,6 +1899,10 @@ document.addEventListener('click', async e => {
   else if (a === 'quick') sendChat(b.dataset.q);
   else if (a === 'rtstart') startVoice(b.dataset.mode);
   else if (a === 'plans') { S.showPlans = true; render(); }
+  else if (a === 'jobfocus') { S.view = 'focus'; render(); }
+  else if (a === 'jfgo') jobFocusGo();
+  else if (a === 'jfpick') { S.jf.sel = Number(b.dataset.i) || 0; render(); }
+  else if (a === 'jfnew') { S.jf.result = null; S.jf.sel = 0; jfSave(null); render(); }
   else if (a === 'pickfree') { S.showPlans = false; render(); }
   else if (a === 'unpaywall') { S.paywall = false; render(); }
   else if (a === 'buysub') buy('pro');

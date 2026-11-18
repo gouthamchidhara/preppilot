@@ -554,7 +554,7 @@ pre code { background: none; border: 0; padding: 0; }
 @media (min-width: 760px) { .wrap:has(.landing) { max-width: 980px; } .l-hero { grid-template-columns: 1.1fr 1fr; align-items: center; gap: 36px; padding-top: 30px; } }
 .l-pitch { margin-bottom: 20px; padding: 14px 16px; border-left: 3px solid var(--accent); border-radius: 0 12px 12px 0; background: var(--accent-soft); color: var(--ink-soft); font-size: .9rem; line-height: 1.5; }
 .l-pitch strong { display: block; margin-bottom: 4px; color: var(--ink); font-size: .95rem; }
-/* "long video squeezes into a few cards" — 9s loop, opacity/transform only */
+/* "long video squeezes into a few cards": cards land within ~1s of load, then hold. 7s loop, opacity/transform only */
 .pz { position: relative; height: 58px; margin-bottom: 14px; }
 .pz-video { position: absolute; inset: 0; display: flex; align-items: center; gap: 10px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--paper); transform-origin: 18px 50%; }
 .pz-play { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--sunk); color: var(--muted); }
@@ -571,17 +571,17 @@ pre code { background: none; border: 0; padding: 0; }
 .pz-clock { margin-left: auto; font: 700 13px var(--sans); color: var(--accent); opacity: 0; white-space: nowrap; }
 @media (prefers-reduced-motion: no-preference) {
   .l-pitch { animation: pitch-enter .6s ease-out both; }
-  .pz-video { animation: pz-video 9s cubic-bezier(.6, 0, .3, 1) infinite; }
-  .pz-bar em { animation: pz-bar 9s linear infinite; }
-  .pz-card { animation: pz-card 9s cubic-bezier(.2, .8, .2, 1) infinite; animation-delay: calc(var(--k) * .12s); }
-  .pz-clock { animation: pz-clock 9s ease-out infinite; }
+  .pz-video { animation: pz-video 7s cubic-bezier(.6, 0, .3, 1) infinite; }
+  .pz-bar em { animation: pz-bar 7s linear infinite; }
+  .pz-card { animation: pz-card 7s cubic-bezier(.2, .8, .2, 1) infinite; animation-delay: calc(var(--k) * .07s); }
+  .pz-clock { animation: pz-clock 7s ease-out infinite; }
 }
 @media (prefers-reduced-motion: reduce) { .pz-video { opacity: 0; } .pz-card, .pz-clock { opacity: 1; } }
 @keyframes pitch-enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-@keyframes pz-video { 0% { opacity: 0; transform: none; } 6%, 40% { opacity: 1; transform: none; } 50% { opacity: 1; transform: scaleX(.1); } 55%, 100% { opacity: 0; transform: scaleX(.1); } }
-@keyframes pz-bar { 0%, 6% { transform: scaleX(.03); } 40% { transform: scaleX(.09); } 100% { transform: scaleX(.09); } }
-@keyframes pz-card { 0%, 50% { opacity: 0; transform: translateX(calc(var(--k) * -100%)) scale(.5); } 60% { opacity: 1; transform: translateY(-3px) rotate(-2deg); } 66%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; transform: none; } }
-@keyframes pz-clock { 0%, 66% { opacity: 0; transform: translateY(4px); } 72%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes pz-video { 0% { opacity: 0; transform: none; } 2%, 7% { opacity: 1; transform: none; } 10.5% { opacity: 1; transform: scaleX(.1); } 12%, 100% { opacity: 0; transform: scaleX(.1); } }
+@keyframes pz-bar { 0% { transform: scaleX(.03); } 7%, 100% { transform: scaleX(.09); } }
+@keyframes pz-card { 0%, 9.5% { opacity: 0; transform: translateX(calc(var(--k) * -100%)) scale(.5); } 12.5% { opacity: 1; transform: translateY(-3px) rotate(-2deg); } 14.5%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; transform: none; } }
+@keyframes pz-clock { 0%, 13% { opacity: 0; transform: translateY(4px); } 16%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; } }
 .l-title { font: 650 clamp(1.75rem, 6vw, 2.6rem)/1.12 var(--sans); letter-spacing: -.025em; }
 .l-sub { font-size: 1.06rem; line-height: 1.55; color: var(--ink-soft); margin-top: 14px; max-width: 34em; }
 .l-cta { margin: 22px 0 8px; }
@@ -684,3 +684,56 @@ body:has(.landing) #topRight { margin-left: auto; }
   .l-q .w, .l-tick { transform: none !important; }
   .l-ans code { clip-path: none; }
 }
+
+/* ---------- Job focus ---------- */
+.jf-entry { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--paper); }
+.jf-entry > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.jf-ico { flex: none; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+.jf-text { width: 100%; resize: vertical; min-height: 180px; padding: 14px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--paper); color: var(--ink); font: 15px/1.5 var(--sans); }
+.jf-skel { display: grid; gap: 8px; }
+.jf-skel i { height: 42px; border-radius: 10px; background: var(--sunk); animation: jf-pulse 1.2s ease-in-out infinite; animation-delay: calc(var(--n, 0) * .1s); }
+.jf-skel i:nth-child(2) { --n: 1 } .jf-skel i:nth-child(3) { --n: 2 } .jf-skel i:nth-child(4) { --n: 3 } .jf-skel i:nth-child(5) { --n: 4 }
+@keyframes jf-pulse { 50% { opacity: .45; } }
+.jf-sample { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 12px 14px; border-left: 3px solid var(--accent); border-radius: 0 12px 12px 0; background: var(--accent-soft); }
+.jf-sample span { flex: 1 1 220px; color: var(--ink-soft); font-size: .9rem; }
+.jf-role { margin-top: 4px; }
+.jf-chips .chip b { margin-right: 4px; color: var(--accent); }
+.jf-chips .chip.on b { color: inherit; opacity: .7; }
+.jf-why { color: var(--ink-soft); }
+.jf-cards { display: grid; gap: 10px; }
+.jf-card { padding: 0; }
+.jf-card summary { list-style: none; display: flex; align-items: flex-start; gap: 10px; padding: 14px 16px; cursor: pointer; }
+.jf-card summary::-webkit-details-marker { display: none; }
+.jf-card .q { flex: 1; font-weight: 600; }
+.jf-n { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--sunk); font: 700 12px var(--sans); color: var(--muted); }
+.jf-card .ans { margin: 0; padding: 0 16px 16px 48px; color: var(--ink-soft); line-height: 1.55; }
+@media (prefers-reduced-motion: no-preference) {
+  .jf-card { animation: jf-in .35s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--k) * 60ms); }
+  .jf-card[open] .ans { animation: jf-in .25s ease-out both; }
+}
+@keyframes jf-in { from { opacity: 0; transform: translate3d(0, 8px, 0); } }
+
+/* Landing: job post -> highlighted skills -> 5 chips -> a card. 8s loop, opacity/transform only. */
+.l-jf { display: grid; gap: 12px; }
+.jfa { position: relative; display: grid; gap: 12px; margin-top: 8px; padding: 16px; border: 1px solid var(--line-strong); border-radius: 16px; background: var(--paper); overflow: hidden; }
+.jfa-post { font-size: .92rem; line-height: 1.7; color: var(--ink-soft); }
+.jfa-post p { margin: 0; }
+.jfa-h { font-weight: 700; color: var(--ink); margin-bottom: 4px !important; }
+.jfa mark { position: relative; background: none; color: inherit; font-weight: 600; isolation: isolate; }
+.jfa mark::before { content: ''; position: absolute; inset: 1px -3px; z-index: -1; border-radius: 5px; background: var(--accent-soft); transform-origin: left; transform: scaleX(0); }
+.jfa-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.jfa-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border: 1px solid var(--accent); border-radius: 99px; background: var(--paper); font: 600 13px var(--sans); color: var(--ink); opacity: 0; }
+.jfa-chip b { color: var(--accent); }
+.jfa-card { display: grid; gap: 4px; padding: 12px 14px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--paper); box-shadow: 3px 3px 0 var(--accent-soft); opacity: 0; }
+.jfa-card b { color: var(--ink); }
+.jfa-card span { color: var(--ink-soft); font-size: .9rem; }
+.jfa-t { font: 600 11px var(--sans) !important; letter-spacing: .04em; text-transform: uppercase; color: var(--accent) !important; }
+@media (prefers-reduced-motion: no-preference) {
+  .jfa mark::before { animation: jfa-mark 8s cubic-bezier(.3, .7, .2, 1) infinite; animation-delay: calc(var(--k) * .28s); }
+  .jfa-chip { animation: jfa-chip 8s cubic-bezier(.2, .8, .2, 1) infinite; animation-delay: calc(var(--k) * .09s); }
+  .jfa-card { animation: jfa-card 8s cubic-bezier(.2, .8, .2, 1) infinite; }
+}
+@media (prefers-reduced-motion: reduce) { .jfa mark::before { transform: none; } .jfa-chip, .jfa-card { opacity: 1; } }
+@keyframes jfa-mark { 0%, 4% { transform: scaleX(0); } 9%, 92% { transform: scaleX(1); } 100% { transform: scaleX(0); } }
+@keyframes jfa-chip { 0%, 26% { opacity: 0; transform: translate3d(0, -14px, 0) scale(.8); } 31% { opacity: 1; transform: translate3d(0, 2px, 0) scale(1.04); } 34%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; transform: none; } }
+@keyframes jfa-card { 0%, 38% { opacity: 0; transform: translate3d(0, 14px, 0) rotate(-1.5deg); } 44%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; transform: none; } }

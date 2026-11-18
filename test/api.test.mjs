@@ -501,3 +501,21 @@ test('purchase refresh works with RevenueCat API v2', async () => {
     delete process.env.REVENUECAT_SECRET_KEY; delete process.env.REVENUECAT_PROJECT_ID;
   }
 });
+
+test('Job focus: Pro only, validates input, keeps output to 5 skills x 3 short cards', async () => {
+  const { sanitizeJobFocus } = await import('../api/src/lib/handlers.js');
+  const jd = 'We need a backend engineer with Java 17, Spring Boot, Kafka, PostgreSQL and AWS. You will design microservices and own on-call.';
+  assert.equal((await call('POST jobfocus', { text: jd })).status, 401);
+  const free = await signIn('jdfree@gmail.com', 'jdfree');
+  assert.equal((await call('POST jobfocus', { text: 'too short' }, free)).status, 400);
+  const r = await call('POST jobfocus', { text: jd }, free);
+  assert.equal(r.status, 402); assert.equal(r.body.code, 'pro');
+  const boss = await signIn('boss@gmail.com', 'boss-jd');
+  assert.notEqual((await call('POST jobfocus', { text: jd }, boss)).status, 402);
+  const card = { q: 'Q?', a: 'A.' };
+  const many = { role: 'Backend', stack: Array.from({ length: 8 }, (_, i) => ({ name: `T${i}`, why: 'w', cards: [card, card, card, card] })) };
+  const p = sanitizeJobFocus(JSON.stringify(many));
+  assert.equal(p.stack.length, 5); assert.ok(p.stack.every(t => t.cards.length === 3));
+  assert.equal(sanitizeJobFocus('not json'), null);
+  assert.equal(sanitizeJobFocus(JSON.stringify({ stack: [{ name: 'x', cards: [] }] })), null);
+});
