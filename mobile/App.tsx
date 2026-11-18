@@ -177,6 +177,7 @@ export default function App() {
           setSupportMultipleWindows={false}
           // Edge to edge: the page draws under the Dynamic Island and handles the inset itself.
           contentInsetAdjustmentBehavior="never"
+          automaticallyAdjustContentInsets={false}
           style={{ backgroundColor: bg }}
         />
       )}

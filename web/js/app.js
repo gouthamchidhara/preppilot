@@ -1125,7 +1125,7 @@ document.addEventListener('touchmove', e => {
   const shell = document.getElementById('shell');
   if (shell) { shell.style.transition = 'none'; shell.style.transform = `translateX(${dz.w + x}px)`; shell.style.borderRadius = '28px'; }
 }, { passive: true });
-document.addEventListener('touchend', () => {
+function dzEnd() {
   if (!dz) return;
   const d = dz; dz = null;
   if (!d.on) return;
@@ -1134,13 +1134,17 @@ document.addEventListener('touchend', () => {
   if (shell) { shell.style.transition = ''; shell.style.transform = ''; shell.style.borderRadius = ''; }
   const open = d.open ? d.x2 > -d.w * 0.3 : d.x2 > Math.min(90, d.w * 0.3);
   setDrawer(open);
-});
+}
+document.addEventListener('touchend', dzEnd);
+document.addEventListener('touchcancel', () => { if (dz) { dz.x2 = dz.open ? 0 : -1e9; dzEnd(); } });
+// Safety net: if anything ever leaves the panel half-open (app sent to background mid-swipe), reset it.
+document.addEventListener('visibilitychange', () => { const d = document.querySelector('.nd'), sh = document.getElementById('shell'); dz = null; if (d) { d.style.transform = ''; d.style.transition = ''; d.style.opacity = ''; } if (sh) { sh.style.transform = ''; sh.style.transition = ''; sh.style.borderRadius = ''; } });
 
 /* Keyboard open on a phone: pin the chat input right on top of the keyboard (iOS shrinks only the
    visual viewport, so a bottom-docked box would otherwise float with a gap or hide under the keys). */
 function placeDock() {
   const vv = window.visualViewport, dock = document.querySelector('.ai-dock');
-  const kb = !!(vv && dock && window.innerHeight - vv.height > 120 && document.activeElement?.id === 'chatInput');
+  const kb = !!(vv && dock && document.activeElement?.id === 'chatInput' && (screen.height - vv.height > 200 || window.innerHeight - vv.height > 120));
   document.documentElement.classList.toggle('kb-open', kb);
   if (!dock) return;
   if (kb) dock.style.top = `${vv.offsetTop + vv.height - dock.offsetHeight}px`;
