@@ -799,7 +799,6 @@ function learnSearchHtml(p) {
       <button class="ls-go" type="submit" aria-label="Start">${ic('right')}</button>
     </form>
     <div id="lsResults">${lsResultsHtml(S.lsQ || '')}</div>
-    <div class="ls-chips"><span class="muted small">Your stack</span>${mine.map(t => `<button class="chip" data-act="lsgo" data-id="${t.id}">${esc(t.name)}</button>`).join('')}</div>
   </section>`;
 }
 
