@@ -16,3 +16,8 @@ ios/
 
 # Temporary agent work copies
 .claude/worktrees/
+
+# Generated at deploy time by scripts/build-seo.mjs
+web/questions/
+web/sitemap.xml
+web/robots.txt

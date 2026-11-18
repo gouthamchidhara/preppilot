@@ -40,6 +40,7 @@ createServer(async (req, res) => {
     }
     let file = normalize(resolve(webRoot, '.' + decodeURIComponent(url.pathname)));
     if (!file.startsWith(webRoot + sep) && file !== webRoot) { res.writeHead(403); return res.end(); }
+    if (existsSync(file) && (await stat(file)).isDirectory() && existsSync(resolve(file, 'index.html'))) file = resolve(file, 'index.html');
     if (!existsSync(file) || (await stat(file)).isDirectory()) file = resolve(webRoot, 'index.html');
     res.writeHead(200, { 'content-type': TYPES[extname(file)] || 'application/octet-stream', 'cache-control': 'no-cache' });
     res.end(await readFile(file));

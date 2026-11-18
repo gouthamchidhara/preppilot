@@ -519,6 +519,7 @@ function landingView() {
     <section class="l-end">
       <h2 class="l-h2">Pick your role and start</h2>
       <p class="muted">Search ${getCatalog().roles.length} roles, or paste a few lines about your experience and we’ll pick for you.</p>
+      <p class="small"><a href="/questions/">Browse 1,200+ interview questions by topic</a></p>
       <div class="row" style="justify-content:center"><button class="btn primary lg" data-act="startonboard">Get started, it’s free</button></div>
     </section>
   </div>`;
