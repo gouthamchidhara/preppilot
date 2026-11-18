@@ -18,6 +18,11 @@ on:
         description: Upload the finished build to TestFlight
         type: boolean
         default: true
+  # Until this file is on main, GitHub cannot run it by hand, so pushing a change to this
+  # file on the release branch starts it (and uploads to TestFlight).
+  push:
+    branches: [claude/eloquent-pasteur-wdc9yd]
+    paths: [.github/workflows/ios-fast.yml]
 
 permissions:
   contents: read
@@ -63,7 +68,7 @@ jobs:
           path: ${{ runner.temp }}/PrepPilot.ipa
           retention-days: 7
       - name: Upload to TestFlight
-        if: ${{ inputs.submit }}
+        if: ${{ github.event_name == 'push' || inputs.submit }}
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
