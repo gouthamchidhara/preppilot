@@ -722,6 +722,10 @@ function homeView() {
         ${hasPro() ? '' : `<button class="btn quiet" data-act="plans">${ic('lock')}Unlock all ${relevant.length} topics</button>`}
       </div>
     </section>` : ''}
+    ${lsGet('pp.swipeTried', '') ? '' : `<section class="sw-promo">
+      <div class="sw-promo-cards" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div><span class="tag">New</span><b>Swipe through your stack</b><span class="muted small">Cards from all your skills, mixed. Swipe right if you know it, left if you don’t.</span>
+      <div class="row"><button class="btn primary" data-act="swipedeck">Try swipe mode</button><button class="link quiet small" data-act="swipenah">Keep steady</button></div></div></section>`}
     ${jobFocusEntry()}
     ${quickCard(relevant)}
     ${fieldSection(relevant)}
@@ -813,7 +817,7 @@ function jobFocusView() {
     <div class="chips jf-chips" role="tablist">${r.stack.map((x, i) => `<button class="chip ${i === sel ? 'on' : ''}" role="tab" aria-selected="${i === sel}" data-act="jfpick" data-i="${i}" style="--k:${i}"><b>${i + 1}</b> ${esc(x.name)}${x.cards ? ` <span class="jf-count">${x.cards.length}</span>` : x.err ? '' : ' <span class="jf-dot" aria-label="loading"></span>'}</button>`).join('')}</div>
     <p class="jf-why">${esc(t.why)}</p>
     <div class="jf-cards">${cardsHtml}</div>
-    ${r.sample ? '' : `<div class="row"><button class="btn quiet" data-act="jfnew">${ic('refresh')}New job post</button></div>`}
+    ${r.sample ? '' : `<div class="row"><button class="btn primary" data-act="jfswipe" ${r.stack.some(x => x.cards) ? '' : 'disabled'}>${ic('cards')}Swipe through all</button><button class="btn quiet" data-act="jfnew">${ic('refresh')}New job post</button></div>`}
   </div>`;
 }
 
@@ -924,23 +928,30 @@ function deckView() {
       <p class="lede">${pct >= 80 ? 'These cards come back later, spaced further apart each time.' : 'The cards you missed come back first next time. Rereading the lessons for those topics will help.'}</p>
       ${worst && diagramFor(worst) ? `<section class="stack tight"><h3>The one to reread: ${esc(topicName(worst))}</h3>${diagramTeaser(worst, diagramHtml(worst))}<div class="row"><button class="btn" data-act="learn" data-id="${worst}">Reread the ${esc(topicName(worst))} lesson</button></div></section>` : ''}
       ${d.free ? `<section class="card live-hero stack"><h2>That was your free round.</h2><p>Free gives you ${FREE_CARDS} cards for each technology you picked, shuffled. Pro opens all ${d.total}, in the order you work, plus troubleshooting and real scenarios from the field.</p><div class="row"><button class="btn invert" data-act="plans">Unlock every card</button></div></section>` : ''}
-      <div class="row"><button class="btn ${d.free ? '' : 'primary'}" data-act="deck" data-id="">Practice another round</button><button class="btn" data-act="home">Back to plan</button></div></div>`;
+      ${d.jf ? `<div class="row"><button class="btn primary" data-act="jfswipe">Swipe them again</button><button class="btn" data-act="jobfocus">Back to Job focus</button></div></div>` : `<div class="row"><button class="btn ${d.free ? '' : 'primary'}" data-act="deck" data-id="${esc((d.ids || []).join(','))}">${d.mode === 'swipe' ? 'Swipe another mix' : 'Practice another round'}</button><button class="btn" data-act="home">Back to plan</button></div></div>`}`;
   }
   const q = d.cards[S.di];
   const t = topicById(q.topic);
-  const singleTopic = d.cards.length && d.cards.every(c => c.topic === d.cards[0].topic) ? d.cards[0].topic : null;
-  return `<div class="stack">
-    <div class="row between"><button class="back" data-act="home">${ic('left')}Stop</button><span class="muted small">Card ${S.di + 1} of ${d.cards.length}</span></div>
+  const swipe = d.mode === 'swipe';
+  const singleTopic = !swipe && d.cards.length && d.cards.every(c => c.topic === d.cards[0].topic) ? d.cards[0].topic : null;
+  const intro = swipe && lsGet('pp.swipeIntro', '') !== '1';
+  return `<div class="stack ${swipe ? 'swipe-mode' : ''}">
+    <div class="row between"><button class="back" data-act="${d.jf ? 'jobfocus' : 'home'}">${ic('left')}${d.jf ? 'Job focus' : 'Stop'}</button><span class="muted small">Card ${S.di + 1} of ${d.cards.length}</span></div>
+    ${d.jf ? '' : `<div class="seg" role="tablist" aria-label="How to go through the cards">
+      <button role="tab" aria-selected="${!swipe}" class="${swipe ? '' : 'on'}" data-act="deckmode" data-m="steady">${ic('right')}Steady</button>
+      <button role="tab" aria-selected="${swipe}" class="${swipe ? 'on' : ''}" data-act="deckmode" data-m="swipe">${ic('cards')}Swipe <span class="seg-new">mix</span></button></div>`}
     <div class="bar"><i style="width:${(S.di * 100) / d.cards.length}%"></i></div>
     ${d.free && S.di === 0 ? `<p class="note small row between"><span>Shuffled on Free. Pro takes you through every card in your workflow’s order.</span><button class="link" data-act="plans">See Pro</button></p>` : ''}
     ${singleTopic && diagramFor(singleTopic) ? `<div class="row between"><span></span><button class="link quiet small" data-act="dgsheet" data-id="${singleTopic}">How it works — see the diagram</button></div>` : ''}
     <article class="card stacked flash ${S.reveal ? 'can-swipe' : 'can-tap'}" id="flash">
       <span class="sw-tag sw-got" aria-hidden="true">${ic('check')}Got it</span><span class="sw-tag sw-miss" aria-hidden="true">${ic('x')}Missed</span>
-      <div class="card-head"><span>${esc(t?.name || q.topic)}</span><span class="level">${q.kind ? FIELD_KINDS[q.kind] : ['', 'Fundamentals', 'Applied', 'Advanced'][q.l] || ''}</span></div>
+      <div class="card-head"><span>${esc(t?.name || q.topicName || q.topic)}</span><span class="level">${q.kind ? FIELD_KINDS[q.kind] : ['', 'Fundamentals', 'Applied', 'Advanced'][q.l] || (q.jf ? 'Job focus' : '')}</span></div>
+      ${intro ? `<div class="sw-intro" aria-live="polite"><div class="sw-hand" aria-hidden="true"><i></i></div><b>Swipe mode</b><span>Tap to flip. Then swipe <b>right</b> if you knew it, <b>left</b> if you didn’t. Cards come from all your skills, mixed.</span><button class="btn primary" data-act="swipeintro">Let’s go</button></div>` : ''}
       <p class="q">${fmt(q.q)}</p>
       ${S.reveal ? `<div class="ans">${fmt(q.a)}</div>` : ''}
-      <div class="foot">${S.reveal ? `
-        <div class="row"><button class="btn miss lg" data-act="grade" data-ok="0">Missed it</button><button class="btn got lg" data-act="grade" data-ok="1">Got it</button></div>
+      <div class="foot">${S.reveal ? (swipe ? `
+        <div class="sw-btns"><button class="sw-btn miss" data-act="grade" data-ok="0" aria-label="Missed it">${ic('x')}</button><button class="sw-btn got" data-act="grade" data-ok="1" aria-label="Got it">${ic('check')}</button></div>` : `
+        <div class="row"><button class="btn miss lg" data-act="grade" data-ok="0">Missed it</button><button class="btn got lg" data-act="grade" data-ok="1">Got it</button></div>`) : ''}${S.reveal ? `
         <div class="row between small"><button class="link quiet" data-act="askq">Go deeper with AI</button>${betaNote(t, `question: ${q.q}`)}</div>`
       : '<button class="btn primary lg block" data-act="reveal">Show the answer</button><p class="muted small" style="text-align:center">Say your answer out loud first.</p>'}
       <p class="muted small kbd-hint" style="text-align:center">Space to reveal · ← missed · → got it</p>
@@ -1707,7 +1718,22 @@ function fieldSection(relevant) {
   </section>`;
 }
 
-function startDeck(ids) {
+/* Two ways through the cards. Steady: the plan's order, due cards first. Swipe: a shuffled mix across
+   every skill in the user's profile, one quick swipe per card. The choice is remembered per device. */
+const lsGet = (k, d) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch { /* storage blocked */ } };
+const deckMode = () => (lsGet('pp.deckMode', 'steady') === 'swipe' ? 'swipe' : 'steady');
+const setDeckMode = m => lsSet('pp.deckMode', m);
+// Spread topics out so a swipe round rarely shows two cards from the same skill in a row.
+function mixTopics(cards) {
+  const by = new Map(); shuffle(cards).forEach(c => { if (!by.has(c.topic)) by.set(c.topic, []); by.get(c.topic).push(c); });
+  const lanes = shuffle([...by.values()]), out = [];
+  while (lanes.some(l => l.length)) for (const l of lanes) if (l.length) out.push(l.shift());
+  return out;
+}
+
+function startDeck(ids, opts = {}) {
+  const mode = opts.mode || deckMode();
   const list = ids ? topics().filter(t => ids.includes(t.id)) : topics();
   const pro = hasPro();
   // Free: the user's fixed sample of 10 cards per technology, shuffled. Pro: everything, in workflow order, 20 a round.
@@ -1716,7 +1742,18 @@ function startDeck(ids) {
     const allowed = freeCardIds();
     cards = shuffle(cards.filter(c => topicById(c.topic)?.custom || topicById(c.topic)?.private || allowed.has(c.id)));
   }
-  S.deck = { cards: cards.slice(0, pro ? 20 : FREE_CARDS), results: [], free: !pro, total: list.reduce((n, t) => n + t.qa.length, 0) };
+  if (mode === 'swipe') cards = mixTopics(cards);
+  S.deck = { cards: cards.slice(0, pro ? 20 : FREE_CARDS), results: [], free: !pro, total: list.reduce((n, t) => n + t.qa.length, 0), mode, ids };
+  S.di = 0; S.reveal = false; S.view = 'deck'; render();
+}
+
+// Job focus cards as a swipe round: every skill mixed together. Not part of the spaced-repetition plan.
+function startJobDeck() {
+  const r = S.jf?.result;
+  if (!r) return;
+  const cards = r.stack.flatMap((t, i) => (t.cards || []).map((c, k) => ({ id: `jf-${i}-${k}`, topic: t.name, topicName: t.name, q: c.q, a: c.a, l: 0, jf: true })));
+  if (!cards.length) return oops('The cards are still being written. Give it a few seconds.');
+  S.deck = { cards: mixTopics(cards), results: [], free: false, total: cards.length, mode: 'swipe', jf: true };
   S.di = 0; S.reveal = false; S.view = 'deck'; render();
 }
 
@@ -1743,7 +1780,7 @@ async function openTopic(id) {
 function gradeCard(ok, swiped = false) {
   if (S.grading || !S.deck || S.di >= S.deck.cards.length) return;
   const q = S.deck.cards[S.di], prog = store.progress();
-  prog[q.id] = review(prog[q.id], ok); store.setProgress(prog);
+  if (!q.jf) { prog[q.id] = review(prog[q.id], ok); store.setProgress(prog); }
   // Practice history for the stats view: one count per day, starting today.
   store.setActivity(recordActivity(store.activity(), todayKey(), ok));
   S.grading = true;
@@ -1778,7 +1815,7 @@ const SWIPE_AT = 90; // px past which a release counts as a decision
 let sw = null;
 app.addEventListener('pointerdown', e => {
   const card = e.target.closest('#flash');
-  if (!card || S.grading || e.button > 0 || e.target.closest('button, a, summary, input, textarea')) return;
+  if (!card || S.grading || e.button > 0 || e.target.closest('button, a, summary, input, textarea, .sw-intro')) return;
   sw = { card, x: e.clientX, y: e.clientY, t: performance.now(), dx: 0, id: e.pointerId, drag: false };
 });
 app.addEventListener('pointermove', e => {
@@ -2056,6 +2093,11 @@ document.addEventListener('click', async e => {
   else if (a === 'cnext') { S.ci++; render(); }
   else if (a === 'cprev') { S.ci--; render(); }
   else if (a === 'deck') startDeck(id ? id.split(',') : null);
+  else if (a === 'deckmode') { setDeckMode(b.dataset.m); startDeck(S.deck?.ids || null, { mode: b.dataset.m }); }
+  else if (a === 'swipedeck') { setDeckMode('swipe'); lsSet('pp.swipeTried', '1'); startDeck(null, { mode: 'swipe' }); }
+  else if (a === 'swipeintro') { lsSet('pp.swipeIntro', '1'); render(); }
+  else if (a === 'swipenah') { lsSet('pp.swipeTried', '1'); render(); }
+  else if (a === 'jfswipe') startJobDeck();
   else if (a === 'roledeck') startRoleDeck(id);
   else if (a === 'reveal') { S.reveal = true; render(); }
   else if (a === 'grade') gradeCard(b.dataset.ok === '1');

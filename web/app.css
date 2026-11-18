@@ -878,3 +878,38 @@ body:has(.landing) #topRight { margin-left: auto; }
 .touch-hint { display: none; }
 @media (hover: none) and (pointer: coarse) { .kbd-hint { display: none; } .touch-hint { display: block; } }
 @media (prefers-reduced-motion: reduce) { .flash.fly, .flash.snap { transition: none; } }
+
+/* Steady / Swipe switch */
+.seg { display: inline-grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: var(--sunk); align-self: center; }
+.seg button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; border: 0; border-radius: 9px; background: none; color: var(--muted); font: 600 14px var(--sans); cursor: pointer; }
+.seg button .ic { width: 15px; height: 15px; }
+.seg button.on { background: var(--paper); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.seg-new { padding: 1px 6px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); font-size: 11px; }
+
+/* Swipe mode: round ✗ / ✓ buttons under the card */
+.sw-btns { display: flex; justify-content: center; gap: 28px; }
+.sw-btn { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--line-strong); background: var(--paper); cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.08); transition: transform .12s; }
+.sw-btn:active { transform: scale(.92); }
+.sw-btn .ic { width: 26px; height: 26px; stroke-width: 2.4; }
+.sw-btn.miss { color: var(--muted); } .sw-btn.got { color: var(--accent); border-color: var(--accent); }
+.swipe-mode .flash { min-height: 380px; }
+
+/* First swipe: a short how-to over the card with a hand that swipes */
+.sw-intro { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; text-align: center; border-radius: inherit; background: var(--paper); animation: fade .2s ease both; }
+.sw-intro > span { color: var(--ink-soft); max-width: 300px; }
+.sw-hand { position: relative; width: 140px; height: 56px; }
+.sw-hand::before { content: ''; position: absolute; left: 10px; right: 10px; top: 27px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--muted), transparent 45%, transparent 55%, var(--accent)); opacity: .5; }
+.sw-hand i { position: absolute; left: 50%; top: 10px; width: 36px; height: 36px; margin-left: -18px; border-radius: 50%; background: var(--ink); opacity: .85; box-shadow: 0 0 0 6px color-mix(in srgb, var(--ink) 15%, transparent); animation: sw-hand 2.4s cubic-bezier(.5, 0, .3, 1) infinite; }
+@keyframes sw-hand { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(46px) rotate(12deg); } 50% { transform: translateX(0); } 75% { transform: translateX(-46px) rotate(-12deg); } }
+
+/* Home: swipe mode introduction */
+.sw-promo { display: flex; align-items: center; gap: 16px; padding: 16px; border: 1px solid var(--accent); border-radius: 16px; background: var(--paper); box-shadow: 4px 4px 0 var(--accent-soft); }
+.sw-promo > div:last-child { flex: 1; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.sw-promo .row { margin-top: 4px; align-items: center; }
+.sw-promo-cards { position: relative; flex: none; width: 64px; height: 76px; }
+.sw-promo-cards i { position: absolute; inset: 0; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--paper); }
+.sw-promo-cards i:nth-child(1) { transform: rotate(-8deg); }
+.sw-promo-cards i:nth-child(2) { transform: rotate(4deg); }
+.sw-promo-cards i:nth-child(3) { border-color: var(--accent); animation: sw-promo 3s cubic-bezier(.5, 0, .3, 1) infinite; }
+@keyframes sw-promo { 0%, 20% { transform: none; opacity: 1; } 45% { transform: translateX(60px) rotate(20deg); opacity: 0; } 46% { transform: translateX(-60px) rotate(-20deg); opacity: 0; } 70%, 100% { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sw-hand i, .sw-promo-cards i { animation: none; } }
