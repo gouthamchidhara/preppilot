@@ -18,6 +18,29 @@ const S = { view: 'home', topic: null, ci: 0, deck: null, di: 0, reveal: false, 
 /* ---------- helpers ---------- */
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const fmt = s => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+// Chat answers: real paragraphs, headings, bullet and numbered lists, code blocks (ChatGPT-style).
+const inl = s => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/(^|[\s(])\*([^*\s][^*]*)\*(?=[\s).,!?:;]|$)/g, '$1<em>$2</em>');
+function mdChat(src) {
+  const parts = String(src ?? '').split(/```[a-zA-Z0-9+#-]*\n?/);
+  return parts.map((p, i) => {
+    if (i % 2) return `<pre><code>${esc(p.replace(/\n$/, ''))}</code></pre>`;
+    const out = []; let list = null, para = [];
+    const flushP = () => { if (para.length) { out.push(`<p>${para.map(inl).join('<br>')}</p>`); para = []; } };
+    const flushL = () => { if (list) { out.push(`<${list.tag}>${list.items.map(x => `<li>${inl(x)}</li>`).join('')}</${list.tag}>`); list = null; } };
+    for (const raw of p.split('\n')) {
+      const line = raw.trimEnd();
+      let m;
+      if (!line.trim()) { flushP(); flushL(); continue; }
+      if ((m = line.match(/^\s*(#{1,4})\s+(.*)$/))) { flushP(); flushL(); out.push(`<h${Math.min(4, m[1].length + 2)}>${inl(m[2])}</h${Math.min(4, m[1].length + 2)}>`); continue; }
+      if ((m = line.match(/^\s*(?:[-*•])\s+(.*)$/))) { flushP(); if (list?.tag !== 'ul') { flushL(); list = { tag: 'ul', items: [] }; } list.items.push(m[1]); continue; }
+      if ((m = line.match(/^\s*\d+[.)]\s+(.*)$/))) { flushP(); if (list?.tag !== 'ol') { flushL(); list = { tag: 'ol', items: [] }; } list.items.push(m[1]); continue; }
+      if (list && /^\s{2,}\S/.test(raw)) { list.items[list.items.length - 1] += ' ' + line.trim(); continue; }
+      flushL(); para.push(line);
+    }
+    flushP(); flushL();
+    return out.join('');
+  }).join('');
+}
 function md(s) {
   const parts = String(s ?? '').split(/```[a-zA-Z]*\n?/);
   return parts.map((p, i) => (i % 2 ? `<pre><code>${esc(p.replace(/\n$/, ''))}</code></pre>` : fmt(p).replace(/(^|<br>)[-*] /g, '$1• '))).join('');
@@ -1368,10 +1391,10 @@ function liveStrip() {
 
 function chatView() {
   const msgs = store.chat();
-  const live = S.live ? `<div class="msg assistant" id="liveMsg">${md(S.live.text) || '<span class="dots"><i></i><i></i><i></i></span>'}</div>` : '';
+  const live = S.live ? `<div class="msg assistant" id="liveMsg">${mdChat(S.live.text) || '<span class="dots"><i></i><i></i><i></i></span>'}</div>` : '';
   if (!signedIn()) return signInCard();
   const a = store.account();
-  const bubble = m => m.role === 'user' && m.content === '🎙 …' ? `<div class="msg user heard" id="heardMsg">${esc(S.heard || '') || '🎙 …'}</div>` : isNotice(m) ? `<div class="msg sys">${fmt(m.content.replace(/^(ℹ️|⚠️)\s*/, ''))}</div>` : `<div class="msg ${m.role}">${m.role === 'assistant' ? md(m.content) : fmt(m.content)}</div>`;
+  const bubble = m => m.role === 'user' && m.content === '🎙 …' ? `<div class="msg user heard" id="heardMsg">${esc(S.heard || '') || '🎙 …'}</div>` : isNotice(m) ? `<div class="msg sys">${fmt(m.content.replace(/^(ℹ️|⚠️)\s*/, ''))}</div>` : `<div class="msg ${m.role}">${m.role === 'assistant' ? mdChat(m.content) : fmt(m.content)}</div>`;
   const started = msgs.length || live;
   const lowFree = a?.plan === 'free' && !S.paywall && a.msgsLeft <= 5;
   const f = S.fresh;
@@ -1561,7 +1584,7 @@ function rtHandlers() {
         S.hintFor = id; fetchLiveHint(S.live.text.slice(0, S.live.text.lastIndexOf('?') + 1).trim().slice(-400));
       }
       const el = document.getElementById('liveMsg');
-      if (el) { el.innerHTML = md(S.live.text); scrollEnd(); }
+      if (el) { el.innerHTML = mdChat(S.live.text); scrollEnd(); }
     },
     done(id, text) {
       const final = text ?? S.live?.text ?? '';

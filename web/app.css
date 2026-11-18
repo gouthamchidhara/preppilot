@@ -1111,3 +1111,26 @@ html:has(.swipe-screen), body:has(.swipe-screen) { overscroll-behavior: none; }
 }
 @media (prefers-reduced-motion: reduce) { .ai-drawer { transition: none; } }
 @media (min-width: 900px) { body:has(.ai-layout) .top { max-width: 1100px; } body:has(.ai-layout) .tabs { right: max(20px, calc(50% - 550px)); } }
+
+/* ---------- AI tab typography, ChatGPT / Claude style ---------- */
+.ai-tab, .ai-drawer { --chat-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-family: var(--chat-font); }
+.ai-tab .msg, .ai-tab .composer textarea, .ai-tab .chip, .ai-drawer button, .ai-tab .live-strip, .ai-tab .ai-title { font-family: var(--chat-font) !important; }
+.ai-tab .msgs { gap: 22px; }
+.ai-tab .msg { font-size: 1rem; line-height: 1.65; letter-spacing: -.003em; color: var(--ink); }
+.ai-tab .msg.user { padding: 10px 16px; border-radius: 20px; background: var(--sunk); max-width: 82%; }
+.ai-tab .msg.assistant { padding: 0 2px; }
+.ai-tab .msg.assistant > :first-child { margin-top: 0; }
+.ai-tab .msg.assistant > :last-child { margin-bottom: 0; }
+.ai-tab .msg.assistant p { margin: 0 0 .85em; }
+.ai-tab .msg.assistant h3, .ai-tab .msg.assistant h4 { margin: 1.2em 0 .5em; font: 600 1.06rem/1.4 var(--chat-font); letter-spacing: -.01em; }
+.ai-tab .msg.assistant h3 { font-size: 1.15rem; }
+.ai-tab .msg.assistant ul, .ai-tab .msg.assistant ol { margin: 0 0 .85em; padding-left: 1.4em; }
+.ai-tab .msg.assistant li { margin: .3em 0; padding-left: .2em; }
+.ai-tab .msg.assistant li::marker { color: var(--muted); }
+.ai-tab .msg.assistant strong { font-weight: 600; }
+.ai-tab .msg code { font: .88em/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace; padding: .12em .38em; border-radius: 6px; background: var(--sunk); border: 0; }
+.ai-tab .msg pre { margin: .4em 0 1em; padding: 14px 16px; border-radius: 12px; font: .85rem/1.6 ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+.ai-tab .msg pre code { padding: 0; background: none; }
+.ai-tab .ai-hello h2 { font: 600 1.6rem/1.25 var(--chat-font); letter-spacing: -.02em; }
+.ai-tab .composer { border-radius: 26px; }
+.ai-tab .composer textarea { font-size: 1rem; }
