@@ -134,7 +134,7 @@ async function loadFresh() {
   const role = p && migrateProfile(p).roleIds.find(id => id !== 'other') || p?.baseRoleId;
   if (!role || S.freshRole === role) return;
   S.freshRole = role;
-  try { const d = await ai.post('/api/fresh', { role }); S.fresh = d; if (S.view === 'home' && !S.showPlans) render(); } catch { S.fresh = null; }
+  try { const d = await ai.post('/api/fresh', { role }); S.fresh = d; if (S.view === 'chat' && !S.showPlans && !S.rt) render(); } catch { S.fresh = null; }
 }
 function freshCard() {
   const f = S.fresh;
@@ -619,6 +619,7 @@ async function suggestRoles() {
 }
 
 async function saveProfile() {
+  S.editProfile = false;
   captureDraft();
   const d = S.draft;
   if (!d?.roleIds.length || (d.roleIds.includes('other') && (!d.baseRoleId || !d.otherRole))) return oops('Choose a role, and fill in the details if you picked "Other".');
@@ -787,35 +788,17 @@ function homeView() {
       <div><span class="tag">New</span><b>Swipe right on what you know</b><span class="muted small">Like Tinder, but for your next job. Cards from all your skills, mixed.</span>
       <div class="row"><button class="btn primary" data-act="swipedeck">Try swipe mode</button><button class="link quiet small" data-act="swipenah">Keep steady</button></div></div></section>`}
     ${jobFocusEntry()}
-    ${quickCard(relevant)}
-    ${fieldSection(relevant)}
-    ${livePromo()}
-    ${freshCard()}
-    <section class="knowmap" aria-label="What you know">
-      <div class="nums"><span><b>What you know</b></span><span><b data-countup="${knownTotal}">${knownTotal}</b> of ${cardsTotal} cards known</span></div>
-      <div class="tiles">${map.topics.map((t, i) => {
-        // A tile that moved up a state since the last render gets a brief highlight.
-        const order = { unseen: 0, weak: 1, ok: 2, strong: 3 };
-        const fresh = prevMap && prevMap[t.id] !== undefined && order[t.state] > order[prevMap[t.id]];
-        return `<button class="tile ${t.state}${fresh ? ' tile-fresh' : ''}" data-act="learn" data-id="${t.id}" style="animation-delay:${S._stagger ? i * 60 : 0}ms" aria-label="${esc(t.name)}: ${t.state === 'strong' ? 'solid' : t.state === 'ok' ? 'getting there' : t.state === 'weak' ? 'shaky' : 'not started'}, ${t.known} of ${t.total} cards known">
-        <span class="t">${esc(t.name)}${lockMark(t.id)}</span><span class="bar"><i style="width:${t.pct}%;animation-delay:${S._stagger ? i * 60 + 150 : 0}ms"></i></span>
-        <span class="m">${t.state === 'strong' ? 'Solid' : t.state === 'ok' ? 'Getting there' : t.state === 'weak' ? 'Shaky' : 'Not started'} · ${t.total ? `${t.known}/${t.total}` : 'no cards here'}</span></button>`; }).join('')}</div>
-      <p class="muted small">${map.counts.strong} solid · ${map.counts.ok} getting there · ${map.counts.weak} shaky · ${map.counts.unseen} not started</p>
-    </section>
-    ${roleIds.length > 1 ? `<section><div class="sec-head"><h3>Practice one role</h3></div><div class="chips">${roleIds.map(id => `<button class="chip" data-act="roledeck" data-id="${esc(id)}">${esc(label(id))}</button>`).join('')}</div></section>` : ''}
     ${roleIds.includes('other') ? `<section class="panel stack"><h3>Make it specific to ${esc(p.otherRole)}</h3>
       <p class="muted">Your plan starts from the closest listed role. AI can write topics for your exact role. This uses 5 AI messages.</p>
       <div class="row"><button class="btn" data-act="buildrole" ${S.busy ? 'disabled' : ''}>${S.busy ? 'Writing your guide…' : 'Write my role guide'}</button></div></section>` : ''}
     ${lockedCount ? `<section class="unlock-strip">
-      <div><b>${relevant.length - lockedCount} of ${relevant.length} topics open on Free</b><span class="muted small">${lockedCount} more topics, ${lockedCards} interview questions and every animated diagram are waiting in Pro.</span></div>
+      <div><b>${relevant.length - lockedCount} of ${relevant.length} topics open on Free</b><span class="muted small">${lockedCards} more interview questions in Pro.</span></div>
       <button class="btn primary" data-act="plans">Unlock all</button></section>` : ''}
     <section>
-      <div class="sec-head"><h3>Your topics</h3>${relevant.length > 8 ? `<button class="link quiet small" data-act="toggletopics">${S.allTopics ? 'Show fewer' : `All ${relevant.length} topics`}</button>` : ''}</div>
-      <div class="rows">${(S.allTopics ? relevant : relevant.slice(0, 8)).map(topicRow).join('')}</div>
+      <div class="sec-head"><h3>Your topics</h3><span class="muted small">${knownTotal} of ${cardsTotal} cards known</span></div>
+      <div class="rows">${(S.allTopics ? relevant : relevant.slice(0, 6)).map(topicRow).join('')}</div>
+      ${relevant.length > 6 ? `<button class="link quiet small" data-act="toggletopics" style="margin-top:10px">${S.allTopics ? 'Show fewer' : `Show all ${relevant.length}`}</button>` : ''}
     </section>
-    <details><summary>Browse other topics</summary>
-      <div class="stack" style="margin-top:16px">${others.map(pk => `<div class="rolefam"><div class="label">${esc(pk.name)}</div><div class="chips">${pk.topics.map(t => `<button class="chip" data-act="learn" data-id="${t.id}">${esc(t.name)}</button>`).join('')}</div></div>`).join('')}</div>
-    </details>
   </div>`;
 }
 
@@ -1325,6 +1308,7 @@ function chatView() {
       ${msgs.length ? '<button class="link quiet small" data-act="clearchat">Clear chat</button>' : ''}</div></div>
     ${S.rt || started ? '' : allowanceCard(a)}
     ${S.paywall ? paywallCard() : voicePanel()}
+    ${S.rt || started ? '' : `${freshCard()}${fieldSection(rankTopics(topics(), profile()))}`}
     ${S.rtMode === 'live' && S.liveHint ? liveHintCard() : ''}
     ${lowFree && !S.rt ? `<p class="note row between"><span>${a.msgsLeft} message${a.msgsLeft === 1 ? '' : 's'} and ${mins(a.voiceSecLeft)} voice minutes left in your free trial.</span><button class="link" data-act="plans">See Pro</button></p>` : ''}
     ${S.chatContext ? `<p class="note row between"><span>Talking about <b>${esc(S.chatContext.split('\n')[0])}</b></span><button class="link quiet" data-act="dropctx">Remove</button></p>` : ''}
@@ -1554,18 +1538,43 @@ function adminSuggestions() {
   </section>`;
 }
 
+// Profile: who you are, what you're preparing for, how the app looks. Progress lives on Home.
+function prepSummary() {
+  const p = profile();
+  if (!p) return '';
+  const m = migrateProfile(p);
+  const roles = m.roleIds.map(id => id === 'other' ? p.otherRole : roleName(id)).filter(Boolean).join(', ');
+  const days = daysUntil(p.date);
+  const r = readiness(rankTopics(topics(), p), p, store.progress());
+  const streak = streakDays(store.activity(), todayKey());
+  if (S.editProfile) return `<section class="stack"><div class="sec-head"><h2>Your prep</h2><button class="link quiet small" data-act="editprofile">Done</button></div>${onboardingView(p)}</section>`;
+  return `<section class="pf-prep">
+    <div class="sec-head"><h2>Your prep</h2><button class="btn small" data-act="editprofile">Edit</button></div>
+    <dl class="pf-facts">
+      <div><dt>Role</dt><dd>${esc(roles || '—')}</dd></div>
+      <div><dt>Level</dt><dd>${esc((LEVELS.find(l => l.id === p.level) || {}).name || p.level || '—')}</dd></div>
+      <div><dt>Interview</dt><dd>${days === null ? 'No date set' : days === 0 ? 'Today' : `In ${days} day${days === 1 ? '' : 's'}`}</dd></div>
+    </dl>
+    <div class="pf-nums"><span><b>${r.pct}%</b>ready</span><span><b>${r.known}</b>cards known</span><span><b>${streak}</b>day streak</span></div>
+  </section>`;
+}
+function prefsSection() {
+  const ts = textSize(), dm = deckMode();
+  const seg = (act, cur, opts) => `<div class="pf-seg" role="radiogroup">${opts.map(([v, l, label]) => `<button role="radio" aria-checked="${cur === v}" aria-label="${label || l}" class="${cur === v ? 'on' : ''}" data-act="${act}" data-v="${v}">${l}</button>`).join('')}</div>`;
+  return `<section class="pf-prefs">
+    <h2>Display</h2>
+    <div class="pf-row"><div><b>Text size</b><span class="muted small">Lessons, cards and answers</span></div>${seg('textsize', ts, [['s', '<span class="ts-s">A</span>', 'Small'], ['m', '<span class="ts-m">A</span>', 'Medium'], ['l', '<span class="ts-l">A</span>', 'Large']])}</div>
+    <div class="pf-row"><div><b>Cards open in</b><span class="muted small">Switch any time on the cards screen</span></div>${seg('prefmode', dm, [['steady', 'Steady'], ['swipe', 'Swipe']])}</div>
+  </section>`;
+}
 function settingsView() {
-  const custom = store.customTopics(), priv = store.privatePacks();
+  const priv = store.privatePacks();
   return `<div class="stack loose">
     ${accountCard()}
     ${store.account()?.unlimited ? adminSuggestions() : ''}
-    ${statsSection()}
-    ${onboardingView(profile())}
-    <section class="stack"><div class="head"><h2>Cards for any topic</h2>
-      <p class="muted">Something your interview covers that isn't here? Name it and AI writes a set. Uses 5 AI messages.</p></div>
-      <form id="genForm" class="row"><input id="genTopic" maxlength="120" placeholder="e.g. Kafka exactly-once delivery" required aria-label="Topic"><button class="btn" ${S.busy ? 'disabled' : ''}>${S.busy ? 'Writing cards…' : 'Write cards'}</button></form>
-      ${custom.length ? `<div class="rows">${custom.map(t => `<div class="rowi static"><span class="main"><span class="t">${esc(t.name)}</span><span class="d">${t.concepts.length} lessons, ${t.qa.length} questions</span></span><button class="link quiet small" data-act="delcustom" data-id="${t.id}">Delete</button></div>`).join('')}</div>` : ''}
-    </section>
+    ${prepSummary()}
+    ${prefsSection()}
+    <details class="pf-more"><summary>More</summary><div class="stack loose" style="margin-top:16px">
     <section class="stack"><div class="head"><h2>Private packs</h2>
       <p class="muted">Import your own pack as a JSON file: your projects, your stories. It never leaves this device.</p></div>
       <input type="file" id="importPack" accept="application/json,.json" aria-label="Import pack">
@@ -1579,6 +1588,7 @@ function settingsView() {
       <p class="muted">Your profile, progress and chats are stored only on this device.</p></div>
       <div class="row"><button class="btn" data-act="export">Export my data</button><button class="btn danger" data-act="reset">Erase everything</button></div>
     </section>
+    </div></details>
   </div>`;
 }
 
@@ -1860,7 +1870,7 @@ function render() {
   }
   // Native app: keep the icon badge and the daily reminder in step with the plan.
   if (native() && key === 'home' && profile()) syncNativeHome();
-  if (key === 'home' && profile()) loadFresh();
+  if (key === 'chat' && profile()) loadFresh();
   if (key === 'landing' && !S.demo) loadDemo();
   if (key === 'landing') { storyLast = -1; requestAnimationFrame(paintStory); if (changed || !featTimer) startFeat(); } else stopFeat();
   // The plans-screen diagram plays itself when the screen opens; anywhere
@@ -1947,6 +1957,10 @@ function fieldSection(relevant) {
    every skill in the user's profile, one quick swipe per card. The choice is remembered per device. */
 const lsGet = (k, d) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch { /* storage blocked */ } };
+// Text size: scales every rem-sized text (lessons, cards, answers, code) from the root.
+const textSize = () => { const v = lsGet('pp.textSize', 'm'); return ['s', 'm', 'l'].includes(v) ? v : 'm'; };
+function setTextSize(v) { lsSet('pp.textSize', v); document.documentElement.dataset.ts = v; }
+document.documentElement.dataset.ts = textSize();
 const deckMode = () => (lsGet('pp.deckMode', 'steady') === 'swipe' ? 'swipe' : 'steady');
 const setDeckMode = m => lsSet('pp.deckMode', m);
 // Spread topics out so a swipe round rarely shows two cards from the same skill in a row.
@@ -2297,6 +2311,9 @@ document.addEventListener('click', async e => {
   else if (a === 'buildrole') buildRoleGuide();
   else if (a === 'cnext') { S.ci++; render(); }
   else if (a === 'cprev') { S.ci--; render(); }
+  else if (a === 'editprofile') { S.editProfile = !S.editProfile; render(); }
+  else if (a === 'textsize') { setTextSize(b.dataset.v); render(); }
+  else if (a === 'prefmode') { setDeckMode(b.dataset.v); render(); }
   else if (a === 'deck') { S.lsLabel = d0label(id); startDeck(id ? id.split(',') : null); }
   else if (a === 'lsgo') { const t = getManifest().packs.flatMap(pk => pk.topics).find(x => x.id === id); lsStart([id], t?.name); }
   else if (a === 'deckmode') {

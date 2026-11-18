@@ -286,7 +286,7 @@ details[open] summary::after { content: "–"; }
 /* View changes fade in softly. */
 .view { animation: fade .2s ease both; }
 code { font-family: var(--mono); font-size: .86em; background: var(--code-bg); border: 1px solid var(--line); padding: 1px 5px; border-radius: 5px; overflow-wrap: anywhere; }
-pre { margin: 6px 0 0; background: var(--code-bg); border: 1px solid var(--line); color: var(--ink); font: 13px/1.6 var(--mono); padding: 13px 15px; border-radius: 8px; overflow-x: auto; white-space: pre; }
+pre { margin: 6px 0 0; background: var(--code-bg); border: 1px solid var(--line); color: var(--ink); font: .8125rem/1.6 var(--mono); padding: 13px 15px; border-radius: 8px; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
 pre code { background: none; border: 0; padding: 0; }
 .flash { min-height: 320px; display: flex; flex-direction: column; }
 .flash .q { font: 500 1.5rem/1.28 var(--serif); letter-spacing: -.008em; }
@@ -397,7 +397,7 @@ pre code { background: none; border: 0; padding: 0; }
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
   display: grid; grid-template-columns: repeat(5, 1fr); max-width: 640px; margin: 0 auto;
   height: calc(var(--tabs) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom);
-  background: color-mix(in srgb, var(--desk) 88%, transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  background: var(--desk);
   border-top: 1px solid var(--line);
 }
 .tabs button { background: none; border: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font: 500 11.5px var(--sans); color: var(--muted); cursor: pointer; transition: color .15s; }
@@ -654,7 +654,7 @@ pre code { background: none; border: 0; padding: 0; }
 }
 
 /* landing: sticky header carries Log in / Get started, so nothing crowds 'recall.' */
-body:has(.landing) .top { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--desk) 88%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); justify-content: space-between; }
+body:has(.landing) .top { position: sticky; top: 0; z-index: 20; background: var(--desk); justify-content: space-between; }
 body:has(.landing) #topRight { margin-left: auto; }
 .l-hero .l-sub { margin-bottom: 8px; }
 .landing .l-giant { margin-top: 28px; }
@@ -1003,3 +1003,32 @@ body:has(.landing) #topRight { margin-left: auto; }
 .curated-head h2 { margin: 0; font-size: 1.15rem; }
 .ls-now { display: inline-flex; align-items: center; gap: 6px; margin: 0; font: 600 13px var(--sans); color: var(--accent); }
 .ls-now .ic { width: 14px; height: 14px; }
+
+
+/* Text size (Profile → Display). Everything sized in rem follows. */
+html[data-ts="s"] { font-size: 93.75%; }
+html[data-ts="m"] { font-size: 100%; }
+html[data-ts="l"] { font-size: 115%; }
+
+/* Swipe screen: keep drags away from the screen edges (iOS uses them for back / app switching) */
+.swipe-screen .sw-stage { margin-left: 8px; margin-right: 8px; }
+html:has(.swipe-screen), body:has(.swipe-screen) { overscroll-behavior: none; }
+
+/* ---------- Profile ---------- */
+.pf-prep, .pf-prefs { display: grid; gap: 14px; padding: 18px; border: 1px solid var(--line-strong); border-radius: 16px; background: var(--paper); }
+.pf-prep h2, .pf-prefs h2 { margin: 0; font-size: 1.1rem; }
+.pf-facts { display: grid; gap: 10px; margin: 0; }
+.pf-facts > div { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.pf-facts > div:last-child { border-bottom: 0; padding-bottom: 0; }
+.pf-facts dt { color: var(--muted); font-size: 14px; } .pf-facts dd { margin: 0; text-align: right; font-weight: 600; }
+.pf-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pf-nums span { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px; border-radius: 12px; background: var(--sunk); color: var(--muted); font-size: 12px; }
+.pf-nums b { color: var(--ink); font-size: 1.25rem; }
+.pf-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.pf-row > div:first-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pf-seg { flex: none; display: inline-flex; gap: 3px; padding: 3px; border-radius: 12px; background: var(--sunk); }
+.pf-seg button { min-width: 40px; height: 34px; padding: 0 12px; border: 0; border-radius: 9px; background: none; color: var(--muted); font: 600 13px var(--sans); cursor: pointer; }
+.pf-seg button.on { background: var(--paper); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+.ts-s { font-size: 12px; } .ts-m { font-size: 15px; } .ts-l { font-size: 19px; }
+.pf-more > summary { cursor: pointer; font-weight: 600; color: var(--ink-soft); padding: 6px 0; }
+.btn.small { padding: 6px 12px; font-size: 13px; min-height: 0; }
