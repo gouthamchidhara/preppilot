@@ -322,7 +322,7 @@ test('sanitizer keeps a well-formed story diagram and drops a bad one', () => {
   assert.equal(none.diagram, undefined);
 });
 
-test('listening mode never auto-replies; talking mode replies fast and allows barge-in', () => {
+test('listening mode never auto-replies; talking waits out thinking pauses and allows barge-in', () => {
   process.env.AZURE_OPENAI_REALTIME_DEPLOYMENT = 'rt';
   process.env.AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT = 'tr';
   const listen = sessionConfigs(validateRealtime({ sdp: 'v=0', mode: 'listen', speak: false }))[0].session;
@@ -330,7 +330,10 @@ test('listening mode never auto-replies; talking mode replies fast and allows ba
   assert.equal(listen.audio.input.turn_detection.create_response, false);
   assert.deepEqual(listen.output_modalities, ['text']);
   assert.equal(talk.audio.input.turn_detection.create_response, true);
-  assert.ok(talk.audio.input.turn_detection.silence_duration_ms <= 400);
+  // Short enough to feel responsive, long enough not to cut in when someone pauses to think.
+  assert.equal(talk.audio.input.turn_detection.silence_duration_ms, 1000);
+  const practice = sessionConfigs(validateRealtime({ sdp: 'v=0', mode: 'live', live: { use: 'practice' } }))[0].session;
+  assert.equal(practice.audio.input.turn_detection.silence_duration_ms, 1200);
   assert.equal(talk.audio.input.turn_detection.interrupt_response, true);
   delete process.env.AZURE_OPENAI_REALTIME_DEPLOYMENT; delete process.env.AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT;
 });
