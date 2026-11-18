@@ -452,3 +452,13 @@ test('only admins can read guide suggestions', async () => {
   assert.equal(r.status, 200);
   assert.ok(r.body.suggestions.some(x => x.topic === 'Terraform'));
 });
+
+test('admins have no limits: long voice calls, Live AI without a session, no rate limit', async () => {
+  const { reserveVoice: rv } = await import('../api/src/lib/account.js');
+  await signIn('boss@gmail.com', 'boss');
+  const r = await rv({ key: 'google:boss', email: 'boss@gmail.com' });
+  assert.equal(r.ok, true);
+  assert.equal(r.allowedSec, 4 * 60 * 60);
+  const v = (await import('../api/src/lib/realtime.js')).validateRealtime({ sdp: 'v=0', mode: 'live', live: { lengthMin: 240 } });
+  assert.equal(v.live.lengthMin, 240);
+});

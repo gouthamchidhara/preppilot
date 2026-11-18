@@ -15,10 +15,10 @@ export class VoiceSession {
     this.pc = null; this.dc = null; this.mic = null; this.audio = null; this.timers = [];
   }
 
-  async start({ mode, speak, profileSummary, context, live }) {
+  async start({ mode, speak, profileSummary, context, live, noIdle }) {
     this.mode = mode;
     // A Live AI session runs continuously for the full session: no silence cut-off.
-    this.noIdle = mode === 'live';
+    this.noIdle = mode === 'live' || !!noIdle;
     this.on.status('connecting');
     const pc = this.pc = new RTCPeerConnection();
     this.audio = Object.assign(document.createElement('audio'), { autoplay: true });

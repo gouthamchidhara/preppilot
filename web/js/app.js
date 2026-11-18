@@ -103,6 +103,7 @@ function freeCardIds() {
   }
   return ids;
 }
+const isAdmin = () => !!store.account()?.unlimited;
 const hasPro = () => { const a = store.account(); return !!(a?.unlimited || a?.plan === 'pro' || store.accessCode()); };
 function freeTopicIds() {
   const p = profile();
@@ -317,6 +318,19 @@ function paintStory() {
 window.addEventListener('scroll', () => { if (!storyRaf) storyRaf = requestAnimationFrame(paintStory); }, { passive: true });
 window.addEventListener('resize', () => paintStory());
 
+function loginView() {
+  return `<div class="stack" style="max-width:420px;margin:0 auto;padding-top:24px">
+    <button class="back" data-act="loginback">${ic('left')}Back</button>
+    <div class="head"><h1 class="l-title" style="font-size:2rem">Welcome back</h1>
+      <p class="muted" style="margin-top:8px">Log in to pick up your AI messages, Live AI sessions and Pro.</p></div>
+    ${native()
+      ? `<div class="stack tight">${window.PP_PLATFORM === 'ios' ? '<button class="btn primary block lg" data-act="nsignin" data-p="apple"> Sign in with Apple</button>' : ''}<button class="btn ${window.PP_PLATFORM === 'ios' ? '' : 'primary'} block lg" data-act="nsignin" data-p="google">Continue with Google</button></div>`
+      : (S.googleClientId ? '<div id="gbtn"></div>' : `<p class="muted small">${S.healthLoaded ? 'Sign-in is being set up. Check back soon.' : 'Loading sign-in…'}</p>`)}
+    <p class="muted small">New here? <button class="link" data-act="startonboard">Get started instead</button></p>
+    <p class="muted small">Your study progress is saved on each device. On a new device, pick your role again after logging in.</p>
+  </div>`;
+}
+
 function landingView() {
   const demo = S.demo;
   const q = demo?.q;
@@ -336,7 +350,7 @@ function landingView() {
         <h1 class="l-title">Your interview is coming up. Let’s make sure it all comes back to you.</h1>
         <p class="l-sub">Quick flashcards for the tech you already work with, Java, React, Python, SQL, cloud and AI, one or two lines each, in the order you actually work.</p>
         <div class="row l-cta"><button class="btn primary lg" data-act="startonboard">Get started, it’s free</button></div>
-        <p class="muted small">No card needed. Takes about a minute.</p>
+        <p class="muted small">No card needed. Takes about a minute. Already have an account? <button class="link" data-act="login">Log in</button></p>
       </div>
       ${heroAnim()}
       <p class="l-giant" aria-hidden="true">recall<span class="l-giant-dot"></span></p>
@@ -486,6 +500,7 @@ async function saveProfile() {
 
 /* ---------- views ---------- */
 function livePromo() {
+  if (isAdmin()) return `<section class="card stacked live-hero" aria-label="Live AI"><div class="card-head"><span>Live AI</span><span>Admin, no limits</span></div><h2>Live AI</h2><p style="margin-top:8px">Practice test, open conversation or interview mode, as long as you like.</p><div class="row" style="margin-top:18px"><button class="btn invert lg" data-act="livesetup">Start Live AI</button></div></section>`;
   const { credits, left } = liveState();
   const o = offer();
   const isProUser = store.account()?.plan === 'pro' && !credits && left < 20;
@@ -760,6 +775,19 @@ function signInCard(headline = 'Practise with AI that knows your plan') {
 function accountCard() {
   const a = store.account();
   if (!signedIn()) return signInCard();
+  if (a?.unlimited) {
+    const name = a.name || a.email || 'Admin';
+    return `<section class="panel stack" id="accountCard">
+      <div class="row"><div class="avatar">${esc(name[0].toUpperCase())}</div>
+        <div class="grow"><div class="row" style="gap:8px"><b style="overflow:hidden;text-overflow:ellipsis">${esc(name)}</b><span class="tag">Admin</span></div><div class="small muted">Admin account</div></div></div>
+      ${ticks(['AI chat with no message or time limits', 'Live AI and voice with no session limits', 'Every topic, card and diagram unlocked', 'Guide suggestions from users, below'])}
+      <div class="links">
+        <a class="link quiet" href="support.html" target="_blank" rel="noopener">Support page</a>
+        <a class="link quiet" href="privacy.html" target="_blank" rel="noopener">Privacy</a>
+        <button class="link quiet" data-act="signout">Sign out</button>
+      </div>
+    </section>`;
+  }
   if (!a) return `<section class="row between small muted"><span>${store.accessCode() ? 'Using a beta access code.' : 'Loading account…'}</span><button class="link quiet" data-act="signout">Sign out</button></section>`;
   const o = offer();
   const name = a.name || a.email || 'Signed in';
@@ -846,7 +874,7 @@ function liveSettings() {
   const p = profile();
   const saved = store.liveSettings() || {};
   return {
-    lengthMin: [20, 30, 45, 60].includes(saved.lengthMin) ? saved.lengthMin : 60,
+    lengthMin: [20, 30, 45, 60, 240].includes(saved.lengthMin) ? saved.lengthMin : 60,
     voice: saved.voice !== false,
     style: ['friendly', 'direct', 'tough'].includes(saved.style) ? saved.style : 'friendly',
     topic: typeof saved.topic === 'string' ? saved.topic : '',
@@ -866,8 +894,9 @@ function liveSetupSheet() {
   const { credits, left } = liveState();
   const pro = store.account()?.plan === 'pro' || store.account()?.unlimited;
   const proLeft = store.account()?.proLiveLeft ?? 0, proWin = store.account()?.proLiveSecLeft || 0;
-  const fromPlan = left < 20 && !credits && pro && (proLeft > 0 || proWin >= 20);
-  const state = left >= 20 ? `Your session is still open with ${Math.ceil(left / 60)} minutes left.` : credits ? `You have ${credits} session${credits > 1 ? 's' : ''} ready.` : fromPlan ? (proWin >= 20 ? `Your Pro session is still open with ${Math.ceil(proWin / 60)} minutes left.` : `Included in Pro: ${proLeft} of ${offer().proLiveN} sessions of ${offer().proLive} minutes left this month. For a full hour, buy a one-time session.`) : 'You need a Live AI session to start. See pricing for the options.';
+  const admin = isAdmin();
+  const fromPlan = !admin && left < 20 && !credits && pro && (proLeft > 0 || proWin >= 20);
+  const state = admin ? 'Admin account: no limits.' : left >= 20 ? `Your session is still open with ${Math.ceil(left / 60)} minutes left.` : credits ? `You have ${credits} session${credits > 1 ? 's' : ''} ready.` : fromPlan ? (proWin >= 20 ? `Your Pro session is still open with ${Math.ceil(proWin / 60)} minutes left.` : `Included in Pro: ${proLeft} of ${offer().proLiveN} sessions of ${offer().proLive} minutes left this month. For a full hour, buy a one-time session.`) : 'You need a Live AI session to start. See pricing for the options.';
   const opt = (v, t, d) => `<label class="use-opt"><input type="radio" name="use" value="${v}" ${use === v ? 'checked' : ''}><span><b>${t}</b><span class="muted small">${d}</span></span></label>`;
   sheet(`<form id="liveSetupForm" class="stack">
     <h2>Live AI, 60 minutes</h2>
@@ -877,7 +906,7 @@ function liveSetupSheet() {
       ${opt('talk', 'Open conversation', 'Talk with AI for the whole session. It listens and answers back and forth, with no time-outs.')}
       ${S.liveInterviewIos ? opt('interview', 'During your interview', 'It listens to your interviewer and shows talking points on your screen within seconds. Silent: it never speaks.') : ''}
     </fieldset>
-    <label>Session length<select name="lengthMin">${(fromPlan ? [20, 30] : [20, 30, 45, 60]).map(n => `<option value="${n}" ${s.lengthMin === n || (fromPlan && n === 30 && s.lengthMin > 30) ? 'selected' : ''}>${n} minutes</option>`).join('')}</select></label>
+    <label>Session length<select name="lengthMin">${(admin ? [240, 20, 30, 45, 60] : fromPlan ? [20, 30] : [20, 30, 45, 60]).map(n => `<option value="${n}" ${s.lengthMin === n || (fromPlan && n === 30 && s.lengthMin > 30) ? 'selected' : ''}>${n === 240 ? 'No limit' : n + ' minutes'}</option>`).join('')}</select></label>
     <label>Topic focus<select name="topic"><option value="">All my topics</option>${relevant.map(t => `<option value="${esc(t.name)}" ${s.topic === t.name ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
     <div class="practice-only stack" ${use === 'interview' ? 'hidden' : ''}>
       <label>AI style<select name="style">${[['friendly', 'Friendly and encouraging'], ['direct', 'Direct, no small talk'], ['tough', 'Tough, probes every gap']].map(([v, n]) => `<option value="${v}" ${s.style === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
@@ -885,7 +914,7 @@ function liveSetupSheet() {
       <label class="switch"><input type="checkbox" name="voice" ${s.voice ? 'checked' : ''}>AI speaks out loud</label>
     </div>
     <p class="note small interview-only" ${use === 'interview' ? '' : 'hidden'}>Put this device where its microphone can hear your interviewer. Check that transcribing the call is allowed by the company and where you live; some places require everyone on a call to agree.</p>
-    <button class="btn primary block lg" type="submit">${left >= 20 ? 'Rejoin the session' : credits || fromPlan ? 'Start' : 'See pricing'}</button>
+    <button class="btn primary block lg" type="submit">${left >= 20 ? 'Rejoin the session' : credits || fromPlan || admin ? 'Start' : 'See pricing'}</button>
     <button class="btn block" type="button" data-act="closesheet">Not now</button>
   </form>`);
 }
@@ -1023,7 +1052,7 @@ async function startVoice(mode) {
     // Live AI uses its own settings: voice on/off, length, style, topic focus, difficulty.
     const live = mode === 'live' ? liveSettings() : null;
     S.liveUse = live?.use || null;
-    await session.start({ mode, speak: mode === 'live' ? live.voice && live.use !== 'interview' : mode !== 'listen' || store.speak(), profileSummary: summary(), context: S.chatContext, live });
+    await session.start({ mode, speak: mode === 'live' ? live.voice && live.use !== 'interview' : mode !== 'listen' || store.speak(), profileSummary: summary(), context: S.chatContext, live, noIdle: isAdmin() });
   } catch (e) {
     S.rt = null; S.rtMode = null;
     if (e.code === 'quota') S.paywall = true;
@@ -1243,6 +1272,8 @@ function plansView() {
 
 function topRight() {
   const a = store.account();
+  if (S.login && !signedIn()) return '';
+  if (!signedIn() && !S.login) return '<button class="btn sm" data-act="login">Log in</button>';
   if (!profile() || S.showPlans) return '';
   if (a?.unlimited) return '<span class="tag">Admin</span>';
   if (a?.plan === 'pro') return '<button class="tag pro" style="border:0;cursor:pointer" data-act="plans">Pro</button>';
@@ -1300,18 +1331,27 @@ function animateIn(changed) {
 function render() {
   const p = profile();
   if (S.view === 'stats') S.view = 'settings'; // Stats now lives inside Profile.
-  const key = S.showPlans ? 'plans' : !p ? (S.onboard ? 'onboard' : 'landing') : S.view === 'deck' && !S.deck ? 'home' : S.view;
+  // Signed out: the landing page on every fresh open (S.guest lets someone who just built a plan
+  // try it without an account, for this visit only). Admins never see pricing.
+  if (isAdmin()) S.showPlans = false;
+  const out = !signedIn() && !S.guest;
+  const key = S.login && !signedIn() ? 'login'
+    : S.showPlans ? 'plans'
+    : !p ? (S.onboard ? 'onboard' : 'landing')
+    : out ? 'landing'
+    : S.view === 'deck' && !S.deck ? 'home' : S.view;
   const changed = key !== S.lastView;
   S.lastView = key;
   const input = document.getElementById('chatInput');
   const keep = input && key === 'chat' ? { value: input.value, focus: document.activeElement === input } : null;
   document.querySelectorAll('nav [data-nav]').forEach(b => b.setAttribute('aria-current', String(b.dataset.nav === (S.view === 'learn' ? 'home' : S.view))));
-  document.querySelector('nav').hidden = !p || S.showPlans;
+  document.querySelector('nav').hidden = !p || S.showPlans || key === 'landing' || key === 'login';
   document.getElementById('topRight').innerHTML = topRight();
   // The home map assembles (tiles stagger in) only when the user arrives at
   // home, not on every background re-render.
   S._stagger = changed && key === 'home';
   const html = key === 'plans' ? plansView()
+    : key === 'login' ? loginView()
     : key === 'landing' ? landingView()
     : key === 'onboard' ? onboardingView(null)
     : key === 'learn' ? learnView()
@@ -1582,7 +1622,7 @@ document.addEventListener('submit', async e => {
     closeSheet();
     const { credits, left } = liveState();
     const ac = store.account();
-    const proOk = ac?.unlimited || (ac?.plan === 'pro' && ((ac.proLiveLeft ?? 0) > 0 || (ac.proLiveSecLeft || 0) >= 20));
+    const proOk = isAdmin() || (ac?.plan === 'pro' && ((ac.proLiveLeft ?? 0) > 0 || (ac.proLiveSecLeft || 0) >= 20));
     if (left < 20 && !credits && !proOk) { S.showPlans = true; return render(); }
     S.view = 'chat'; render();
     return startVoice('live');
@@ -1684,7 +1724,9 @@ document.addEventListener('click', async e => {
     return;
   }
   if (a === 'closesheet') closeSheet();
-  else if (a === 'startonboard') { S.onboard = true; render(); }
+  else if (a === 'startonboard') { S.login = false; S.onboard = true; S.guest = true; render(); }
+  else if (a === 'login') { S.login = true; render(); }
+  else if (a === 'loginback') { S.login = false; render(); }
   else if (a === 'demoreveal') { if (S.demo) { S.demo.reveal = true; render(); } }
   else if (a === 'demoshuffle') loadDemo();
   else if (a === 'demolane') loadDemo(Number(b.dataset.i));
@@ -1732,7 +1774,7 @@ document.addEventListener('click', async e => {
   else if (a === 'rtmute') { S.muted = !S.muted; S.rt?.setMuted(S.muted); render(); }
   else if (a === 'rtstop') S.rt?.stop();
   else if (a === 'nsignin') nativeSignIn(b.dataset.p);
-  else if (a === 'signout') { S.rt?.stop(); store.setAccessCode(''); signOut(); S.paywall = false; render(); }
+  else if (a === 'signout') { S.rt?.stop(); store.setAccessCode(''); signOut(); S.paywall = false; S.guest = false; S.onboard = false; S.view = 'home'; S.adminSug = null; render(); window.scrollTo({ top: 0 }); }
   else if (a === 'delacct') {
     sheet(`<h2>Delete your account?</h2>
       <p class="muted">This removes your email, plan and AI usage from our servers right away. It does not cancel a Pro subscription: do that in your ${window.PP_PLATFORM === 'android' ? 'Google Play' : 'Apple ID'} subscription settings.</p>
@@ -1797,7 +1839,8 @@ document.addEventListener('click', async e => {
   // Start from the stored account so the plans screen opens on a fresh sign-in, not on every launch.
   let prevAccount = store.account();
   onAccountChange(acc => {
-    if (acc && !prevAccount && acc.plan === 'free' && profile()) S.showPlans = true;
+    if (acc && S.login) { S.login = false; S.view = 'home'; if (!profile()) S.onboard = true; }
+    if (acc && !prevAccount && acc.plan === 'free' && profile() && !acc.unlimited) S.showPlans = true;
     if (acc && !prevAccount && store.lastProvider() === 'google' && !store.suggestAsked()) S.suggestPending = true;
     prevAccount = acc;
     if (!acc || (acc.plan === 'free' && acc.msgsLeft > 0 && acc.voiceSecLeft >= 20)) S.paywall = false;

@@ -105,7 +105,7 @@ export async function reserveVoice(ident, now = Date.now(), maxSec = null) {
   const L = limits();
   const plan = planOf(user, now);
   const cap = maxSec || L.maxCallSec;
-  if (plan === 'admin') return { ok: true, plan, allowedSec: cap };
+  if (plan === 'admin') return { ok: true, plan, allowedSec: L.adminCallSec };
   let allowed = 0;
   let result = null;
   await (await getDb()).update('users', user.key, u => {

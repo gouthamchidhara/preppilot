@@ -9,7 +9,7 @@ export function realtimeConfigured() {
 
 const VOICES = new Set(['alloy', 'ash', 'ballad', 'coral', 'cedar', 'echo', 'marin', 'sage', 'shimmer', 'verse']);
 
-const LIVE_LENGTHS = new Set([20, 30, 45, 60]);
+const LIVE_LENGTHS = new Set([20, 30, 45, 60, 240]); // 240 = admin 'no limit'
 const LIVE_STYLES = new Set(['friendly', 'direct', 'tough']);
 const LIVE_LEVELS = new Set(['junior', 'mid', 'senior']);
 

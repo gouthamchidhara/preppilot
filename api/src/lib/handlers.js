@@ -6,7 +6,7 @@ import { chatSystemPrompt, generateSystemPrompt, generateUserPrompt } from './pr
 import { realtimeConfigured, validateRealtime, startRealtime, hangupCall } from './realtime.js';
 import { identify, verifyIdToken, signSession } from './auth.js';
 import { upsertUser, status, consumeMsgs, refundMsgs, reserveVoice, refundVoice, recordCall, endCall, sweepCalls, deleteUser, startLiveSession, startProLive, cancelProLive, cancelLiveSession, loadUser } from './account.js';
-import { COST, limits, proPriceLabel, livePriceLabel, planOf } from './plans.js';
+import { COST, limits, proPriceLabel, livePriceLabel, planOf, adminEmails } from './plans.js';
 import { webhookAuthorized, applyWebhook, refreshFromRevenueCat } from './billing.js';
 import { getDb } from './db.js';
 import { freshFor, ROLE_LIST } from './fresh.js';
@@ -31,6 +31,8 @@ function who(req) {
 }
 
 function limited(kind, ident) {
+  // Admins are not rate limited.
+  if (ident.viaCode || (ident.email && adminEmails().includes(String(ident.email).toLowerCase()))) return null;
   const rl = rateLimit(kind, ident.key);
   return rl.ok ? null : json(429, { error: rl.reason }, { 'retry-after': String(rl.retryAfter) });
 }
@@ -119,6 +121,13 @@ export async function handleRealtime(req, log) {
     if (!m.ok) {
       // No paid hour: Pro includes two 30-minute Live AI sessions a month.
       const s0 = await status(w.ident, now);
+      if (s0?.plan === 'admin') {
+        const allowedSec = (v.live?.lengthMin || L.adminCallSec / 60) * 60;
+        const out = await startRealtime(v, log).catch(e => ({ error: e }));
+        if (out.error) return fail(out.error, log);
+        if (out.callId) await recordCall({ id: out.callId, key: w.ident.key, start: Date.now(), allowedSec, plan: 'admin', day: today(now) });
+        return json(200, { sdp: out.sdp, callId: out.callId, allowedSec, degraded: out.degraded, live: true, account: await status(w.ident) });
+      }
       if (s0?.plan === 'pro') {
         const pm = await startProLive(w.ident.key, now);
         if (!pm.ok) return json(402, { error: `You have used this month's ${L.proLiveSessions} Pro Live AI sessions. A one-time session gives you a full hour.`, code: 'no_credit' });
