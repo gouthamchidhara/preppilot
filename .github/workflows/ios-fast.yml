@@ -1,0 +1,81 @@
+name: iOS fast build (GitHub Mac + TestFlight)
+
+# Manual only: Actions tab -> "iOS fast build" -> Run workflow.
+# Builds on GitHub's own macOS machine (no Expo queue). Expo is used only to hand over the
+# signing certificate and provisioning profile it already stores, and for the build number.
+#
+# Upload to TestFlight:
+#   - If the repository secrets ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_P8 (contents of the
+#     AuthKey_XXXX.p8 file) exist, the build is uploaded straight from this Mac with Apple's
+#     own tool. Expo is not involved.
+#   - Otherwise it falls back to `eas submit`, which uses the key stored on Expo.
+#
+# Cost: macOS minutes count 10x against the free 2,000 GitHub minutes (about 200 Mac minutes).
+on:
+  workflow_dispatch:
+    inputs:
+      submit:
+        description: Upload the finished build to TestFlight
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-fast
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Tests
+        working-directory: .
+        run: npm test
+      - name: Pick newest Xcode
+        run: |
+          X=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          echo "Using $X"; sudo xcode-select -s "$X/Contents/Developer"; xcodebuild -version
+      - name: Make sure fastlane and CocoaPods are installed
+        run: |
+          command -v fastlane || brew install fastlane
+          command -v pod || sudo gem install cocoapods
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm ci
+      - name: Build on this Mac
+        run: eas build -p ios --profile production --local --non-interactive --output "$RUNNER_TEMP/PrepPilot.ipa"
+      - name: Keep the .ipa for 7 days
+        uses: actions/upload-artifact@v4
+        with:
+          name: PrepPilot-ipa
+          path: ${{ runner.temp }}/PrepPilot.ipa
+          retention-days: 7
+      - name: Upload to TestFlight
+        if: ${{ inputs.submit }}
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          IPA="$RUNNER_TEMP/PrepPilot.ipa"
+          if [ -n "$ASC_KEY_ID" ] && [ -n "$ASC_ISSUER_ID" ] && [ -n "$ASC_KEY_P8" ]; then
+            echo "Uploading directly to Apple from GitHub"
+            mkdir -p ~/.appstoreconnect/private_keys
+            printf '%s\n' "$ASC_KEY_P8" > ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
+            xcrun altool --upload-app -f "$IPA" -t ios --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+          else
+            echo "No App Store Connect key in GitHub secrets, using eas submit"
+            eas submit -p ios --profile production --path "$IPA" --non-interactive --wait
+          fi
