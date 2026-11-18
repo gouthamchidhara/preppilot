@@ -33,6 +33,9 @@ Checked with it on 18 November: subscription Enabled; Static Web App (Free) prod
 - [ ] **App Store Connect: App Privacy answers** match `web/privacy.html` (updated 17 November).
 - [ ] **TestFlight purchase test** with a sandbox account: buy Pro, buy a Live AI session, Restore purchases, and check the AI page shows "Unlimited" and "2 of 2" Live AI sessions.
 
+- [x] **App availability: United States only** (set by Claude 18 Nov; was every country including China mainland, which triggered China security/AIGC notices). Add countries later in Pricing and Availability.
+- [ ] **App name:** the App Store listing says "Remivo" while the app, site and support page say PrepPilot. Decide one name and make them match before review.
+
 ## 2. Email
 
 - [x] **`support@preppilot.us` receives mail** (works; first messages landed in Gmail spam, 18 Nov). DNS (MX, SPF, DKIM) and the routing rule are correct. Check in Cloudflare → Email Routing:
