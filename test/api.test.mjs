@@ -469,3 +469,32 @@ test('RevenueCat webhook also accepts the secret in the URL (Azure replaces Auth
   const bad = await ROUTES['POST billing/revenuecat']({ body: { event: { type: 'TEST' } }, headers: {}, query: { auth: 'wrong' } });
   assert.equal(bad.status, 401);
 });
+
+test('purchase refresh works with RevenueCat API v2', async () => {
+  const h = await signIn('v2buyer@gmail.com', 'v2buyer');
+  const key = 'google:v2buyer';
+  const until = Date.now() + 30 * 86400000;
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async url => {
+    const u = String(url);
+    const body = u.includes('/entitlements') ? { items: [{ id: 'entlPRO', lookup_key: 'pro' }] }
+      : u.includes('/products') ? { items: [{ id: 'prodLIVE', store_identifier: 'mock_session_60min' }, { id: 'prodPRO', store_identifier: 'pro_monthly' }] }
+      : u.includes('/active_entitlements') ? { items: [{ entitlement_id: 'entlPRO', expires_at: until }] }
+      : u.includes('/purchases') ? { items: [{ id: 'pur1', product_id: 'prodLIVE', store_purchase_identifier: 'txn-9' }] }
+      : null;
+    return { ok: !!body, status: body ? 200 : 404, json: async () => body };
+  };
+  Object.assign(process.env, { REVENUECAT_SECRET_KEY: 'sk_test', REVENUECAT_PROJECT_ID: 'projX' });
+  try {
+    const r = await call('POST billing/refresh', {}, h);
+    assert.equal(r.status, 200);
+    assert.equal(r.body.pro, true);
+    assert.equal(r.body.account.plan, 'pro');
+    assert.equal(r.body.account.sessionCredits, 1);
+    await call('POST billing/refresh', {}, h); // same purchase again: still one credit
+    assert.equal((await call('GET me', null, h)).body.sessionCredits, 1);
+  } finally {
+    globalThis.fetch = realFetch;
+    delete process.env.REVENUECAT_SECRET_KEY; delete process.env.REVENUECAT_PROJECT_ID;
+  }
+});

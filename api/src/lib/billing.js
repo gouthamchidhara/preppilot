@@ -41,9 +41,43 @@ export async function applyWebhook(body, now = Date.now()) {
   return { ignored: true }; // CANCELLATION / BILLING_ISSUE: access stays until expiration
 }
 
+// After a purchase the app asks the server to check RevenueCat directly, because the webhook can
+// arrive a few seconds later. Uses RevenueCat API v2 when REVENUECAT_PROJECT_ID is set (v2 secret
+// keys do not work with v1), otherwise the legacy v1 subscriber endpoint.
+let v2Ids = null; // { entitlementId, liveProductIds } for the project, cached per instance
+async function rcV2(path, secret) {
+  const res = await fetch(`https://api.revenuecat.com/v2/projects/${encodeURIComponent(process.env.REVENUECAT_PROJECT_ID)}${path}`, {
+    headers: { authorization: `Bearer ${secret}` }, signal: AbortSignal.timeout(8000),
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw Object.assign(new Error(`RevenueCat ${res.status}`), { status: 502 });
+  return res.json();
+}
+
 export async function refreshFromRevenueCat(key, now = Date.now()) {
   const secret = process.env.REVENUECAT_SECRET_KEY;
   if (!secret) return { configured: false };
+  if (process.env.REVENUECAT_PROJECT_ID) {
+    if (!v2Ids) {
+      const [ents, prods] = await Promise.all([rcV2('/entitlements?limit=100', secret), rcV2('/products?limit=100', secret)]);
+      v2Ids = {
+        entitlementId: (ents?.items || []).find(e => e.lookup_key === ENTITLEMENT())?.id || '',
+        liveProductIds: new Set((prods?.items || []).filter(p => p.store_identifier === LIVE_PRODUCT()).map(p => p.id)),
+      };
+    }
+    const id = encodeURIComponent(key);
+    const [active, purchases] = await Promise.all([rcV2(`/customers/${id}/active_entitlements?limit=100`, secret), rcV2(`/customers/${id}/purchases?limit=100`, secret)]);
+    for (const p of purchases?.items || []) {
+      if (!v2Ids.liveProductIds.has(p.product_id)) continue;
+      const txn = String(p.store_purchase_identifier || p.id || '');
+      if (txn) await addSessionCredits(key, 1, now, txn);
+    }
+    const ent = (active?.items || []).find(e => e.entitlement_id === v2Ids.entitlementId);
+    if (!ent) return { configured: true, pro: false };
+    const until = ent.expires_at ? Number(ent.expires_at) : now + 3650 * 86400000;
+    await setProUntil(key, until, now);
+    return { configured: true, pro: until > now, until };
+  }
   const res = await fetch(`https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(key)}`, {
     headers: { authorization: `Bearer ${secret}` },
     signal: AbortSignal.timeout(8000),
