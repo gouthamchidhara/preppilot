@@ -24,8 +24,8 @@ Checked with it on 18 November: subscription Enabled; Static Web App (Free) prod
 - [x] **Merge `claude/eloquent-pasteur-wdc9yd` into `main`.** Done 17 November 2026 (fast-forward to `a31efcf`); Azure now serves `main`. (The Google sign-in fix `ffb3865` is in.)
 - [x] **RevenueCat: entitlement `pro`** exists and contains `pro_monthly`. Done 17 November 2026.
 - [x] **RevenueCat: Current offering** has a Monthly package for `pro_monthly` and a package for `mock_session_60min`. Done 17 November 2026 (offering `default`, 4 packages).
-- [ ] **RevenueCat: webhook** URL `https://preppilot.us/api/billing/revenuecat`, Authorization header equal to the Azure setting `REVENUECAT_WEBHOOK_AUTH`. Send RevenueCat's test event; the API should answer 200.
-- [ ] **Azure: `REVENUECAT_SECRET_KEY`** set to RevenueCat's secret API key (currently empty). Used right after a purchase to unlock Pro or the session.
+- [x] **RevenueCat: webhook** created by Claude 18 Nov via API v2 (all events, sandbox and production), URL carries `?auth=` because Azure replaces the Authorization header. Was: URL `https://preppilot.us/api/billing/revenuecat`, Authorization header equal to the Azure setting `REVENUECAT_WEBHOOK_AUTH`. Send RevenueCat's test event; the API should answer 200.
+- [ ] **Azure: `REVENUECAT_SECRET_KEY`** set to the RevenueCat **v2** secret key (owner pastes it in the Azure Portal; `REVENUECAT_PROJECT_ID=projda036fd0` is already set). Currently empty. Used right after a purchase to unlock Pro or the session.
 - [ ] **App Store Connect: `pro_monthly`** at $10.99/month (current amount not confirmed).
 - [ ] **App Store Connect: `mock_session_60min`** at $15.99; display name and description "Live AI, 60 minutes". Keep the product id.
 - [ ] **App Store Connect: Paid Apps agreement** Active (Agreements, Tax and Banking).
