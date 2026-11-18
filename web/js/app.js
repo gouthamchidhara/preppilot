@@ -45,6 +45,7 @@ const ICONS = {
   soundoff: '<path d="M4 9h3l5-4v14l-5-4H4z"/><path d="M16 9l5 6M21 9l-5 6"/>',
   list: '<path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>',
   star: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
 };
 const ic = n => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
@@ -679,6 +680,65 @@ function quickCard(relevant) {
   </section>`;
 }
 
+/* ---------- Home search: "What do you want to learn today?" ---------- */
+// Everyday names people type, mapped to words in our topic names and ids.
+const LS_SYN = { js: 'javascript', ts: 'typescript', k8s: 'kubernetes', kube: 'kubernetes', py: 'python', golang: 'go', 'c#': 'csharp', csharp: 'c#', dotnet: '.net', '.net': 'dotnet', node: 'node', nodejs: 'node', db: 'sql', database: 'sql', databases: 'sql', postgres: 'sql', mysql: 'sql', ml: 'machine learning', ai: 'llm', genai: 'llm', llms: 'llm', rag: 'llm', aws: 'cloud', azure: 'cloud', gcp: 'cloud', devops: 'cicd', 'ci/cd': 'cicd', ci: 'cicd', algo: 'algorithms', algorithms: 'dsa', dsa: 'algorithms', 'system design': 'system-design', sd: 'system design', oop: 'design patterns', kafka: 'streaming', spark: 'spark', hr: 'behavioral', behaviour: 'behavioral', star: 'behavioral', testing: 'testing', qa: 'test', selenium: 'selenium', playwright: 'playwright', react: 'react', angular: 'angular', spring: 'spring', 'spring boot': 'spring', docker: 'docker', linux: 'linux', git: 'git' };
+const lsNorm = x => String(x || '').toLowerCase().trim();
+function lsSearch(q) {
+  q = lsNorm(q);
+  if (q.length < 2) return [];
+  const terms = [q, LS_SYN[q]].filter(Boolean);
+  const mine = new Set(rankTopics(topics(), profile()).map(t => t.id));
+  const out = [];
+  for (const pk of getManifest().packs) for (const t of pk.topics) {
+    if (t.private) continue;
+    // Whole words only, so "java" finds Java topics and not JavaScript.
+    const words = x => lsNorm(x).split(/[^a-z0-9#.+]+/).filter(Boolean);
+    const nameW = words(t.name), idW = t.id.split('-'), packW = words(pk.name), blurbW = words(t.blurb);
+    const name = lsNorm(t.name);
+    let sc = 0;
+    for (const w of terms) {
+      const multi = w.includes(' ');
+      if (t.id === w || name === w || (multi ? name.includes(w) : nameW.includes(w) || idW.includes(w))) sc = Math.max(sc, 5);
+      else if (multi ? lsNorm(pk.name).includes(w) : packW.includes(w)) sc = Math.max(sc, 4);
+      else if (!multi && w.length >= 3 && nameW.some(x => x.startsWith(w) && x.length - w.length <= 2)) sc = Math.max(sc, 3); // plurals, "kube"
+      else if (multi ? lsNorm(t.blurb).includes(w) : blurbW.includes(w)) sc = Math.max(sc, 1.5);
+    }
+    if (sc) out.push({ id: t.id, name: t.name, blurb: t.blurb, pack: pk.name, score: sc + (mine.has(t.id) ? 0.5 : 0) });
+  }
+  return out.sort((a, b) => b.score - a.score).slice(0, 6);
+}
+function lsResultsHtml(q) {
+  if (lsNorm(q).length < 2) return '';
+  const r = lsSearch(q);
+  if (!r.length) return `<div class="ls-empty"><span>No flashcards on “${esc(q)}” yet.</span><button class="btn" data-act="quick" data-q="${esc(`Quiz me on ${q}, one question at a time, easy first`)}">Ask the AI coach instead</button></div>`;
+  return `<div class="ls-list" role="listbox">${r.map(t => `<button class="ls-item" role="option" data-act="lsgo" data-id="${t.id}">
+    <span class="main"><b>${esc(t.name)}</b><span>${esc(t.pack)}${t.blurb ? ` · ${esc(t.blurb)}` : ''}</span></span>${isLocked(t.id) ? '<span class="tag">Pro</span>' : ic('right')}</button>`).join('')}</div>`;
+}
+// Start a round on what they searched: their level from the profile, easy to hard, in their chosen mode.
+async function lsStart(ids, label) {
+  if (!ids.length) return;
+  const open = ids.filter(id => !isLocked(id));
+  if (!open.length) { S.showPlans = true; return render(); }
+  try { await ensureTopics(open); } catch { return oops('Could not download those cards. Check your connection.'); }
+  S.lsLabel = label || '';
+  startDeck(open);
+}
+// 'Swipe another mix' after a search keeps the search label; any other deck clears it.
+const d0label = id => (id && S.deck?.ids && id === S.deck.ids.join(',') ? S.lsLabel : '');
+function learnSearchHtml(p) {
+  const mine = rankTopics(topics(), p).filter(t => !t.custom && !t.private).slice(0, 6);
+  return `<section class="ls">
+    <h1 class="ls-title">What do you want to learn today?</h1>
+    <form id="learnForm" class="ls-box" role="search">
+      ${ic('search')}<input id="learnSearch" type="search" enterkeyhint="go" autocomplete="off" placeholder="Java, Kafka, system design…" aria-label="What do you want to learn today?" value="${esc(S.lsQ || '')}">
+      <button class="ls-go" type="submit" aria-label="Start">${ic('right')}</button>
+    </form>
+    <div id="lsResults">${lsResultsHtml(S.lsQ || '')}</div>
+    <div class="ls-chips"><span class="muted small">Your stack</span>${mine.map(t => `<button class="chip" data-act="lsgo" data-id="${t.id}">${esc(t.name)}</button>`).join('')}</div>
+  </section>`;
+}
+
 function homeView() {
   const p = profile();
   const relevant = rankTopics(topics(), p);
@@ -710,10 +770,8 @@ function homeView() {
   const lockedCount = relevant.filter(t => isLocked(t.id)).length;
   const lockedCards = relevant.filter(t => isLocked(t.id)).reduce((n, t) => n + t.qa.length, 0);
   return `<div class="stack loose">
-    <section class="greet">
-      <div class="label">${esc(roleIds.map(label).join(' and '))}</div>
-      <h1>${started ? 'Pick up where you left off.' : 'What do you want to get sharp on?'}</h1>
-    </section>
+    ${learnSearchHtml(p)}
+    <div class="curated-head"><h2>Curated for you</h2><span class="muted small">${esc(roleIds.map(label).join(' and '))}${p.level ? ` · ${esc(p.level)}` : ''}</span></div>
     ${nt ? `<section class="card stacked">
       <div class="card-head"><span>Up next</span>${hasPro() ? '' : `<span>${relevant.length - relevant.filter(t => isLocked(t.id)).length} of ${relevant.length} topics open</span>`}</div>
       <h2>${esc(nt.name)}</h2>
@@ -940,6 +998,7 @@ function deckView() {
   const singleTopic = !swipe && d.cards.length && d.cards.every(c => c.topic === d.cards[0].topic) ? d.cards[0].topic : null;
   const intro = swipe && lsGet('pp.swipeIntro', '') !== '1';
   return `<div class="stack ${swipe ? 'swipe-mode' : ''}">
+    ${S.lsLabel && d.ids ? `<p class="ls-now">${ic('search')}${esc(S.lsLabel)}</p>` : ''}
     <div class="deck-top"><button class="back" data-act="${d.jf ? 'jobfocus' : 'home'}">${ic('left')}${d.jf ? 'Job focus' : 'Stop'}</button><span class="deck-count">${S.di + 1}<i>/</i>${d.cards.length}</span>${d.jf ? '<span></span>' : modeToggle(false)}</div>
     <div class="bar"><i style="width:${(S.di * 100) / d.cards.length}%"></i></div>
     ${d.free && S.di === 0 ? `<p class="note small row between"><span>Shuffled on Free. Pro takes you through every card in your workflow’s order.</span><button class="link" data-act="plans">See Pro</button></p>` : ''}
@@ -986,6 +1045,7 @@ function swipeView() {
   const intro = lsGet('pp.swipeIntro', '') !== '1';
   const streak = S.swStreak || 0;
   return `<div class="stack swipe-screen">
+    ${S.lsLabel && d.ids ? `<p class="ls-now">${ic('search')}${esc(S.lsLabel)}</p>` : ''}
     <div class="deck-top"><button class="back" data-act="${d.jf ? 'jobfocus' : 'home'}">${ic('left')}${d.jf ? 'Job focus' : 'Stop'}</button><span class="deck-count" id="swCount">${S.di + 1}<i>/</i>${d.cards.length}</span>${d.jf ? '<span></span>' : modeToggle(true)}</div>
     <div class="sw-dots" aria-hidden="true">${d.cards.map((_, i) => `<i class="${i < S.di ? (d.results[i] ? 'ok' : 'no') : i === S.di ? 'now' : ''}"></i>`).join('')}</div>
     <div class="sw-stage" id="swStage">${swStageHtml()}${intro ? `<div class="sw-intro"><div class="sw-hand" aria-hidden="true"><i></i></div><b>Swipe right on what you know</b><span>Tap to flip. <b>Right</b> if you know it, <b>left</b> if you don’t, <b>up</b> if you know it cold. No ghosting.</span><button class="btn primary" data-act="swipeintro">Let’s play</button></div>` : ''}
@@ -1899,6 +1959,7 @@ function mixTopics(cards) {
 }
 
 function startDeck(ids, opts = {}) {
+  if (!ids) S.lsLabel = '';
   const mode = opts.mode || deckMode();
   const list = ids ? topics().filter(t => ids.includes(t.id)) : topics();
   const pro = hasPro();
@@ -1910,7 +1971,9 @@ function startDeck(ids, opts = {}) {
   }
   // Easy to hard, interview topics first. Swipe mixes the core topics; steady keeps the plan's topic order.
   const p = profile();
-  const weightOf = id => { const t = topicById(id); return t ? (ids ? 3 : topicWeight(t, p)) : 0; };
+  // Searched or picked topics: the role's own weight where it has one, so core topics lead and
+  // nice-to-know ones (e.g. build tools for a Java search) only fill in.
+  const weightOf = id => { const t = topicById(id); if (!t) return 0; const w = topicWeight(t, p); return ids ? (w || 2) : w; };
   cards = interviewRound(cards, { weightOf, mix: mode === 'swipe', limit: pro ? 20 : FREE_CARDS });
   S.swStreak = 0;
   S.deck = { cards, results: [], free: !pro, total: list.reduce((n, t) => n + t.qa.length, 0), mode, ids };
@@ -2069,6 +2132,13 @@ function cardContext(t, c) { return `${t.name} — ${c.t}\n${c.what}\n${c.ex ? '
 document.addEventListener('submit', async e => {
   e.preventDefault();
   if (e.target.id === 'profileForm') return saveProfile();
+  if (e.target.id === 'learnForm') {
+    const q = document.getElementById('learnSearch')?.value || '';
+    const hits = lsSearch(q);
+    if (!hits.length) { const r = document.getElementById('lsResults'); if (r) r.innerHTML = lsResultsHtml(q); return; }
+    const best = hits[0].score; // everything as good as the top match (e.g. "java" -> Core Java, JVM, Spring...)
+    return lsStart(hits.filter(h => h.score >= Math.min(best, 4)).slice(0, 4).map(h => h.id), q);
+  }
   if (e.target.id === 'chatForm') { const i = document.getElementById('chatInput'); const v = i.value; i.value = ''; i.style.height = ''; return sendChat(v); }
   if (e.target.id === 'codeForm') { store.setAccessCode(document.getElementById('code').value.trim()); return render(); }
   if (e.target.classList?.contains('suggest-form')) return submitSuggestion(e.target);
@@ -2144,6 +2214,7 @@ app.addEventListener('input', e => {
   if (e.target.id === 'chatInput') { e.target.style.height = 'auto'; e.target.style.height = Math.min(140, e.target.scrollHeight) + 'px'; }
   if (e.target.id === 'expSummary') S.expSummary = e.target.value;
   if (e.target.id === 'jfText' && S.jf) S.jf.text = e.target.value;
+  if (e.target.id === 'learnSearch') { S.lsQ = e.target.value; const r = document.getElementById('lsResults'); if (r) r.innerHTML = lsResultsHtml(S.lsQ); }
   if (e.target.id !== 'roleSearch') return;
   S.roleSearch = e.target.value;
   filterRoles();
@@ -2226,7 +2297,8 @@ document.addEventListener('click', async e => {
   else if (a === 'buildrole') buildRoleGuide();
   else if (a === 'cnext') { S.ci++; render(); }
   else if (a === 'cprev') { S.ci--; render(); }
-  else if (a === 'deck') startDeck(id ? id.split(',') : null);
+  else if (a === 'deck') { S.lsLabel = d0label(id); startDeck(id ? id.split(',') : null); }
+  else if (a === 'lsgo') { const t = getManifest().packs.flatMap(pk => pk.topics).find(x => x.id === id); lsStart([id], t?.name); }
   else if (a === 'deckmode') {
     const m = b.dataset.m, tg = b.closest('.mode-tg');
     if ((m === 'swipe') === !!tg?.classList.contains('is-swipe')) return;

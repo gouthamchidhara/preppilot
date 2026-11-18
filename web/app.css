@@ -976,3 +976,30 @@ body:has(.landing) #topRight { margin-left: auto; }
 @keyframes sw-av-r { from { opacity: 0; transform: translateX(70px) rotate(20deg); } }
 @keyframes sw-heart { from { opacity: 0; transform: scale(0); } }
 @media (prefers-reduced-motion: reduce) { .sw-match, .sw-match * { animation: none !important; } }
+
+/* ---------- Home: "What do you want to learn today?" ---------- */
+.ls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; }
+.ls-box input:focus, .ls-box input:focus-visible { outline: none; box-shadow: none; }
+.ls-box input { -webkit-appearance: none; appearance: none; }
+.ls-title { margin: 4px 0 2px; font: 600 clamp(1.7rem, 7vw, 2.2rem)/1.15 var(--serif); letter-spacing: -.01em; }
+.ls-box { display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 16px; border: 1.5px solid var(--line-strong); border-radius: 18px; background: var(--paper); box-shadow: 0 6px 20px rgba(0,0,0,.05); transition: border-color .2s, box-shadow .2s; }
+.ls-box:focus-within { border-color: var(--ink); box-shadow: 0 8px 26px rgba(0,0,0,.09); }
+.ls-box > .ic { flex: none; width: 20px; height: 20px; color: var(--muted); }
+.ls-box input { flex: 1; min-width: 0; height: 46px; border: 0; outline: 0; background: none; color: var(--ink); font: 500 17px var(--sans); }
+.ls-box input::-webkit-search-cancel-button { display: none; }
+.ls-go { flex: none; width: 46px; height: 46px; border: 0; border-radius: 14px; display: grid; place-items: center; background: var(--ink); color: var(--paper); cursor: pointer; }
+.ls-go .ic { width: 20px; height: 20px; }
+.ls-list { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; border: 1px solid var(--line-strong); border-radius: 16px; background: var(--paper); overflow: hidden; animation: jf-in .18s ease-out both; }
+.ls-item { min-width: 0; display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 0; border-top: 1px solid var(--line); background: none; text-align: left; color: var(--ink); cursor: pointer; }
+.ls-item:first-child { border-top: 0; }
+.ls-item:hover, .ls-item:focus-visible { background: var(--sunk); }
+.ls-item .main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ls-item .main span { color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ls-item > .ic { flex: none; width: 16px; height: 16px; color: var(--muted); }
+.ls-empty { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 16px; border: 1px dashed var(--line-strong); border-radius: 14px; color: var(--ink-soft); }
+.ls-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ls-chips > span { margin-right: 4px; }
+.curated-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-top: 8px; padding-top: 18px; border-top: 1px solid var(--line); }
+.curated-head h2 { margin: 0; font-size: 1.15rem; }
+.ls-now { display: inline-flex; align-items: center; gap: 6px; margin: 0; font: 600 13px var(--sans); color: var(--accent); }
+.ls-now .ic { width: 14px; height: 14px; }
