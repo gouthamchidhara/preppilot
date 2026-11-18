@@ -26,8 +26,8 @@ Checked with it on 18 November: subscription Enabled; Static Web App (Free) prod
 - [x] **RevenueCat: Current offering** has a Monthly package for `pro_monthly` and a package for `mock_session_60min`. Done 17 November 2026 (offering `default`, 4 packages).
 - [x] **RevenueCat: webhook** created by Claude 18 Nov via API v2 (all events, sandbox and production), URL carries `?auth=` because Azure replaces the Authorization header. Was: URL `https://preppilot.us/api/billing/revenuecat`, Authorization header equal to the Azure setting `REVENUECAT_WEBHOOK_AUTH`. Send RevenueCat's test event; the API should answer 200.
 - [ ] **Azure: `REVENUECAT_SECRET_KEY`** set to the RevenueCat **v2** secret key (owner pastes it in the Azure Portal; `REVENUECAT_PROJECT_ID=projda036fd0` is already set). Currently empty. Used right after a purchase to unlock Pro or the session.
-- [ ] **App Store Connect: `pro_monthly`** at $10.99/month (current amount not confirmed).
-- [ ] **App Store Connect: `mock_session_60min`** at $15.99; display name and description "Live AI, 60 minutes". Keep the product id.
+- [x] **App Store Connect: `pro_monthly`** fixed by Claude 18 Nov: $10.99/month (was $4.99), shows as "PrepPilot Pro", new description, review screenshot; state Ready to Submit.
+- [x] **App Store Connect: `mock_session_60min`** fixed by Claude 18 Nov: $15.99 (was $10.99), shows as "Live AI, 60 minutes", sold in the USA, review screenshot; state Ready to Submit. Unused misspelled product `com.gchid.prepilot.subscribtion` deleted. Was: display name and description "Live AI, 60 minutes". Keep the product id.
 - [ ] **App Store Connect: Paid Apps agreement** Active (Agreements, Tax and Banking).
 - [ ] **New iOS build** to TestFlight (`docs/IOS-RELEASE-RUNBOOK.md`, workflow "iOS release"). The current build predates the purchase fixes, light/dark colours, badge and notifications.
 - [ ] **App Store Connect: App Privacy answers** match `web/privacy.html` (updated 17 November).
