@@ -915,6 +915,7 @@ function deckView() {
   const d = S.deck;
   if (!d.cards.length) return `<div class="stack" style="padding-top:30px"><h1>You have seen every card here for now.</h1><p class="lede">They come back when they are worth another look. Start a new topic${hasPro() ? '' : ', or unlock every topic and its cards with Pro'}.</p><div class="row">${hasPro() ? '' : '<button class="btn primary" data-act="plans">Unlock more topics</button>'}<button class="btn" data-act="home">Back to plan</button></div></div>`;
   if (S.di >= d.cards.length) {
+    S.swStreak = 0;
     const got = d.results.filter(Boolean).length;
     const pct = Math.round((got * 100) / d.cards.length);
     // The topic with the most missed cards gets its diagram right here, so the
@@ -928,11 +929,12 @@ function deckView() {
       <p class="lede">${pct >= 80 ? 'These cards come back later, spaced further apart each time.' : 'The cards you missed come back first next time. Rereading the lessons for those topics will help.'}</p>
       ${worst && diagramFor(worst) ? `<section class="stack tight"><h3>The one to reread: ${esc(topicName(worst))}</h3>${diagramTeaser(worst, diagramHtml(worst))}<div class="row"><button class="btn" data-act="learn" data-id="${worst}">Reread the ${esc(topicName(worst))} lesson</button></div></section>` : ''}
       ${d.free ? `<section class="card live-hero stack"><h2>That was your free round.</h2><p>Free gives you ${FREE_CARDS} cards for each technology you picked, shuffled. Pro opens all ${d.total}, in the order you work, plus troubleshooting and real scenarios from the field.</p><div class="row"><button class="btn invert" data-act="plans">Unlock every card</button></div></section>` : ''}
-      ${d.jf ? `<div class="row"><button class="btn primary" data-act="jfswipe">Swipe them again</button><button class="btn" data-act="jobfocus">Back to Job focus</button></div></div>` : `<div class="row"><button class="btn ${d.free ? '' : 'primary'}" data-act="deck" data-id="${esc((d.ids || []).join(','))}">${d.mode === 'swipe' ? 'Swipe another mix' : 'Practice another round'}</button><button class="btn" data-act="home">Back to plan</button></div></div>`}`;
+      ${d.jf ? `<div class="row"><button class="btn primary" data-act="jfswipe">Swipe them again</button><button class="btn" data-act="jobfocus">Back to Job focus</button></div></div>` : `<div class="row"><button class="btn ${d.free ? '' : 'primary'}" data-act="deck" data-id="${esc((d.ids || []).join(','))}">${d.mode.startsWith('swipe') ? 'Swipe another mix' : 'Practice another round'}</button><button class="btn" data-act="home">Back to plan</button></div></div>`}`;
   }
+  if (d.mode === 'swipe' && S.di < d.cards.length) return swipeView();
   const q = d.cards[S.di];
   const t = topicById(q.topic);
-  const swipe = d.mode === 'swipe';
+  const swipe = false;
   const singleTopic = !swipe && d.cards.length && d.cards.every(c => c.topic === d.cards[0].topic) ? d.cards[0].topic : null;
   const intro = swipe && lsGet('pp.swipeIntro', '') !== '1';
   return `<div class="stack ${swipe ? 'swipe-mode' : ''}">
@@ -943,8 +945,7 @@ function deckView() {
     <div class="bar"><i style="width:${(S.di * 100) / d.cards.length}%"></i></div>
     ${d.free && S.di === 0 ? `<p class="note small row between"><span>Shuffled on Free. Pro takes you through every card in your workflow’s order.</span><button class="link" data-act="plans">See Pro</button></p>` : ''}
     ${singleTopic && diagramFor(singleTopic) ? `<div class="row between"><span></span><button class="link quiet small" data-act="dgsheet" data-id="${singleTopic}">How it works — see the diagram</button></div>` : ''}
-    <article class="card stacked flash ${S.reveal ? 'can-swipe' : 'can-tap'}" id="flash">
-      <span class="sw-tag sw-got" aria-hidden="true">${ic('check')}Got it</span><span class="sw-tag sw-miss" aria-hidden="true">${ic('x')}Missed</span>
+    <article class="card stacked flash" id="flash">
       <div class="card-head"><span>${esc(t?.name || q.topicName || q.topic)}</span><span class="level">${q.kind ? FIELD_KINDS[q.kind] : ['', 'Fundamentals', 'Applied', 'Advanced'][q.l] || (q.jf ? 'Job focus' : '')}</span></div>
       ${intro ? `<div class="sw-intro" aria-live="polite"><div class="sw-hand" aria-hidden="true"><i></i></div><b>Swipe mode</b><span>Tap to flip. Then swipe <b>right</b> if you knew it, <b>left</b> if you didn’t. Cards come from all your skills, mixed.</span><button class="btn primary" data-act="swipeintro">Let’s go</button></div>` : ''}
       <p class="q">${fmt(q.q)}</p>
@@ -955,10 +956,145 @@ function deckView() {
         <div class="row between small"><button class="link quiet" data-act="askq">Go deeper with AI</button>${betaNote(t, `question: ${q.q}`)}</div>`
       : '<button class="btn primary lg block" data-act="reveal">Show the answer</button><p class="muted small" style="text-align:center">Say your answer out loud first.</p>'}
       <p class="muted small kbd-hint" style="text-align:center">Space to reveal · ← missed · → got it</p>
-      <p class="muted small touch-hint" style="text-align:center">${S.reveal ? 'Swipe right if you got it, left if you missed it' : 'Tap the card to flip it'}</p></div>
+</div>
     </article>
   </div>`;
 }
+
+/* ---------- Swipe mode: its own screen, a real card stack ---------- */
+const cardFace = (q, back) => {
+  const t = topicById(q.topic);
+  const name = esc(t?.name || q.topicName || q.topic);
+  const lvl = ['', 'Fundamentals', 'Applied', 'Advanced'][q.l] || (q.jf ? 'Job focus' : '');
+  return back
+    ? `<div class="sw-face back"><div class="sw-head"><span>${name}</span><span>Answer</span></div><p class="sw-q-small">${fmt(q.q)}</p><div class="sw-a">${fmt(q.a)}</div><p class="sw-tip">Knew it? Swipe right. Not quite? Swipe left.</p></div>`
+    : `<div class="sw-face front"><div class="sw-head"><span>${name}</span><span>${lvl}</span></div><p class="sw-q">${fmt(q.q)}</p><p class="sw-tip">${ic('refresh')}Tap to flip</p></div>`;
+};
+const swCardHtml = (q, top) => `<article class="sw-card ${top ? 'is-top' : 'is-next'}" ${top ? 'id="swTop"' : 'aria-hidden="true"'}>
+  <div class="sw-inner">${cardFace(q, false)}${top ? cardFace(q, true) : ''}</div>
+  ${top ? `<span class="sw-stamp got" aria-hidden="true">${ic('check')}Got it</span><span class="sw-stamp miss" aria-hidden="true">${ic('x')}Nope</span>` : ''}</article>`;
+function swStageHtml() {
+  const d = S.deck, q = d.cards[S.di], n = d.cards[S.di + 1], n2 = d.cards[S.di + 2];
+  return `${n2 ? '<div class="sw-card is-ghost" aria-hidden="true"></div>' : ''}${n ? swCardHtml(n, false) : ''}${swCardHtml(q, true)}`;
+}
+function swipeView() {
+  const d = S.deck;
+  const intro = lsGet('pp.swipeIntro', '') !== '1';
+  const streak = S.swStreak || 0;
+  return `<div class="stack swipe-screen">
+    <div class="row between"><button class="back" data-act="${d.jf ? 'jobfocus' : 'home'}">${ic('left')}${d.jf ? 'Job focus' : 'Stop'}</button><span class="muted small" id="swCount">${S.di + 1} / ${d.cards.length}</span></div>
+    ${d.jf ? '' : `<div class="seg" role="tablist" aria-label="How to go through the cards">
+      <button role="tab" aria-selected="false" data-act="deckmode" data-m="steady">${ic('right')}Steady</button>
+      <button role="tab" aria-selected="true" class="on" data-act="deckmode" data-m="swipe">${ic('cards')}Swipe <span class="seg-new">mix</span></button></div>`}
+    <div class="sw-dots" aria-hidden="true">${d.cards.map((_, i) => `<i class="${i < S.di ? (d.results[i] ? 'ok' : 'no') : i === S.di ? 'now' : ''}"></i>`).join('')}</div>
+    <div class="sw-stage" id="swStage">${swStageHtml()}${intro ? `<div class="sw-intro"><div class="sw-hand" aria-hidden="true"><i></i></div><b>Swipe mode</b><span>Tap a card to flip it. Swipe <b>right</b> if you knew it, <b>left</b> if you didn’t. Cards come from all your skills, mixed.</span><button class="btn primary" data-act="swipeintro">Let’s play</button></div>` : ''}
+      <div class="sw-streak ${streak >= 3 ? 'show' : ''}" id="swStreak">${streak} in a row</div><div class="sw-burst" id="swBurst" aria-hidden="true"></div></div>
+    <div class="sw-btns"><button class="sw-btn miss" data-act="swgo" data-ok="0" aria-label="Didn't know it">${ic('x')}</button><button class="sw-btn flip" data-act="swflip" aria-label="Flip the card">${ic('refresh')}</button><button class="sw-btn got" data-act="swgo" data-ok="1" aria-label="Knew it">${ic('check')}</button></div>
+    ${d.jf ? '' : '<div class="row between small"><button class="link quiet" data-act="askq">Go deeper with AI</button><span class="muted">← → keys work too</span></div>'}
+  </div>`;
+}
+
+const SW_AT = 100; // px past which a release counts
+let sw = null, swRaf = 0;
+function swFlip() {
+  const c = document.getElementById('swTop');
+  if (!c) return;
+  c.classList.toggle('flipped'); S.reveal = c.classList.contains('flipped');
+}
+function swApply() {
+  swRaf = 0;
+  if (!sw) return;
+  const { card, dx, dy, sign } = sw;
+  const k = Math.max(-1, Math.min(1, dx / SW_AT));
+  card.style.transform = `translate3d(${dx}px, ${dy * 0.35}px, 0) rotate(${(dx / 14) * sign}deg)`;
+  card.style.setProperty('--got', Math.max(0, k)); card.style.setProperty('--miss', Math.max(0, -k));
+  const next = document.querySelector('.sw-card.is-next');
+  if (next) next.style.setProperty('--lift', Math.min(1, Math.abs(dx) / SW_AT));
+}
+// Decide a card: fly it off along its own direction, then let the next card take its place.
+function swDecide(ok, vx = 0) {
+  const card = document.getElementById('swTop');
+  const d = S.deck;
+  if (!card || S.grading || !d || S.di >= d.cards.length) return;
+  S.grading = true; sw = null;
+  const q = d.cards[S.di];
+  if (!q.jf) { const prog = store.progress(); prog[q.id] = review(prog[q.id], ok); store.setProgress(prog); }
+  store.setActivity(recordActivity(store.activity(), todayKey(), ok));
+  if (navigator.vibrate) try { navigator.vibrate(ok ? 12 : [8, 40, 8]); } catch { /* not allowed */ }
+  const dist = Math.max(window.innerWidth, 600) * 1.2;
+  const speed = Math.max(0.9, Math.min(2.5, Math.abs(vx)));
+  const ms = Math.round(360 / speed);
+  card.classList.remove('dragging');
+  card.style.transition = `transform ${ms}ms cubic-bezier(.2, .6, .35, 1), opacity ${ms}ms ease-in`;
+  card.style.setProperty(ok ? '--got' : '--miss', 1);
+  card.style.transform = `translate3d(${ok ? dist : -dist}px, ${(sw?.dy || 0) * 0.35 + 60}px, 0) rotate(${ok ? 32 : -32}deg)`;
+  card.style.opacity = '0';
+  const next = document.querySelector('.sw-card.is-next');
+  if (next) next.classList.add('rise');
+  // Streak: a fun nudge for runs of known cards.
+  S.swStreak = ok ? (S.swStreak || 0) + 1 : 0;
+  const st = document.getElementById('swStreak');
+  if (st) { st.textContent = `${S.swStreak} in a row`; st.classList.toggle('show', S.swStreak >= 3); if (S.swStreak >= 3) { st.classList.remove('pop'); void st.offsetWidth; st.classList.add('pop'); } }
+  if (ok && S.swStreak && S.swStreak % 5 === 0) swBurst();
+  d.results.push(ok); S.di++; S.reveal = false;
+  const dot = document.querySelectorAll('.sw-dots i');
+  if (dot[S.di - 1]) dot[S.di - 1].className = ok ? 'ok' : 'no';
+  if (dot[S.di]) dot[S.di].className = 'now';
+  const cnt = document.getElementById('swCount');
+  if (cnt && S.di < d.cards.length) cnt.textContent = `${S.di + 1} / ${d.cards.length}`;
+  setTimeout(() => {
+    S.grading = false;
+    if (S.di >= d.cards.length) {
+      if (native() && !store.notifAsked()) { store.setNotifAsked(true); promptNotifications(); }
+      d.mode = 'swipe-done'; return render(); // the round summary uses the regular end screen
+    }
+    // Only the stage is redrawn: the risen card is replaced by an identical one, so nothing jumps.
+    const stage = document.getElementById('swStage');
+    if (stage) { stage.querySelectorAll('.sw-card').forEach(e => e.remove()); stage.insertAdjacentHTML('afterbegin', swStageHtml()); }
+  }, Math.min(ms, 260));
+}
+function swBurst() {
+  const b = document.getElementById('swBurst');
+  if (!b || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+  b.innerHTML = Array.from({ length: 14 }, (_, i) => `<i style="--a:${(i / 14) * 360}deg;--d:${60 + (i % 3) * 22}px"></i>`).join('');
+  b.classList.remove('go'); void b.offsetWidth; b.classList.add('go');
+}
+app.addEventListener('pointerdown', e => {
+  const card = e.target.closest('#swTop');
+  if (!card || S.grading || e.button > 0 || e.target.closest('button, a')) return;
+  const r = card.getBoundingClientRect();
+  // Grabbed low on the card, it tilts the other way, like a real card.
+  sw = { card, x: e.clientX, y: e.clientY, dx: 0, dy: 0, id: e.pointerId, drag: false, sign: e.clientY > r.top + r.height * 0.6 ? -1 : 1, hist: [[performance.now(), e.clientX]] };
+});
+app.addEventListener('pointermove', e => {
+  if (!sw || e.pointerId !== sw.id) return;
+  const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+  if (!sw.drag) {
+    if (Math.hypot(dx, dy) < 6) return;
+    sw.drag = true; sw.card.setPointerCapture?.(e.pointerId); sw.card.classList.add('dragging');
+  }
+  e.preventDefault();
+  sw.dx = dx; sw.dy = dy;
+  sw.hist.push([performance.now(), e.clientX]); if (sw.hist.length > 5) sw.hist.shift();
+  if (!swRaf) swRaf = requestAnimationFrame(swApply);
+});
+function swEnd(e) {
+  if (!sw || (e && e.pointerId !== sw.id)) return;
+  const s0 = sw;
+  if (!s0.drag) { sw = null; if (e?.type === 'pointerup') swFlip(); return; }
+  const [t0, x0] = s0.hist[0], [t1, x1] = s0.hist[s0.hist.length - 1];
+  const vx = (x1 - x0) / Math.max(1, t1 - t0); // px per ms
+  if (Math.abs(s0.dx) > SW_AT || (Math.abs(vx) > 0.55 && Math.abs(s0.dx) > 30)) return swDecide(s0.dx > 0, vx);
+  sw = null;
+  const card = s0.card;
+  card.classList.remove('dragging');
+  card.style.transition = 'transform .45s cubic-bezier(.18, 1.35, .4, 1)';
+  card.style.transform = ''; card.style.setProperty('--got', 0); card.style.setProperty('--miss', 0);
+  document.querySelector('.sw-card.is-next')?.style.setProperty('--lift', 0);
+  setTimeout(() => { card.style.transition = ''; }, 460);
+}
+app.addEventListener('pointerup', swEnd);
+app.addEventListener('pointercancel', swEnd);
 
 const STATUS = { connecting: 'Connecting…', ready: 'Listening. Just talk.', listening: 'Listening. I won\'t interrupt.', you: 'You\'re speaking…', thinking: 'Thinking…', ai: 'Speaking. Talk to interrupt.' };
 const MODE_NAME = { talk: 'Talk', listen: 'Rehearse', live: 'Live AI' };
@@ -1743,6 +1879,7 @@ function startDeck(ids, opts = {}) {
     cards = shuffle(cards.filter(c => topicById(c.topic)?.custom || topicById(c.topic)?.private || allowed.has(c.id)));
   }
   if (mode === 'swipe') cards = mixTopics(cards);
+  S.swStreak = 0;
   S.deck = { cards: cards.slice(0, pro ? 20 : FREE_CARDS), results: [], free: !pro, total: list.reduce((n, t) => n + t.qa.length, 0), mode, ids };
   S.di = 0; S.reveal = false; S.view = 'deck'; render();
 }
@@ -1809,50 +1946,7 @@ function gradeCard(ok, swiped = false) {
   }, 1100);
 }
 
-/* Swipe a flashcard: right = got it, left = missed. Tap (before the answer) flips it.
-   Pointer events cover touch, pen and mouse; vertical scrolling stays native (touch-action: pan-y). */
-const SWIPE_AT = 90; // px past which a release counts as a decision
-let sw = null;
-app.addEventListener('pointerdown', e => {
-  const card = e.target.closest('#flash');
-  if (!card || S.grading || e.button > 0 || e.target.closest('button, a, summary, input, textarea, .sw-intro')) return;
-  sw = { card, x: e.clientX, y: e.clientY, t: performance.now(), dx: 0, id: e.pointerId, drag: false };
-});
-app.addEventListener('pointermove', e => {
-  if (!sw || e.pointerId !== sw.id) return;
-  const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
-  if (!sw.drag) {
-    if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { sw = null; return; } // a scroll, not a swipe
-    if (Math.abs(dx) < 8 || !S.reveal) return;
-    sw.drag = true; sw.card.setPointerCapture?.(e.pointerId); sw.card.classList.add('dragging');
-  }
-  sw.dx = dx;
-  const k = Math.max(-1, Math.min(1, dx / SWIPE_AT));
-  sw.card.style.transform = `translate3d(${dx}px, ${Math.abs(dx) * 0.04}px, 0) rotate(${dx / 18}deg)`;
-  sw.card.style.setProperty('--got', Math.max(0, k).toFixed(2));
-  sw.card.style.setProperty('--miss', Math.max(0, -k).toFixed(2));
-});
-function endSwipe(e) {
-  if (!sw || (e && e.pointerId !== sw.id)) return;
-  const { card, dx, drag, t } = sw; sw = null;
-  if (!drag) { // a tap: flip the card if the answer is still hidden
-    if (e?.type === 'pointerup' && !S.reveal && !e.target.closest('button, a')) { S.reveal = true; render(); }
-    return;
-  }
-  card.classList.remove('dragging');
-  const fast = Math.abs(dx) / Math.max(1, performance.now() - t) > 0.6; // a quick flick counts too
-  if (Math.abs(dx) >= SWIPE_AT || (fast && Math.abs(dx) > 40)) {
-    const ok = dx > 0;
-    card.classList.add('fly');
-    card.style.transform = `translate3d(${ok ? 140 : -140}vw, 40px, 0) rotate(${ok ? 28 : -28}deg)`;
-    gradeCard(ok, true);
-  } else {
-    card.classList.add('snap'); card.style.transform = ''; card.style.setProperty('--got', 0); card.style.setProperty('--miss', 0);
-    setTimeout(() => card.classList.remove('snap'), 260);
-  }
-}
-app.addEventListener('pointerup', endSwipe);
-app.addEventListener('pointercancel', endSwipe);
+
 
 function aiFailed(err) {
   if (err.code === 'quota') { S.paywall = true; S.view = 'chat'; }
@@ -1994,6 +2088,12 @@ app.addEventListener('keydown', e => {
 app.addEventListener('keydown', e => {
   if (S.view !== 'deck' || !S.deck || S.di >= S.deck.cards.length) return;
   if (e.target?.matches?.('input, textarea, select, button')) return;
+  if (S.deck.mode === 'swipe') {
+    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); swFlip(); }
+    else if (e.key === 'ArrowRight') swDecide(true, 1.4);
+    else if (e.key === 'ArrowLeft') swDecide(false, -1.4);
+    return;
+  }
   if (e.key === ' ' || e.key === 'Enter') {
     e.preventDefault();
     if (!S.reveal) { S.reveal = true; render(); }
@@ -2095,7 +2195,9 @@ document.addEventListener('click', async e => {
   else if (a === 'deck') startDeck(id ? id.split(',') : null);
   else if (a === 'deckmode') { setDeckMode(b.dataset.m); startDeck(S.deck?.ids || null, { mode: b.dataset.m }); }
   else if (a === 'swipedeck') { setDeckMode('swipe'); lsSet('pp.swipeTried', '1'); startDeck(null, { mode: 'swipe' }); }
-  else if (a === 'swipeintro') { lsSet('pp.swipeIntro', '1'); render(); }
+  else if (a === 'swipeintro') { lsSet('pp.swipeIntro', '1'); document.querySelector('.sw-intro')?.remove(); }
+  else if (a === 'swgo') swDecide(b.dataset.ok === '1', b.dataset.ok === '1' ? 1.4 : -1.4);
+  else if (a === 'swflip') swFlip();
   else if (a === 'swipenah') { lsSet('pp.swipeTried', '1'); render(); }
   else if (a === 'jfswipe') startJobDeck();
   else if (a === 'roledeck') startRoleDeck(id);
