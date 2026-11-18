@@ -43,6 +43,7 @@ const ICONS = {
   book: '<path d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2zM4 20a2 2 0 0 0 2 2h13"/>',
   sound: '<path d="M4 9h3l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/>',
   soundoff: '<path d="M4 9h3l5-4v14l-5-4H4z"/><path d="M16 9l5 6M21 9l-5 6"/>',
+  list: '<path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
 };
 const ic = n => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
@@ -938,10 +939,7 @@ function deckView() {
   const singleTopic = !swipe && d.cards.length && d.cards.every(c => c.topic === d.cards[0].topic) ? d.cards[0].topic : null;
   const intro = swipe && lsGet('pp.swipeIntro', '') !== '1';
   return `<div class="stack ${swipe ? 'swipe-mode' : ''}">
-    <div class="row between"><button class="back" data-act="${d.jf ? 'jobfocus' : 'home'}">${ic('left')}${d.jf ? 'Job focus' : 'Stop'}</button><span class="muted small">Card ${S.di + 1} of ${d.cards.length}</span></div>
-    ${d.jf ? '' : `<div class="seg" role="tablist" aria-label="How to go through the cards">
-      <button role="tab" aria-selected="${!swipe}" class="${swipe ? '' : 'on'}" data-act="deckmode" data-m="steady">${ic('right')}Steady</button>
-      <button role="tab" aria-selected="${swipe}" class="${swipe ? 'on' : ''}" data-act="deckmode" data-m="swipe">${ic('cards')}Swipe <span class="seg-new">mix</span></button></div>`}
+    <div class="deck-top"><button class="back" data-act="${d.jf ? 'jobfocus' : 'home'}">${ic('left')}${d.jf ? 'Job focus' : 'Stop'}</button><span class="deck-count">${S.di + 1}<i>/</i>${d.cards.length}</span>${d.jf ? '<span></span>' : modeToggle(false)}</div>
     <div class="bar"><i style="width:${(S.di * 100) / d.cards.length}%"></i></div>
     ${d.free && S.di === 0 ? `<p class="note small row between"><span>Shuffled on Free. Pro takes you through every card in your workflow’s order.</span><button class="link" data-act="plans">See Pro</button></p>` : ''}
     ${singleTopic && diagramFor(singleTopic) ? `<div class="row between"><span></span><button class="link quiet small" data-act="dgsheet" data-id="${singleTopic}">How it works — see the diagram</button></div>` : ''}
@@ -960,6 +958,11 @@ function deckView() {
     </article>
   </div>`;
 }
+
+/* Card mode switch: two icons in a pill, a thumb slides to the chosen one. */
+const modeToggle = swipe => `<div class="mode-tg ${swipe ? 'is-swipe' : ''}" role="radiogroup" aria-label="Card mode">
+  <button role="radio" aria-checked="${!swipe}" data-act="deckmode" data-m="steady" title="Steady: in order">${ic('list')}<span>Steady</span></button>
+  <button role="radio" aria-checked="${swipe}" data-act="deckmode" data-m="swipe" title="Swipe: mixed skills">${ic('cards')}<span>Swipe</span></button></div>`;
 
 /* ---------- Swipe mode: its own screen, a real card stack ---------- */
 const cardFace = (q, back) => {
@@ -982,10 +985,7 @@ function swipeView() {
   const intro = lsGet('pp.swipeIntro', '') !== '1';
   const streak = S.swStreak || 0;
   return `<div class="stack swipe-screen">
-    <div class="row between"><button class="back" data-act="${d.jf ? 'jobfocus' : 'home'}">${ic('left')}${d.jf ? 'Job focus' : 'Stop'}</button><span class="muted small" id="swCount">${S.di + 1} / ${d.cards.length}</span></div>
-    ${d.jf ? '' : `<div class="seg" role="tablist" aria-label="How to go through the cards">
-      <button role="tab" aria-selected="false" data-act="deckmode" data-m="steady">${ic('right')}Steady</button>
-      <button role="tab" aria-selected="true" class="on" data-act="deckmode" data-m="swipe">${ic('cards')}Swipe <span class="seg-new">mix</span></button></div>`}
+    <div class="deck-top"><button class="back" data-act="${d.jf ? 'jobfocus' : 'home'}">${ic('left')}${d.jf ? 'Job focus' : 'Stop'}</button><span class="deck-count" id="swCount">${S.di + 1}<i>/</i>${d.cards.length}</span>${d.jf ? '<span></span>' : modeToggle(true)}</div>
     <div class="sw-dots" aria-hidden="true">${d.cards.map((_, i) => `<i class="${i < S.di ? (d.results[i] ? 'ok' : 'no') : i === S.di ? 'now' : ''}"></i>`).join('')}</div>
     <div class="sw-stage" id="swStage">${swStageHtml()}${intro ? `<div class="sw-intro"><div class="sw-hand" aria-hidden="true"><i></i></div><b>Swipe mode</b><span>Tap a card to flip it. Swipe <b>right</b> if you knew it, <b>left</b> if you didn’t. Cards come from all your skills, mixed.</span><button class="btn primary" data-act="swipeintro">Let’s play</button></div>` : ''}
       <div class="sw-streak ${streak >= 3 ? 'show' : ''}" id="swStreak">${streak} in a row</div><div class="sw-burst" id="swBurst" aria-hidden="true"></div></div>
@@ -2193,7 +2193,14 @@ document.addEventListener('click', async e => {
   else if (a === 'cnext') { S.ci++; render(); }
   else if (a === 'cprev') { S.ci--; render(); }
   else if (a === 'deck') startDeck(id ? id.split(',') : null);
-  else if (a === 'deckmode') { setDeckMode(b.dataset.m); startDeck(S.deck?.ids || null, { mode: b.dataset.m }); }
+  else if (a === 'deckmode') {
+    const m = b.dataset.m, tg = b.closest('.mode-tg');
+    if ((m === 'swipe') === !!tg?.classList.contains('is-swipe')) return;
+    tg?.classList.toggle('is-swipe', m === 'swipe');
+    tg?.querySelectorAll('button').forEach(x => x.setAttribute('aria-checked', String(x.dataset.m === m)));
+    setDeckMode(m);
+    setTimeout(() => startDeck(S.deck?.ids || null, { mode: m }), 220); // let the thumb glide first
+  }
   else if (a === 'swipedeck') { setDeckMode('swipe'); lsSet('pp.swipeTried', '1'); startDeck(null, { mode: 'swipe' }); }
   else if (a === 'swipeintro') { lsSet('pp.swipeIntro', '1'); document.querySelector('.sw-intro')?.remove(); }
   else if (a === 'swgo') swDecide(b.dataset.ok === '1', b.dataset.ok === '1' ? 1.4 : -1.4);
