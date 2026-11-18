@@ -35,7 +35,7 @@ async function signIn(email, sub = email) {
   assert.equal(r.status, 200, JSON.stringify(r.body));
   return { 'x-session-token': r.body.token };
 }
-const ask = (h, text = 'hi') => call('POST chat', { messages: [{ role: 'user', content: text }] }, h);
+const ask = (h, text = 'explain a hashmap') => call('POST chat', { messages: [{ role: 'user', content: text }] }, h);
 
 beforeEach(async () => {
   await useMemoryDb(); resetRateLimits();
@@ -528,4 +528,15 @@ test('Job focus: Pro only, skills first, then cards per skill with a signed tick
   assert.equal(jfReadTicket(t.replace(/^./, c => c === 'a' ? 'b' : 'a'), 'google:boss-jd', 2000), null);
   assert.equal((await call('POST jobfocus/cards', { ticket: 'junk', i: 0 }, boss)).status, 400);
   assert.equal((await call('POST jobfocus/cards', { ticket: t, i: 0 })).status, 401);
+});
+
+test('small talk is answered for free; real questions still count', async () => {
+  const { smallTalk } = await import('../api/src/lib/guard.js');
+  for (const t of ['hi', 'Hello!', 'hey there', 'how are you doing?', 'thanks!', 'ok', 'bye', 'good morning coach']) assert.ok(smallTalk(t), t);
+  for (const t of ['hi, explain kafka partitions', 'what is a hashmap', 'thanks, now quiz me on SQL joins please']) assert.equal(smallTalk(t), null, t);
+  const h = await signIn('hi@gmail.com', 'hi-user');
+  const before = (await call('GET me', null, h)).body.msgsLeft;
+  const r = await ask(h, 'Hello!');
+  assert.equal(r.status, 200); assert.equal(r.body.free, true);
+  assert.equal((await call('GET me', null, h)).body.msgsLeft, before);
 });

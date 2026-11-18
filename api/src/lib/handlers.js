@@ -1,7 +1,7 @@
 // Framework-agnostic handlers: (req) -> { status, body, headers }.
 // req = { body, headers (lower-case keys), ip }
 import { complete, llmConfigured } from './llm.js';
-import { rateLimit, outOfScope, SCOPE_REPLY, validateChat, validateGenerate, validateLiveHint, validateSuggestion, sanitizeGenerated } from './guard.js';
+import { rateLimit, outOfScope, smallTalk, SCOPE_REPLY, validateChat, validateGenerate, validateLiveHint, validateSuggestion, sanitizeGenerated } from './guard.js';
 import { chatSystemPrompt, generateSystemPrompt, generateUserPrompt } from './prompts.js';
 import { realtimeConfigured, validateRealtime, startRealtime, hangupCall } from './realtime.js';
 import { identify, verifyIdToken, signSession } from './auth.js';
@@ -67,7 +67,10 @@ export async function handleChat(req, log) {
   if (w.error) return w.error;
   const rl = limited('chat', w.ident);
   if (rl) return rl;
-  if (outOfScope(v.messages[v.messages.length - 1].content)) return json(200, { reply: SCOPE_REPLY, scoped: true, account: await status(w.ident) });
+  const lastText = v.messages[v.messages.length - 1].content;
+  const hi = smallTalk(lastText);
+  if (hi) return json(200, { reply: hi, free: true, account: await status(w.ident) }); // never counted
+  if (outOfScope(lastText)) return json(200, { reply: SCOPE_REPLY, scoped: true, account: await status(w.ident) });
   const q = await consumeMsgs(w.ident, COST.chat);
   if (!q.ok) return denied(q);
   try {

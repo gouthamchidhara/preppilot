@@ -128,3 +128,13 @@ export function outOfScope(text) {
   return OFF_SCOPE.some(r => r.test(String(text || '')));
 }
 export const SCOPE_REPLY = 'That is outside what PrepPilot does. I am here to get you ready for the interview: I can explain a concept, quiz you, grade your answer, or walk through an error or a short snippet the way an interviewer would ask about it. What would you like to practise?';
+
+// Greetings, thanks and goodbyes get a friendly fixed reply: no AI call, nothing counted.
+const SMALL_TALK = /^(hi+|hello+|hey+|hiya|yo|hola|namaste|good (morning|afternoon|evening|night)|how are (you|u)( doing)?|how'?s it going|what'?s up|sup|thanks?( you| a lot| so much)?|thank (you|u)|thx|ty|ok(ay)?|k|cool|nice|great|awesome|got it|bye|goodbye|see (you|ya)|later|lol|haha+|👍|🙏|😊|🙂)([\s,!.?]+(there|bot|coach|ai|man|buddy|again|!+))*[\s,!.?]*$/i;
+export function smallTalk(text) {
+  const t = String(text || '').trim();
+  if (!t || t.length > 40 || !SMALL_TALK.test(t)) return null;
+  if (/^(thanks?|thank|thx|ty|ok|k|cool|nice|great|awesome|got it|👍|🙏)/i.test(t)) return 'Anytime. Want another question, or should I grade your next answer?';
+  if (/^(bye|goodbye|see|later|good night)/i.test(t)) return 'Good luck with the prep. Come back any time for a quick quiz.';
+  return 'Hi! I’m doing well, and ready when you are. Want me to quiz you on your weakest topic, or explain something you’re unsure about?';
+}

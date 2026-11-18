@@ -5,9 +5,11 @@ const K = {
   session: 'pp.session', account: 'pp.account', liveSettings: 'pp.liveSettings',
   suggestAsked: 'pp.suggestAsked', lastProvider: 'pp.lastProvider',
   nudgeIndex: 'pp.nudgeIndex', nudgeDay: 'pp.nudgeDay', notifAsked: 'pp.notifAsked',
-  activity: 'pp.activity',
+  activity: 'pp.activity', chats: 'pp.chats', chatCur: 'pp.chatCur',
 };
 
+const MAX_CHATS = 30, MAX_MSGS = 120;
+const chatTitle = msgs => { const u = msgs.find(m => m.role === 'user' && m.content !== '🎙 …'); return (u?.content || 'Voice session').replace(/\s+/g, ' ').slice(0, 60); };
 const read = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
 const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { alert('Storage is full: ' + e.message); } };
 
@@ -20,8 +22,30 @@ export const store = {
   setCustomTopics: t => write(K.custom, t),
   privatePacks: () => read(K.privatePacks, []),
   setPrivatePacks: p => write(K.privatePacks, p),
-  chat: () => read(K.chat, []),
-  setChat: c => write(K.chat, c.slice(-40)),
+  // Conversations: [{ id, title, at, msgs }], newest first. chat()/setChat() read and write the
+  // current one, so the rest of the app works with a single list of messages.
+  chats: () => {
+    let list = read(K.chats, null);
+    if (!list) { // first run: the old single chat becomes the first conversation
+      const old = read(K.chat, []);
+      list = old.length ? [{ id: 'c' + Date.now(), title: chatTitle(old), at: Date.now(), msgs: old }] : [];
+      write(K.chats, list);
+    }
+    return list;
+  },
+  setChats: list => write(K.chats, list.slice(0, MAX_CHATS)),
+  chatCur: () => read(K.chatCur, ''),
+  setChatCur: id => write(K.chatCur, id),
+  chat: () => { const id = store.chatCur(); return store.chats().find(c => c.id === id)?.msgs || []; },
+  setChat: msgs => {
+    const list = store.chats();
+    let id = store.chatCur(), c = list.find(x => x.id === id);
+    if (!c) { if (!msgs.length) return; c = { id: 'c' + Date.now(), msgs: [] }; list.unshift(c); store.setChatCur(c.id); }
+    c.msgs = msgs.slice(-MAX_MSGS); c.at = Date.now(); c.title = chatTitle(c.msgs);
+    store.setChats([c, ...list.filter(x => x !== c)].filter(x => x.msgs.length));
+  },
+  newChat: () => store.setChatCur(''),
+  deleteChat: id => { store.setChats(store.chats().filter(c => c.id !== id)); if (store.chatCur() === id) store.setChatCur(''); },
   accessCode: () => read(K.access, ''),
   setAccessCode: c => write(K.access, c),
   speak: () => read(K.speak, false),

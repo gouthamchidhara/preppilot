@@ -1068,3 +1068,10 @@ html:has(.swipe-screen), body:has(.swipe-screen) { overscroll-behavior: none; }
 .ls:focus-within .ls-picks { display: grid; animation: jf-in .18s ease-out both; }
 .ls-picks .ls-item > .ic:first-child { flex: none; width: 18px; height: 18px; color: var(--accent); }
 .ls-picks .ls-item { border-top: 1px solid var(--line); }
+.ls-ask { background: var(--accent-soft) !important; }
+.ls-ask > .ic:first-child { flex: none; width: 18px; height: 18px; color: var(--accent); }
+.ai-speak { align-self: flex-end; color: var(--muted); }
+.ai-head .iconbtn { width: 40px; height: 40px; }
+.link-row { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 0; border: 0; background: none; text-align: left; color: var(--ink); cursor: pointer; }
+.link-row .t { font-weight: 600; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rowi.on { background: var(--sunk); border-radius: 12px; }

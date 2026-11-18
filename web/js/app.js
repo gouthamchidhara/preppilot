@@ -46,6 +46,8 @@ const ICONS = {
   list: '<path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>',
   star: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
   search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m14 6 4 4"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
 };
 const ic = n => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
@@ -740,10 +742,14 @@ function startNewDeck() {
   S.deck = { cards: interviewRound(cards, { mix: deckMode() === 'swipe', limit: 20 }), results: [], free: false, total: cards.length, mode: deckMode(), ids: null };
   S.di = 0; S.reveal = false; S.view = 'deck'; render();
 }
+// A question rather than a topic name: offer the AI coach first.
+const looksLikeQuestion = q => /\?\s*$/.test(q) || /^(what|how|why|when|which|who|explain|difference|can|should|is|are|does|do|tell|give|compare|help)\b/i.test(q.trim()) || q.trim().split(/\s+/).length >= 5;
+const askRow = q => `<button class="ls-item ls-ask" data-act="askai" data-q="${esc(q)}">${ic('spark')}<span class="main"><b>Ask the AI coach</b><span>“${esc(q)}”</span></span>${ic('right')}</button>`;
 function lsResultsHtml(q) {
   if (lsNorm(q).length < 2) return lsPicksHtml();
   const r = lsSearch(q);
-  if (!r.length) return `<div class="ls-empty"><span>No flashcards on “${esc(q)}” yet.</span><button class="btn" data-act="quick" data-q="${esc(`Quiz me on ${q}, one question at a time, easy first`)}">Ask the AI coach instead</button></div>`;
+  if (looksLikeQuestion(q)) return `<div class="ls-list" role="listbox">${askRow(q)}${r.slice(0, 3).map(t => `<button class="ls-item" role="option" data-act="lsgo" data-id="${t.id}"><span class="main"><b>${esc(t.name)} flashcards</b><span>${esc(t.pack)}</span></span>${isLocked(t.id) ? '<span class="tag">Pro</span>' : ic('right')}</button>`).join('')}</div>`;
+  if (!r.length) return `<div class="ls-list" role="listbox">${askRow(q)}</div><p class="muted small" style="margin:0">No flashcards on “${esc(q)}” yet.</p>`;
   return `<div class="ls-list" role="listbox">${r.map(t => `<button class="ls-item" role="option" data-act="lsgo" data-id="${t.id}">
     <span class="main"><b>${esc(t.name)}</b><span>${esc(t.pack)}${t.blurb ? ` · ${esc(t.blurb)}` : ''}</span></span>${isLocked(t.id) ? '<span class="tag">Pro</span>' : ic('right')}</button>`).join('')}</div>`;
 }
@@ -763,7 +769,7 @@ function learnSearchHtml(p) {
   return `<section class="ls">
     <h1 class="ls-title">What do you want to learn today?</h1>
     <form id="learnForm" class="ls-box" role="search">
-      ${ic('search')}<input id="learnSearch" type="search" enterkeyhint="go" autocomplete="off" placeholder="Java, Kafka, system design…" aria-label="What do you want to learn today?" value="${esc(S.lsQ || '')}">
+      ${ic('search')}<input id="learnSearch" type="search" enterkeyhint="go" autocomplete="off" placeholder="A topic, or ask a question" aria-label="What do you want to learn today?" value="${esc(S.lsQ || '')}">
       <button class="ls-go" type="submit" aria-label="Start">${ic('right')}</button>
     </form>
     <div id="lsResults">${lsResultsHtml(S.lsQ || '')}</div>
@@ -1324,6 +1330,14 @@ function allowanceCard(a) {
 }
 
 // The Live AI offer, one slim row that is always on the AI tab: the paid product, never buried.
+function chatHistorySheet() {
+  const list = store.chats(), cur = store.chatCur();
+  const when = t => { const d = Math.floor((Date.now() - t) / 864e5); return d <= 0 ? 'Today' : d === 1 ? 'Yesterday' : d < 7 ? `${d} days ago` : new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); };
+  sheet(`<div class="stack"><div class="row between"><h2 style="margin:0">Chats</h2><button class="btn small" data-act="newchat">${ic('edit')}New chat</button></div>
+    <div class="rows">${list.map(c => `<div class="rowi ${c.id === cur ? 'on' : ''}"><button class="main link-row" data-act="openchat" data-id="${c.id}"><span class="t">${esc(c.title)}</span><span class="d">${when(c.at)} · ${c.msgs.filter(m => m.role === 'user').length} message${c.msgs.filter(m => m.role === 'user').length === 1 ? '' : 's'}</span></button><button class="link quiet small" data-act="delchat" data-id="${c.id}" aria-label="Delete chat">${ic('x')}</button></div>`).join('') || '<p class="muted">No chats yet.</p>'}</div>
+    <p class="muted small">Saved on this device. The coach reads only the last few messages of a chat, so long chats stay fast.</p></div>`);
+}
+
 function liveStrip() {
   const { credits, left } = liveState();
   const a = store.account(), o = offer();
@@ -1358,7 +1372,7 @@ function chatView() {
   const nudge = !S.rt && msgs.filter(m => m.role === 'assistant').length >= 3 && !isAdmin() ? `<button class="live-nudge" data-act="${liveState().credits || store.account()?.plan === 'pro' ? 'livesetup' : 'plans'}">${ic('mic')}<span>Ready to say it out loud? <b>Run a Live AI mock interview</b></span>${ic('right')}</button>` : '';
   return `<div class="stack chat ai-tab">
     <div class="ai-head"><h1>AI coach</h1>
-      <div class="row" style="gap:14px">${S.rt ? '' : `<label class="switch small"><input type="checkbox" id="speakToggle" ${store.speak() ? 'checked' : ''}>Read aloud</label>`}${msgs.length ? '<button class="link quiet small" data-act="clearchat">Clear</button>' : ''}</div></div>
+      <div class="row" style="gap:6px">${S.rt ? '' : `${store.chats().length ? `<button class="iconbtn plain" data-act="chathistory" aria-label="Chat history" title="Chat history">${ic('clock')}</button>` : ''}${msgs.length ? `<button class="iconbtn plain" data-act="newchat" aria-label="New chat" title="New chat">${ic('edit')}</button>` : ''}`}</div></div>
     ${S.rt ? voicePanel() : S.paywall ? paywallCard() : liveStrip()}
     ${S.rtMode === 'live' && S.liveHint ? liveHintCard() : ''}
     ${S.chatContext ? `<p class="note row between"><span>Talking about <b>${esc(S.chatContext.split('\n')[0])}</b></span><button class="link quiet" data-act="dropctx">Remove</button></p>` : ''}
@@ -1368,6 +1382,7 @@ function chatView() {
         ${S.voiceServer && realtimeSupported ? `<button class="chip" data-act="rtstart" data-mode="talk">${ic('mic')}Talk it through</button>` : ''}</div>`}
     ${live}${S.busy ? '<div class="msg assistant"><span class="dots"><i></i><i></i><i></i></span></div>' : ''}</div>
     ${nudge}
+    ${S.rt ? '' : `<label class="switch small ai-speak"><input type="checkbox" id="speakToggle" ${store.speak() ? 'checked' : ''}>Read replies aloud</label>`}
     ${lowFree && !S.rt ? `<p class="note row between small"><span>${a.msgsLeft} free message${a.msgsLeft === 1 ? '' : 's'} left.</span><button class="link" data-act="plans">See Pro</button></p>` : ''}
     <form id="chatForm" class="composer">
       <textarea id="chatInput" rows="1" maxlength="2000" placeholder="${S.rt ? 'Or type your reply' : 'Message the AI coach'}" aria-label="Message"></textarea>
@@ -2209,7 +2224,7 @@ document.addEventListener('submit', async e => {
   if (e.target.id === 'learnForm') {
     const q = document.getElementById('learnSearch')?.value || '';
     const hits = lsSearch(q);
-    if (!hits.length) { const r = document.getElementById('lsResults'); if (r) r.innerHTML = lsResultsHtml(q); return; }
+    if (q.trim() && (looksLikeQuestion(q) || !hits.length)) { S.lsQ = ''; S.view = 'chat'; render(); return sendChat(q); }
     const best = hits[0].score; // everything as good as the top match (e.g. "java" -> Core Java, JVM, Spring...)
     return lsStart(hits.filter(h => h.score >= Math.min(best, 4)).slice(0, 4).map(h => h.id), q);
   }
@@ -2375,6 +2390,11 @@ document.addEventListener('click', async e => {
   else if (a === 'textsize') { setTextSize(b.dataset.v); render(); }
   else if (a === 'prefmode') { setDeckMode(b.dataset.v); render(); }
   else if (a === 'newdeck') startNewDeck();
+  else if (a === 'newchat') { store.newChat(); S.chatContext = ''; closeSheet(); render(); }
+  else if (a === 'chathistory') chatHistorySheet();
+  else if (a === 'openchat') { store.setChatCur(id); closeSheet(); render(); }
+  else if (a === 'delchat') { store.deleteChat(id); store.chats().length ? chatHistorySheet() : closeSheet(); render(); }
+  else if (a === 'askai') { S.view = 'chat'; render(); sendChat(b.dataset.q || ''); }
   else if (a === 'deck') { S.lsLabel = d0label(id); startDeck(id ? id.split(',') : null); }
   else if (a === 'lsgo') { const t = getManifest().packs.flatMap(pk => pk.topics).find(x => x.id === id); lsStart([id], t?.name); }
   else if (a === 'deckmode') {
