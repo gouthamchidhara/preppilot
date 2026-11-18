@@ -140,7 +140,13 @@ export default function App() {
           mediaPlaybackRequiresUserAction={false}
           mediaCapturePermissionGrantType="grant"
           allowsBackForwardNavigationGestures
-          pullToRefreshEnabled
+          // iOS momentum scrolling. Must be set explicitly: on the new architecture an unset value
+          // reaches the native view as 0, which stops the page dead the moment the finger lifts
+          // (the "one line per swipe" feel). 'normal' is Safari's own rate.
+          decelerationRate="normal"
+          // Pull-to-refresh reloaded the whole app when scrolling back to the top; the app refreshes its own data.
+          pullToRefreshEnabled={false}
+          bounces
           startInLoadingState
           renderLoading={() => <View style={[styles.center, { backgroundColor: bg }]}><ActivityIndicator color={fg} /></View>}
           onError={() => setFailed(true)}
