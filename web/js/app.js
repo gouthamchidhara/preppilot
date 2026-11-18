@@ -1744,6 +1744,12 @@ document.addEventListener('click', async e => {
     S.draft = null;
     S.roleSearch = '';
     if (b.dataset.nav === 'deck') return startDeck(null);
+    // The PrepPilot logo, for anyone not signed in, always returns to the animated landing page,
+    // even mid-onboarding or while trying the plan as a guest. "Get started" leads back in.
+    if (b.classList.contains('brand') && !signedIn()) {
+      S.login = false; S.onboard = false; S.guest = false; S.showPlans = false; S.view = 'home';
+      render(); return window.scrollTo({ top: 0 });
+    }
     S.view = b.dataset.nav; return render();
   }
   const a = b.dataset.act, id = b.dataset.id;
