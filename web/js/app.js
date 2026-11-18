@@ -1961,6 +1961,12 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch { /* storage
 const textSize = () => { const v = lsGet('pp.textSize', 'm'); return ['s', 'm', 'l'].includes(v) ? v : 'm'; };
 function setTextSize(v) { lsSet('pp.textSize', v); document.documentElement.dataset.ts = v; }
 document.documentElement.dataset.ts = textSize();
+// Inside the iPhone / Android app: behave like an app, not a web page. Double-tap never zooms.
+if (window.PP_PLATFORM) {
+  document.documentElement.classList.add('in-app');
+  const vp = document.querySelector('meta[name=viewport]');
+  if (vp) vp.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover');
+}
 const deckMode = () => (lsGet('pp.deckMode', 'steady') === 'swipe' ? 'swipe' : 'steady');
 const setDeckMode = m => lsSet('pp.deckMode', m);
 // Spread topics out so a swipe round rarely shows two cards from the same skill in a row.
