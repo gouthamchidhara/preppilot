@@ -63,6 +63,10 @@ Read this first, then `docs/PENDING-CHECKLIST.md` and `docs/PRODUCT-STRATEGY.md`
 
 ## 4. Next tasks (in the owner's priority order)
 
+0. **Diagrams beyond flows (owner approved).** `web/js/diagrams.js` already renders `flow, layers, cycle, split, map, tree, state, stack, bars`, but 47 of 72 topics in `web/js/diagram-data.js` use `flow`. Re-author each topic with the kind that fits: comparison (`split`) for X vs Y topics, `layers` for stacks/models, `cycle` for loops/handshakes, `tree` for hierarchies, `state` for lifecycles. If no picture helps, drop the diagram and show a worked example card instead. Check each in the lesson view (light + dark, phone width).
+0. **Faster custom subjects:** `handleGenerate` (`api/src/lib/handlers.js`, maxTokens 3500, ~15 s). Split into two parallel AI calls (concepts, questions) and merge; show lessons as soon as they arrive.
+0. **On the next TestFlight build, verify:** edge-to-edge header under the Dynamic Island (`mobile/App.tsx` SafeAreaView edges now left/right only; web `.top` pads `env(safe-area-inset-top)`), no keyboard accessory bar.
+
 1. **Verify on device** after the newest TestFlight build: scrolling feel, swipe-right panel, swipe cards, purchase sheet speed. Fix anything that still feels "webby".
 2. **Browser payments** (owner asked: after the iOS build). Plan in `docs/PENDING-CHECKLIST.md` section 4: RevenueCat Web Billing (Stripe), same `pro` entitlement and `mock_session_60min` product; web plans screen opens web checkout. Owner creates the Stripe account and connects it in RevenueCat.
 3. **Chat sync across devices** (optional, opt-in). Today chats are device-only and the privacy line says so. If added, store on the server per user and update the privacy text.
