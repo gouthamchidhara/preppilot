@@ -345,14 +345,22 @@ function landingView() {
   return `<div class="landing">
     <section class="l-hero">
       <div class="l-copy">
-        ${!signedIn() ? `<aside class="l-pitch" aria-label="A quicker way to refresh">
-          <div class="l-pitch-motion" aria-hidden="true">
-            <span class="l-pitch-video">${ic('play')} Long videos<span class="l-pitch-progress"></span></span>
-            <span class="l-pitch-arrow">${ic('right')}</span>
-            <span class="l-pitch-cards">${ic('cards')} Short cards</span>
+        ${!signedIn() ? `<aside class="l-pitch" aria-label="Short cards instead of long videos">
+          <div class="pz" aria-hidden="true">
+            <div class="pz-video">
+              <span class="pz-play">${ic('play')}</span>
+              <span class="pz-meta"><b>Java Collections, lecture 14 of 62</b><i class="pz-bar"><em></em></i></span>
+              <span class="pz-time">2:47:10</span>
+            </div>
+            <div class="pz-cards">
+              <span class="pz-card" style="--k:0"><code>hashCode()</code></span>
+              <span class="pz-card" style="--k:1"><code>equals()</code></span>
+              <span class="pz-card" style="--k:2"><code>load 0.75</code></span>
+              <span class="pz-clock">90 sec</span>
+            </div>
           </div>
-          <strong>Less binge-watching. More “I remember this.”</strong>
-          <p>Fed up with long Udemy or Pluralsight videos? Try short cards that bring back what you already know.</p>
+          <strong>Three hours of video, or ninety seconds of cards.</strong>
+          <p>You learned it once already. Skip re-watching the course and get the parts interviewers ask about back on the tip of your tongue.</p>
         </aside>` : ''}
         <p class="l-tag">## interview prep, the short way</p>
         <h1 class="l-title">Your interview is coming up. Let’s make sure it all comes back to you.</h1>

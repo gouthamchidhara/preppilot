@@ -554,25 +554,34 @@ pre code { background: none; border: 0; padding: 0; }
 @media (min-width: 760px) { .wrap:has(.landing) { max-width: 980px; } .l-hero { grid-template-columns: 1.1fr 1fr; align-items: center; gap: 36px; padding-top: 30px; } }
 .l-pitch { margin-bottom: 20px; padding: 14px 16px; border-left: 3px solid var(--accent); border-radius: 0 12px 12px 0; background: var(--accent-soft); color: var(--ink-soft); font-size: .9rem; line-height: 1.5; }
 .l-pitch strong { display: block; margin-bottom: 4px; color: var(--ink); font-size: .95rem; }
-.l-pitch-motion { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: .75rem; font-weight: 600; }
-.l-pitch-video, .l-pitch-cards { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 7px 9px; border: 1px solid var(--line-strong); border-radius: 7px; background: var(--paper); }
-.l-pitch-motion .ic { width: 15px; height: 15px; }
-.l-pitch-video { overflow: hidden; opacity: .6; }
-.l-pitch-progress { position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background: var(--muted); transform: scaleX(.2); transform-origin: left; }
-.l-pitch-arrow { display: inline-flex; color: var(--accent); }
-.l-pitch-cards { border-color: var(--accent); color: var(--accent); box-shadow: 3px 3px 0 var(--paper), 4px 4px 0 var(--accent); }
+/* "long video squeezes into a few cards" — 9s loop, opacity/transform only */
+.pz { position: relative; height: 58px; margin-bottom: 14px; }
+.pz-video { position: absolute; inset: 0; display: flex; align-items: center; gap: 10px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--paper); transform-origin: 18px 50%; }
+.pz-play { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--sunk); color: var(--muted); }
+.pz-play .ic { width: 14px; height: 14px; }
+.pz-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.pz-meta b { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pz-bar { display: block; height: 3px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.pz-bar em { display: block; height: 100%; width: 100%; background: var(--muted); transform-origin: left; transform: scaleX(.03); }
+.pz-time { flex: none; font: 600 12px ui-monospace, Menlo, Consolas, monospace; color: var(--muted); }
+.pz-cards { position: absolute; inset: 0; display: flex; align-items: center; gap: 8px; }
+.pz-card { padding: 8px 10px; border-radius: 9px; background: var(--paper); border: 1px solid var(--accent); box-shadow: 2px 2px 0 var(--accent-soft); opacity: 0; }
+.pz-card { flex: 0 0 auto; white-space: nowrap; }
+.pz-card code { background: none; border: 0; padding: 0; font-size: 12px; color: var(--ink); white-space: nowrap; overflow-wrap: normal; }
+.pz-clock { margin-left: auto; font: 700 13px var(--sans); color: var(--accent); opacity: 0; white-space: nowrap; }
 @media (prefers-reduced-motion: no-preference) {
   .l-pitch { animation: pitch-enter .6s ease-out both; }
-  .l-pitch-video { animation: pitch-video 3.6s ease-in-out both; }
-  .l-pitch-progress { animation: pitch-progress 3.6s ease-out both; }
-  .l-pitch-arrow { animation: pitch-arrow 3.6s ease-in-out both; }
-  .l-pitch-cards { animation: pitch-cards 3.6s cubic-bezier(.2, .7, .2, 1) both; }
+  .pz-video { animation: pz-video 9s cubic-bezier(.6, 0, .3, 1) infinite; }
+  .pz-bar em { animation: pz-bar 9s linear infinite; }
+  .pz-card { animation: pz-card 9s cubic-bezier(.2, .8, .2, 1) infinite; animation-delay: calc(var(--k) * .12s); }
+  .pz-clock { animation: pz-clock 9s ease-out infinite; }
 }
+@media (prefers-reduced-motion: reduce) { .pz-video { opacity: 0; } .pz-card, .pz-clock { opacity: 1; } }
 @keyframes pitch-enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-@keyframes pitch-video { 0%, 30% { opacity: 1; } 55%, 100% { opacity: .6; } }
-@keyframes pitch-progress { 0% { transform: scaleX(0); } 35%, 100% { transform: scaleX(.2); } }
-@keyframes pitch-arrow { 0%, 25% { opacity: 0; transform: translateX(-6px); } 45%, 100% { opacity: 1; transform: none; } }
-@keyframes pitch-cards { 0%, 30% { opacity: 0; transform: translateY(8px) rotate(-6deg); } 55% { opacity: 1; transform: translateY(-3px) rotate(2deg); } 70%, 100% { opacity: 1; transform: none; } }
+@keyframes pz-video { 0% { opacity: 0; transform: none; } 6%, 40% { opacity: 1; transform: none; } 50% { opacity: 1; transform: scaleX(.1); } 55%, 100% { opacity: 0; transform: scaleX(.1); } }
+@keyframes pz-bar { 0%, 6% { transform: scaleX(.03); } 40% { transform: scaleX(.09); } 100% { transform: scaleX(.09); } }
+@keyframes pz-card { 0%, 50% { opacity: 0; transform: translateX(calc(var(--k) * -100%)) scale(.5); } 60% { opacity: 1; transform: translateY(-3px) rotate(-2deg); } 66%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; transform: none; } }
+@keyframes pz-clock { 0%, 66% { opacity: 0; transform: translateY(4px); } 72%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; } }
 .l-title { font: 650 clamp(1.75rem, 6vw, 2.6rem)/1.12 var(--sans); letter-spacing: -.025em; }
 .l-sub { font-size: 1.06rem; line-height: 1.55; color: var(--ink-soft); margin-top: 14px; max-width: 34em; }
 .l-cta { margin: 22px 0 8px; }
