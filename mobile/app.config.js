@@ -11,7 +11,7 @@ module.exports = {
   expo: {
     name: 'PrepPilot',
     slug: 'preppilot',
-    owner: 'gchid',
+    owner: 'ppaladugula',
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/icon.png',

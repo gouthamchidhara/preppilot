@@ -10,6 +10,7 @@ name: iOS fast build (GitHub Mac + TestFlight)
 #     own tool. Expo is not involved.
 #   - Otherwise it falls back to `eas submit`, which uses the key stored on Expo.
 #
+# Expo account owner: ppaladugula (see mobile/app.config.js).
 # Cost: macOS minutes count 10x against the free 2,000 GitHub minutes (about 200 Mac minutes).
 on:
   workflow_dispatch:
