@@ -25,10 +25,10 @@ Checked with it on 18 November: subscription Enabled; Static Web App (Free) prod
 - [x] **RevenueCat: entitlement `pro`** exists and contains `pro_monthly`. Done 17 November 2026.
 - [x] **RevenueCat: Current offering** has a Monthly package for `pro_monthly` and a package for `mock_session_60min`. Done 17 November 2026 (offering `default`, 4 packages).
 - [x] **RevenueCat: webhook** created by Claude 18 Nov via API v2 (all events, sandbox and production), URL carries `?auth=` because Azure replaces the Authorization header. Was: URL `https://preppilot.us/api/billing/revenuecat`, Authorization header equal to the Azure setting `REVENUECAT_WEBHOOK_AUTH`. Send RevenueCat's test event; the API should answer 200.
-- [ ] **Azure: `REVENUECAT_SECRET_KEY`** set to the RevenueCat **v2** secret key (owner pastes it in the Azure Portal; `REVENUECAT_PROJECT_ID=projda036fd0` is already set). Currently empty. Used right after a purchase to unlock Pro or the session.
+- [ ] *(optional)* **Azure: `REVENUECAT_SECRET_KEY`** — purchases work without it through the webhook; it only speeds up the first unlock. set to the RevenueCat **v2** secret key (owner pastes it in the Azure Portal; `REVENUECAT_PROJECT_ID=projda036fd0` is already set). Currently empty. Used right after a purchase to unlock Pro or the session.
 - [x] **App Store Connect: `pro_monthly`** fixed by Claude 18 Nov: $10.99/month (was $4.99), shows as "PrepPilot Pro", new description, review screenshot; state Ready to Submit.
 - [x] **App Store Connect: `mock_session_60min`** fixed by Claude 18 Nov: $15.99 (was $10.99), shows as "Live AI, 60 minutes", sold in the USA, review screenshot; state Ready to Submit. Unused misspelled product `com.gchid.prepilot.subscribtion` deleted. Was: display name and description "Live AI, 60 minutes". Keep the product id.
-- [ ] **App Store Connect: Paid Apps agreement** Active (Agreements, Tax and Banking).
+- [x] **App Store Connect: Paid Apps agreement** in place with bank account and W-9 (owner screenshot 18 Nov). Was: Active (Agreements, Tax and Banking).
 - [ ] **New iOS build** to TestFlight (`docs/IOS-RELEASE-RUNBOOK.md`, workflow "iOS release"). The current build predates the purchase fixes, light/dark colours, badge and notifications.
 - [x] **App Store Connect: App Privacy answers** published 18 Nov (email, name, audio, other user content, user ID, purchase history, product interaction; all App Functionality, linked, no tracking). Was: match `web/privacy.html` (updated 17 November).
 - [ ] **TestFlight purchase test** with a sandbox account: buy Pro, buy a Live AI session, Restore purchases, and check the AI page shows "Unlimited" and "2 of 2" Live AI sessions.
@@ -51,7 +51,7 @@ Checked with it on 18 November: subscription Enabled; Static Web App (Free) prod
 - [x] **Hide "During your interview" on iPhone** with a server setting (for example `LIVE_INTERVIEW_IOS=off` returned by `/api/health`), default off for App Review. Done 17 November 2026: `/api/health` returns `liveInterviewIos` (on only when `LIVE_INTERVIEW_IOS=on`); the option is hidden in `liveSetupSheet()`, `livePromo()` and the Pricing table / "Live AI in your interview" section in `plansView()` when off. Landing page needed no change (it never mentions the mode).
 - [x] **Support page** `web/support.html` (does not exist yet; `/support.html` currently shows the home page). Contact `support@preppilot.us`, how to cancel Pro, restore purchases, delete the account, what Live AI includes, refunds through Apple. Done 17 November 2026; linked from Profile and Pricing. Setting it as the Support URL in App Store Connect still needs an Apple sign-in (blocked from Muse's browser).
 - [ ] **Costs:** after the first 20 to 30 Live AI sessions, compare Azure Cost Management (Azure OpenAI resource) with `docs/COST-AND-PRICING.md`.
-- [ ] **Budget alert** email reaches you.
+- [x] **Budget alert**: $20/month, emails at 80% and 100% (checked 18 Nov).
 - [x] **`ADMIN_EMAILS`** contains only your own addresses (checked 18 Nov: one address) (they get unlimited access).
 
 ## Done (for reference)
