@@ -41,6 +41,8 @@ const ICONS = {
   spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7z"/>',
   cards: '<rect x="3" y="7" width="14" height="13" rx="2.5"/><path d="M7 4h11a3 3 0 0 1 3 3v10"/>',
   book: '<path d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2zM4 20a2 2 0 0 0 2 2h13"/>',
+  sound: '<path d="M4 9h3l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/>',
+  soundoff: '<path d="M4 9h3l5-4v14l-5-4H4z"/><path d="M16 9l5 6M21 9l-5 6"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
 };
 const ic = n => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
@@ -877,7 +879,8 @@ function voicePanel() {
         <div class="timer" id="rtTimer">${esc(MODE_NAME[S.rtMode] || '')}</div></div>
       <div class="ctl">
         ${S.rtMode === 'listen' ? '<button class="btn primary" data-act="rtrespond">Get feedback</button>' : '<button class="btn" data-act="rtinterrupt">Interrupt</button>'}
-        <button class="btn" data-act="rtmute">${S.muted ? 'Unmute' : 'Mute'}</button>
+        <button class="btn ${S.muted ? 'on' : ''}" data-act="rtmute" aria-pressed="${!!S.muted}">${ic(S.muted ? 'micoff' : 'mic')}${S.muted ? 'Mic off' : 'Mic on'}</button>
+        ${S.rtSpeaks ? `<button class="btn ${S.soundOff ? 'on' : ''}" data-act="rtsound" aria-pressed="${!!S.soundOff}">${ic(S.soundOff ? 'soundoff' : 'sound')}${S.soundOff ? 'Sound off' : 'Sound on'}</button>` : ''}
         <button class="btn danger" data-act="rtstop">End</button>
       </div>
     </section>`;
@@ -994,7 +997,7 @@ function chatView() {
   const live = S.live ? `<div class="msg assistant" id="liveMsg">${md(S.live.text) || '<span class="dots"><i></i><i></i><i></i></span>'}</div>` : '';
   const canUse = signedIn();
   const a = store.account();
-  const bubble = m => isNotice(m) ? `<div class="msg sys">${fmt(m.content.replace(/^(ℹ️|⚠️)\s*/, ''))}</div>` : `<div class="msg ${m.role}">${m.role === 'assistant' ? md(m.content) : fmt(m.content)}</div>`;
+  const bubble = m => m.role === 'user' && m.content === '🎙 …' ? `<div class="msg user heard" id="heardMsg">${esc(S.heard || '') || '🎙 …'}</div>` : isNotice(m) ? `<div class="msg sys">${fmt(m.content.replace(/^(ℹ️|⚠️)\s*/, ''))}</div>` : `<div class="msg ${m.role}">${m.role === 'assistant' ? md(m.content) : fmt(m.content)}</div>`;
   if (!canUse) return signInCard();
   const lowFree = a?.plan === 'free' && !S.paywall && (a.msgsLeft <= 5 || a.voiceSecLeft < 30);
   const started = msgs.length || live;
@@ -1071,9 +1074,10 @@ function liveSetupSheet() {
 function liveHintCard() {
   const h = S.liveHint;
   if (!h) return '';
-  return `<section class="panel stack"><div class="label">Hint for this question</div>
-    <p style="font:400 1.05rem/1.6 var(--serif)">${h.loading ? 'Thinking of a hint…' : esc(h.hint)}</p>
-    ${h.showStrong && h.strong ? `<div><div class="label">A strong answer would add</div><p class="muted" style="font:400 1.05rem/1.6 var(--serif)">${esc(h.strong)}</p></div>` : ''}
+  return `<section class="panel stack live-hint ${h.loading ? 'is-loading' : ''}"><div class="label">How to answer</div>
+    <p class="lh-q muted small">${esc(h.question)}</p>
+    ${h.loading ? '<div class="lh-skel" aria-hidden="true"><i></i><i></i><i></i></div>' : `<p style="font:400 1.05rem/1.6 var(--serif)">${esc(h.hint)}</p>
+    ${h.strong ? `<div><div class="label">Points a strong answer covers</div><p class="muted" style="font:400 1.05rem/1.6 var(--serif)">${esc(h.strong)}</p></div>` : ''}`}
     <p class="muted small">Hints are for practice. AI is here to help you prepare.</p>
   </section>`;
 }
@@ -1145,7 +1149,13 @@ function rtHandlers() {
       // Placeholder so the user's words appear before the AI reply even if transcription lands later.
       if (!S.pendingUser) { store.setChat([...store.chat(), { role: 'user', content: '🎙 …' }]); S.pendingUser = true; if (!S.live) render(); }
     },
+    heard(text) {
+      S.heard = (S.heard || '') + text;
+      const el = document.getElementById('heardMsg');
+      if (el) { el.textContent = S.heard; scrollEnd(); }
+    },
     user(text) {
+      S.heard = '';
       const msgs = store.chat();
       const i = msgs.map(m => m.content).lastIndexOf('🎙 …');
       if (i >= 0) msgs[i] = { role: 'user', content: text.trim() || '(inaudible)' };
@@ -1160,6 +1170,10 @@ function rtHandlers() {
       if (S.live?.hidden && S.live.id === id) { S.live.hidden = false; render(); }
       if (!S.live || S.live.id !== id) { S.live = { id, text: '' }; S.pendingUser = false; render(); }
       S.live.text += text;
+      // Practice test: the moment the coach's question is out, start the answer points, while it is still speaking.
+      if (S.rtMode === 'live' && S.liveUse === 'practice' && S.hintFor !== id && S.live.text.includes('?')) {
+        S.hintFor = id; fetchLiveHint(S.live.text.slice(0, S.live.text.lastIndexOf('?') + 1).trim().slice(-400));
+      }
       const el = document.getElementById('liveMsg');
       if (el) { el.innerHTML = md(S.live.text); scrollEnd(); }
     },
@@ -1169,13 +1183,13 @@ function rtHandlers() {
       const skip = S.liveUse === 'interview' && /^[.…\s]*$/.test(final);
       if (final.trim() && !skip) store.setChat([...store.chat(), { role: 'assistant', content: final }]);
       // In a practice test, a finished question gets an instant hint.
-      if (S.rtMode === 'live' && S.liveUse !== 'interview' && /\?\s*$/.test(final.trim())) fetchLiveHint(final.trim());
+      if (S.rtMode === 'live' && S.liveUse === 'practice' && S.hintFor !== id && /\?\s*$/.test(final.trim())) { S.hintFor = id; fetchLiveHint(final.trim()); }
       render();
     },
     end(reason) {
       const wasLive = S.rtMode === 'live';
       const retry = wasLive && /^Connection lost/.test(reason || '') && (S.liveRetries || 0) < 3;
-      S.rt = null; S.rtMode = null; S.rtStatus = ''; S.live = null; S.pendingUser = false; S.muted = false; S.liveHint = null; S.liveUse = null;
+      S.rt = null; S.rtMode = null; S.rtStatus = ''; S.live = null; S.pendingUser = false; S.muted = false; S.soundOff = false; S.rtSpeaks = false; S.heard = ''; S.hintFor = null; S.liveHint = null; S.liveUse = null;
       store.setChat(store.chat().filter(m => m.content !== '🎙 …'));
       if (reason) store.setChat([...store.chat(), { role: 'assistant', content: `ℹ️ ${reason}` }]);
       if (retry) {
@@ -1201,7 +1215,9 @@ async function startVoice(mode) {
     // Live AI uses its own settings: voice on/off, length, style, topic focus, difficulty.
     const live = mode === 'live' ? liveSettings() : null;
     S.liveUse = live?.use || null;
-    await session.start({ mode, speak: mode === 'live' ? live.voice && live.use !== 'interview' : mode !== 'listen' || store.speak(), profileSummary: summary(), context: S.chatContext, live, noIdle: isAdmin() });
+    const speak = mode === 'live' ? live.voice && live.use !== 'interview' : mode !== 'listen' || store.speak();
+    S.rtSpeaks = speak; S.soundOff = false; S.heard = '';
+    await session.start({ mode, speak, profileSummary: summary(), context: S.chatContext, live, noIdle: isAdmin() });
   } catch (e) {
     S.rt = null; S.rtMode = null;
     if (e.code === 'quota') S.paywall = true;
@@ -1939,6 +1955,7 @@ document.addEventListener('click', async e => {
   else if (a === 'rtrespond') S.rt?.respond();
   else if (a === 'rtinterrupt') S.rt?.interrupt();
   else if (a === 'rtmute') { S.muted = !S.muted; S.rt?.setMuted(S.muted); render(); }
+  else if (a === 'rtsound') { S.soundOff = !S.soundOff; S.rt?.setSoundOff(S.soundOff); render(); }
   else if (a === 'rtstop') S.rt?.stop();
   else if (a === 'nsignin') nativeSignIn(b.dataset.p);
   else if (a === 'signout') { S.rt?.stop(); store.setAccessCode(''); signOut(); S.paywall = false; S.guest = false; S.onboard = false; S.view = 'home'; S.adminSug = null; render(); window.scrollTo({ top: 0 }); }

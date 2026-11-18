@@ -71,6 +71,8 @@ export class VoiceSession {
     switch (e.type) {
       case 'input_audio_buffer.speech_started': this.on.status('you'); this.on.userStart(); break;
       case 'input_audio_buffer.speech_stopped': this.on.status(this.mode === 'listen' ? 'listening' : 'thinking'); break;
+      // What it hears, word by word while you speak (when the transcription model streams).
+      case 'conversation.item.input_audio_transcription.delta': this.on.heard?.(e.delta || ''); break;
       case 'conversation.item.input_audio_transcription.completed': this.on.user(e.transcript || ''); break;
       case 'response.output_audio_transcript.delta':
       case 'response.output_text.delta': this.on.delta(e.response_id, e.delta || ''); break;
@@ -101,6 +103,9 @@ export class VoiceSession {
   interrupt() { this.send({ type: 'response.cancel' }); this.send({ type: 'output_audio_buffer.clear' }); }
 
   setMuted(m) { this.mic?.getAudioTracks().forEach(t => { t.enabled = !m; }); }
+
+  // Silence the AI's voice; its words still appear on screen.
+  setSoundOff(off) { if (this.audio) this.audio.muted = !!off; }
 
   stop(reason) {
     if (!this.pc && !this.mic) return;

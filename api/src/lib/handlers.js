@@ -196,12 +196,12 @@ export async function handleLiveHint(req, log) {
   if (!inWindow) return json(402, { error: 'Hints are part of a Live AI session. Start one to get hints.', code: 'no_live_session' });
   const system = 'You are PrepPilot\'s practice helper. The user is in a timed practice test. '
     + 'Given the coach\'s question and the user\'s answer so far (if any), reply with ONLY a JSON object: '
-    + '{"hint": "one short hint for answering, 1-2 sentences", "strong": "2-3 things a strong answer would add, concise"}. No markdown.';
+    + '{"hint": "how to open the answer: one sentence the candidate can say first", "strong": "the 3 key points a strong answer covers, each a few words, separated by \' · \'"}. Be specific to the question: name the exact concept, API or trade-off. No markdown.';
   const userText = v.answer
     ? `Question: ${v.question}\nAnswer so far: ${v.answer}`
     : `Question: ${v.question}\nNo answer yet.`;
   try {
-    const raw = await complete([{ role: 'system', content: system }, { role: 'user', content: userText }], { json: true, maxTokens: 300, temperature: 0.3 });
+    const raw = await complete([{ role: 'system', content: system }, { role: 'user', content: userText }], { json: true, maxTokens: 200, temperature: 0.2 });
     let parsed = null;
     try { parsed = JSON.parse(raw); } catch { /* fall through to the raw-text fallback */ }
     const hint = typeof parsed?.hint === 'string' && parsed.hint.trim() ? parsed.hint.trim().slice(0, 600) : String(raw).slice(0, 600);

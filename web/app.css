@@ -744,3 +744,13 @@ body:has(.landing) #topRight { margin-left: auto; }
 .jf-skel-card:nth-child(odd) { animation-delay: .15s; }
 .jf-err { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 14px; border: 1px solid var(--line-strong); border-radius: 12px; }
 .jf-err span { flex: 1 1 200px; color: var(--ink-soft); }
+
+/* Live AI: what it hears appears while you speak; answer points load in place */
+.msg.heard { opacity: .85; }
+.live-hint .lh-q { margin: -4px 0 0; }
+.lh-skel { display: grid; gap: 8px; }
+.lh-skel i { height: 14px; border-radius: 6px; background: var(--sunk); animation: jf-pulse 1s ease-in-out infinite; }
+.lh-skel i:nth-child(2) { width: 85%; animation-delay: .1s; } .lh-skel i:nth-child(3) { width: 60%; animation-delay: .2s; }
+.ctl .btn .ic { width: 16px; height: 16px; margin-right: 6px; vertical-align: -3px; }
+.ctl .btn.on { border-color: var(--ink); }
+@media (prefers-reduced-motion: no-preference) { .live-hint { animation: jf-in .25s ease-out both; } }

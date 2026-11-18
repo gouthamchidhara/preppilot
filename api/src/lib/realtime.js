@@ -76,7 +76,7 @@ export function sessionConfigs(v) {
             // a 0.9 s pause; at 1200 ms it never did, replying ~1.5 s after the answer ended.
             // 1000 ms still talked over a 1.3 s pause in conversation, so every spoken mode waits 1200 ms. Listening never
             // auto-answers (the app sends response.create); interview mode only shows silent text.
-            silence_duration_ms: v.mode === 'listen' ? 900 : v.live?.use === 'interview' ? 600 : 1200,
+            silence_duration_ms: v.mode === 'listen' ? 900 : v.live?.use === 'interview' ? 500 : 1200,
             create_response: v.mode !== 'listen',
             interrupt_response: v.live?.use !== 'interview',
           },
