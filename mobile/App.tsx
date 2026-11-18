@@ -138,7 +138,7 @@ export default function App() {
   }
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: bg }]} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[styles.root, { backgroundColor: bg }]} edges={['left', 'right']}>
       <StatusBar style={dark ? 'light' : 'dark'} />
       {failed ? (
         <View style={[styles.center, { backgroundColor: bg }]}>
@@ -175,6 +175,9 @@ export default function App() {
           renderLoading={() => <View style={[styles.center, { backgroundColor: bg }]}><ActivityIndicator color={fg} /></View>}
           onError={() => setFailed(true)}
           setSupportMultipleWindows={false}
+          // Edge to edge: the page draws under the Dynamic Island and handles the inset itself.
+          contentInsetAdjustmentBehavior="never"
+          style={{ backgroundColor: bg }}
         />
       )}
     </SafeAreaView>

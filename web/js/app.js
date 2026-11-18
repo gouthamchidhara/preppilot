@@ -1151,6 +1151,7 @@ if (window.visualViewport) {
   visualViewport.addEventListener('scroll', placeDock);
 }
 document.addEventListener('focusin', e => { if (e.target.id === 'chatInput') { setTimeout(placeDock, 50); setTimeout(() => { placeDock(); scrollEnd(); }, 320); } });
+document.addEventListener('focusin', e => { if (e.target.id === 'learnSearch') setTimeout(() => e.target.scrollIntoView({ block: 'start', behavior: 'smooth' }), 300); });
 document.addEventListener('focusout', e => { if (e.target.id === 'chatInput') setTimeout(placeDock, 50); });
 
 const SW_AT = 100; // px past which a release counts
@@ -1812,13 +1813,13 @@ function customView() {
   return `<div class="stack loose">
     <div class="head"><h1>Your subjects</h1>
       <p class="lede">Anything your interview covers that the 72 built-in topics don't — Ansible, Puppet, a tool only your team uses. AI writes the full guide: lessons told like a story, plus flashcards.</p></div>
-    <section class="card stacked">
+    <section class="cs-panel">
       <div class="card-head"><span>Custom subjects</span><span>${custom.length} of ${CUSTOM_LIMIT}</span></div>
       ${reason === 'pro'
         ? `<p class="muted">Custom subjects are part of Pro. The subjects you already have stay usable either way.</p><div class="row"><button class="btn primary" data-act="plans">See pricing</button></div>`
         : reason === 'signin'
           ? `<p class="muted">Sign in to write a custom subject.</p>`
-          : `<form id="customForm" class="row"><input id="customTopic" maxlength="120" placeholder="e.g. Ansible" required aria-label="Subject"><button class="btn primary" ${S.busy || atCap ? 'disabled' : ''}>${S.busy ? 'Writing your guide…' : 'Generate my guide'}</button></form>
+          : `${S.busy ? `<ol class="gen-steps" aria-live="polite"><li>Reading up on the subject</li><li>Writing short lessons</li><li>Writing interview questions</li><li>Checking the answers</li></ol>` : ''}<form id="customForm" class="row cs-form"><input id="customTopic" maxlength="120" placeholder="e.g. Ansible" required aria-label="Subject"><button class="btn primary" ${S.busy || atCap ? 'disabled' : ''}>${S.busy ? 'Writing your guide…' : 'Generate my guide'}</button></form>
           <p class="muted small">Uses 5 AI messages. ${atCap ? `You have all ${CUSTOM_LIMIT} subjects — delete one to make room.` : `You can keep up to ${CUSTOM_LIMIT} subjects.`}</p>`}
       ${custom.length ? `<div class="rows" style="margin-top:14px">${rows}</div>` : `<p class="muted" style="margin-top:14px">No custom subjects yet.</p>`}
     </section>
