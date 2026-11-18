@@ -138,7 +138,13 @@ export default function App() {
   }
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: bg }]} edges={['top', 'left', 'right']}>
+    {/* No 'top' edge: the WebView runs to the very top of the screen, under the
+        Dynamic Island / status bar, so the side panel and the page blend into the
+        island bar like a native drawer instead of stopping at a hard line below
+        it. The web page already clears the island itself with
+        env(safe-area-inset-top) (panel, page header, sheets, chat tab), which
+        only reports a real value once the WebView is edge-to-edge. */}
+    <SafeAreaView style={[styles.root, { backgroundColor: bg }]} edges={['left', 'right']}>
       <StatusBar style={dark ? 'light' : 'dark'} />
       {failed ? (
         <View style={[styles.center, { backgroundColor: bg }]}>
