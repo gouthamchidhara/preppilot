@@ -272,6 +272,51 @@ const LANES = [
   ['AI & LLMs', ['llm-apps', 'ml-fundamentals']],
 ];
 
+// Landing scroll story: an interviewer's question writes itself as you scroll, there is the
+// blank moment, then the answer comes back line by line. Scrolling up rewinds it.
+const STORY = {
+  q: 'So… walk me through how a HashMap actually finds a value.',
+  a: [
+    ['hashCode()', 'turns the key into a number that picks the bucket'],
+    ['equals()', 'checks which entry in that bucket is really yours'],
+    ['0.75 load factor', 'past that, the table doubles and everything is rehashed'],
+    ['Java 8+', 'a crowded bucket turns into a tree, so lookups stay fast'],
+  ],
+};
+function storyHtml() {
+  const words = STORY.q.split(' ');
+  return `<section class="l-story" id="lStory" aria-label="How it feels in the interview">
+    <div class="l-stage">
+      <div class="l-stage-in">
+        <p class="l-tag">## the moment that matters</p>
+        <p class="l-who">Interviewer</p>
+        <p class="l-q" aria-label="${esc(STORY.q)}">${words.map((w, i) => `<span class="w" data-i="${i}">${esc(w)}</span>`).join(' ')}</p>
+        <p class="l-blank" aria-hidden="true"><span class="l-dot"></span><span class="l-blank-t">you, a second later</span></p>
+        <ol class="l-ans">${STORY.a.map(([k, v], i) => `<li data-i="${i}"><code>${esc(k)}</code><span>${esc(v)}</span></li>`).join('')}</ol>
+        <p class="l-done">That’s a card you went through last Tuesday. <b>It came back.</b></p>
+      </div>
+    </div>
+  </section>`;
+}
+let storyRaf = 0;
+function paintStory() {
+  storyRaf = 0;
+  const el = document.getElementById('lStory');
+  if (!el) return;
+  const r = el.getBoundingClientRect();
+  const span = Math.max(1, r.height - window.innerHeight);
+  const p = Math.min(1, Math.max(0, -r.top / span));
+  const words = el.querySelectorAll('.l-q .w'), lines = el.querySelectorAll('.l-ans li');
+  const nw = Math.round(Math.min(1, p / 0.4) * words.length);
+  words.forEach((w, i) => { w.classList.toggle('on', i < nw); w.classList.toggle('cur', i === nw - 1 && p < 0.55); });
+  el.classList.toggle('thinking', p >= 0.4 && p < 0.55);
+  const nl = p < 0.55 ? 0 : Math.ceil(Math.min(1, (p - 0.55) / 0.33) * lines.length);
+  lines.forEach((l, i) => l.classList.toggle('on', i < nl));
+  el.classList.toggle('done', p >= 0.92);
+}
+window.addEventListener('scroll', () => { if (!storyRaf) storyRaf = requestAnimationFrame(paintStory); }, { passive: true });
+window.addEventListener('resize', () => paintStory());
+
 function landingView() {
   const demo = S.demo;
   const q = demo?.q;
@@ -287,15 +332,19 @@ function landingView() {
           <strong>Less binge-watching. More “I remember this.”</strong>
           <p>Fed up with long Udemy or Pluralsight videos? Try short cards that bring back what you already know.</p>
         </aside>` : ''}
+        <p class="l-tag">## interview prep, the short way</p>
         <h1 class="l-title">Your interview is coming up. Let’s make sure it all comes back to you.</h1>
         <p class="l-sub">Quick flashcards for the tech you already work with, Java, React, Python, SQL, cloud and AI, one or two lines each, in the order you actually work.</p>
         <div class="row l-cta"><button class="btn primary lg" data-act="startonboard">Get started, it’s free</button></div>
         <p class="muted small">No card needed. Takes about a minute.</p>
       </div>
       ${heroAnim()}
+      <p class="l-giant" aria-hidden="true">recall<span class="l-giant-dot"></span></p>
     </section>
+    ${storyHtml()}
 
     <section class="l-try">
+      <p class="l-tag">## try one yourself</p>
       <h2 class="l-h2">Try a card</h2>
       <div class="chips l-lanes" role="tablist" aria-label="Pick a technology">${LANES.map(([n], i) => `<button class="chip ${demo?.lane === i ? 'on' : ''}" role="tab" aria-selected="${demo?.lane === i}" data-act="demolane" data-i="${i}">${esc(n)}</button>`).join('')}</div>
       ${q ? `<article class="card stacked flash l-card" id="flash">
@@ -307,7 +356,8 @@ function landingView() {
     </section>
 
     <section class="l-why">
-      <h2 class="l-h2">Why it works</h2>
+      <p class="l-tag">## why it works</p>
+      <h2 class="l-h2">Built for the night before, not a semester</h2>
       <div class="l-grid">
         <div class="l-tile">${ic('cards')}<b>Short on purpose</b><span>Not a course. Each card is the line you want ready when the interviewer asks.</span></div>
         <div class="l-tile">${ic('right')}<b>In your workflow’s order</b><span>Write it, build it, test it, ship it, run it. The next card is the one you’d expect.</span></div>
@@ -1271,6 +1321,7 @@ function render() {
   if (native() && key === 'home' && profile()) syncNativeHome();
   if (key === 'home' && profile()) loadFresh();
   if (key === 'landing' && !S.demo) loadDemo();
+  if (key === 'landing') requestAnimationFrame(paintStory);
   // The plans-screen diagram plays itself when the screen opens; anywhere
   // else the player stops so timers never outlive their screen.
   if (key === 'plans' && changed) startDgAutoplay();
