@@ -1177,7 +1177,16 @@ body.drawer-open .nd { transform: none; opacity: 1; }
    panel's own header (PrepPilot + search). Tapping the slid-away page
    still closes the panel. */
 @media (max-width: 899px) { body.drawer-open .top { visibility: hidden; } }
+/* Dim the slid-away page while the panel is open on mobile, so the strip
+   reads as background, not a torn page fragment. Same scrim value as
+   #sheet / .ai-scrim. CSS-only: a tap on the strip still reaches the
+   document capture handler that closes the panel. */
+@media (max-width: 899px) {
+  #shell::after { content: ''; position: absolute; inset: 0; z-index: 30; border-radius: inherit; background: rgba(15, 20, 21, .45); opacity: 0; pointer-events: none; transition: opacity .32s; }
+  body.drawer-open #shell::after { opacity: 1; pointer-events: auto; }
+}
 .nd-head { display: flex; align-items: center; justify-content: space-between; padding: 0 6px 14px 12px; }
+.nd-head-btns { display: flex; gap: 8px; align-items: center; }
 .nd-head b { font-size: 1.5rem; letter-spacing: -.02em; }
 .nd-round { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line-strong); background: var(--paper); color: var(--ink); cursor: pointer; }
 .nd-round .ic { width: 20px; height: 20px; }
@@ -1204,6 +1213,7 @@ body.drawer-open .nd { transform: none; opacity: 1; }
 /* Wide screens: the panel is a permanent sidebar */
 @media (min-width: 900px) {
   body.has-drawer .menu-btn { display: none; }
+  body.has-drawer .nd-menu { display: none; }
   body.has-drawer #shell { margin-left: 280px; transform: none !important; border-radius: 0 !important; box-shadow: none !important; height: auto !important; overflow: visible !important; }
   body.has-drawer .nd { width: 280px; transform: none; opacity: 1; border-right: 1px solid var(--line); }
   .ai-layout { display: block !important; }

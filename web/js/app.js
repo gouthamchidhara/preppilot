@@ -1431,7 +1431,7 @@ function navDrawerHtml(key) {
     chats = groups.map(g => `<span class="nd-day">${esc(g.label)}</span>${g.items.map(c => `<button class="nd-chat-item ${key === 'chat' && c.id === cur ? 'on' : ''}" data-act="ndchat" data-id="${c.id}">${esc(c.title)}</button>`).join('')}`).join('');
   } else chats = list.slice(0, 6).map(c => `<button class="nd-chat-item ${key === 'chat' && c.id === cur ? 'on' : ''}" data-act="ndchat" data-id="${c.id}">${esc(c.title)}</button>`).join('');
   return `<aside class="nd" aria-label="Menu">
-    <div class="nd-head"><b>PrepPilot</b><button class="nd-round" data-act="ndgo" data-v="search" aria-label="Search topics">${ic('search')}</button></div>
+    <div class="nd-head"><b>PrepPilot</b><span class="nd-head-btns"><button class="nd-round" data-act="ndgo" data-v="search" aria-label="Search topics">${ic('search')}</button><button class="nd-round nd-menu" data-act="drawer" aria-label="Close panel">${ic('menu')}</button></span></div>
     <nav class="nd-nav">
       ${item('home', 'Home', 'home', key === 'home')}
       ${item('deck', 'Cards', 'cards', key === 'deck')}
