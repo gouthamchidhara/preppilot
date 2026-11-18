@@ -27,13 +27,47 @@ test('drawer open on narrow screens: the slid-away page is dimmed', () => {
   // Without a scrim the 70px strip of the slid-away shell shows the page's
   // big heading, search box and chips cut mid-word — it reads as a torn
   // live page, not background. Same scrim value as #sheet / .ai-scrim.
+  // Opacity is driven by --scrim-o so the drag can fade the dim in with
+  // the finger; the settled open state sets it on #shell, where an inline
+  // value set mid-drag still wins.
   assert.ok(
-    flat.includes("#shell::after { content: ''; position: absolute; inset: 0; z-index: 30; border-radius: inherit; background: rgba(15, 20, 21, .45); opacity: 0; pointer-events: none; transition: opacity .32s; }"),
+    flat.includes("#shell::after { content: ''; position: absolute; inset: 0; z-index: 30; border-radius: inherit; background: rgba(15, 20, 21, .45); opacity: var(--scrim-o, 0); pointer-events: none; transition: opacity .32s; }"),
     'app.css must define a #shell::after scrim under max-width: 899px',
   );
   assert.ok(
-    flat.includes('body.drawer-open #shell::after { opacity: 1; pointer-events: auto; }'),
-    'app.css must show the scrim while the drawer is open',
+    flat.includes('body.drawer-open #shell { --scrim-o: 1; }'),
+    'app.css must dim the shell while the drawer is open',
+  );
+  assert.ok(
+    flat.includes('body.drawer-open #shell::after { pointer-events: auto; }'),
+    'app.css must let taps on the dimmed strip close the panel',
+  );
+  assert.ok(
+    flat.includes('body.drawer-drag #shell::after { transition: none; }'),
+    'app.css must not lag the scrim behind the finger mid-drag',
+  );
+});
+
+test('drawer swipe: horizontal drags go to the gesture, not the browser scroll', () => {
+  // Without touch-action: pan-y the browser claims horizontal drags for
+  // scrolling and fires touchcancel mid-swipe; there was no touchcancel
+  // handler, so a cancelled drag left the panel stuck half-open with its
+  // transitions disabled.
+  assert.ok(
+    /#shell \{[^}]*touch-action: pan-y;/.test(css),
+    'app.css must set touch-action: pan-y on #shell',
+  );
+  assert.ok(
+    /\.nd \{[^}]*touch-action: pan-y;/.test(css),
+    'app.css must set touch-action: pan-y on .nd',
+  );
+  assert.ok(
+    js.includes("document.addEventListener('touchcancel', endDrawerDrag)"),
+    'app.js must settle a cancelled drawer drag like a release',
+  );
+  assert.ok(
+    js.includes('function endDrawerDrag()') && js.includes('requestAnimationFrame(() => {'),
+    'app.js must glide from the finger position on release, not snap',
   );
 });
 
