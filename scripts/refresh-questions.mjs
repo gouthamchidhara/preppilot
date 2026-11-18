@@ -28,6 +28,8 @@ const PER = Number(opt('--per', 3));
 const ONLY = opt('--only', '') ? new Set(opt('--only', '').split(',')) : null;
 const PACK = opt('--pack', '');
 const DRY = args.includes('--dry');
+// Daily runs: stop adding to a topic once it has this many new questions this month, so no topic balloons.
+const MONTH_CAP = Number(opt('--month-cap', 8));
 const MONTH = new Date().toISOString().slice(0, 7);
 if (!DRY && (!ENDPOINT || !KEY)) { console.error('Set AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY'); process.exit(1); }
 
@@ -123,6 +125,7 @@ for (const f of files) {
   let changed = false;
   for (const t of pack.topics) {
     if (t.private || SKIP.has(t.id) || (ONLY && !ONLY.has(t.id))) continue;
+    if (t.qa.filter(q => q.new === MONTH).length >= MONTH_CAP) continue;
     const tags = TAGS[t.id] || [];
     const [so, hn] = await Promise.all([stackOverflow(tags), hackerNews(t.name.replace(/&/g, ' '))]);
     if (DRY) { console.log(`${t.id}: ${so.length} SO, ${hn.length} HN`, so.slice(0, 3)); continue; }
