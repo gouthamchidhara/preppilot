@@ -14,6 +14,11 @@ Status in one line: the site and app work; **paid purchases do not unlock anythi
   - Service Health: any Static Web Apps incident in East US 2.
   - Last resort: `./deploy.ps1` redeploys the infrastructure and content.
 
+## Azure access for Claude (18 November)
+Login `preppilot-claude`, Contributor on `rg-preppilot` only, created with `scripts/grant-claude-azure.ps1`; stored as a network secret in the Claude environment. Claude calls Azure with `scripts/azure-api.sh`. Remove any time: Entra ID → App registrations → preppilot-claude → Delete.
+
+Checked with it on 18 November: subscription Enabled; Static Web App (Free) production Ready; `preppilot.us` and `www` Ready; sweeper Running; budget `budget-preppilot` $20/month, about $1.22 spent. App settings still missing: `REVENUECAT_SECRET_KEY` (empty) and all `ACS_EMAIL_*` / `SUGGESTIONS_EMAIL` (not set).
+
 ## 1. Before anyone can pay
 
 - [x] **Merge `claude/eloquent-pasteur-wdc9yd` into `main`.** Done 17 November 2026 (fast-forward to `a31efcf`); Azure now serves `main`. (The Google sign-in fix `ffb3865` is in.)
