@@ -34,7 +34,7 @@ Checked with it on 18 November: subscription Enabled; Static Web App (Free) prod
 - [ ] **TestFlight purchase test** with a sandbox account: buy Pro, buy a Live AI session, Restore purchases, and check the AI page shows "Unlimited" and "2 of 2" Live AI sessions.
 
 - [x] **App availability: United States only** (set by Claude 18 Nov; was every country including China mainland, which triggered China security/AIGC notices). Add countries later in Pricing and Availability.
-- [ ] **App Store name:** the PrepPilot listing (app 6835532732, `com.gchid.preppilot`) is named "interview-preppilot". Choose a proper store name (for example "PrepPilot: Interview Prep") before review. ("Remivo" is a different app in the same account.)
+- [x] **App Store name set to "PrepPilot: Interview Prep"** by Claude 18 Nov. Was: the PrepPilot listing (app 6835532732, `com.gchid.preppilot`) is named "interview-preppilot". Choose a proper store name (for example "PrepPilot: Interview Prep") before review. ("Remivo" is a different app in the same account.)
 
 ## 2. Email
 
