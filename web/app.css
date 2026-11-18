@@ -1155,3 +1155,52 @@ html.in-app body { padding-bottom: 0; }
 html.in-app #app { padding-bottom: calc(var(--tabs) + 28px + env(safe-area-inset-bottom)); }
 html.in-app #app:has(.ai-dock) { padding-bottom: 0; }
 html.in-app .ai-dock { padding-bottom: calc(12px + var(--tabs) + env(safe-area-inset-bottom)); bottom: 0; }
+
+/* ---------- App-wide side panel (ChatGPT style) ---------- */
+.menu-btn { display: none; flex: none; width: 44px; height: 44px; border-radius: 50%; place-items: center; border: 1px solid var(--line-strong); background: var(--paper); color: var(--ink); cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+.menu-btn .ic { width: 20px; height: 20px; }
+body.has-drawer { --tabs: 0px; }
+body.has-drawer nav.tabs { display: none !important; }
+body.has-drawer .menu-btn { display: grid; }
+body.has-drawer .top { justify-content: flex-start; }
+body.has-drawer .top #topRight { margin-left: auto; }
+body.has-drawer .top .brand { margin-left: 4px; }
+#shell { position: relative; z-index: 2; min-height: 100vh; background: var(--desk); transition: transform .32s cubic-bezier(.2, .8, .2, 1), border-radius .32s; }
+body.drawer-open #shell { transform: translateX(min(82vw, 320px)); border-radius: 28px; box-shadow: -14px 0 40px rgba(0,0,0,.14); overflow: hidden; height: 100vh; }
+.nd { position: fixed; z-index: 1; top: 0; left: 0; bottom: 0; width: min(82vw, 320px); display: flex; flex-direction: column; padding: calc(18px + env(safe-area-inset-top)) 14px calc(16px + env(safe-area-inset-bottom)); background: var(--paper); transform: translateX(-24%); opacity: 0; transition: transform .32s cubic-bezier(.2, .8, .2, 1), opacity .25s; }
+body.drawer-open .nd { transform: none; opacity: 1; }
+.nd-head { display: flex; align-items: center; justify-content: space-between; padding: 0 6px 14px 12px; }
+.nd-head b { font-size: 1.5rem; letter-spacing: -.02em; }
+.nd-round { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line-strong); background: var(--paper); color: var(--ink); cursor: pointer; }
+.nd-round .ic { width: 20px; height: 20px; }
+.nd-nav { display: grid; gap: 2px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.nd-item { display: flex; align-items: center; gap: 14px; padding: 11px 12px; border: 0; border-radius: 12px; background: none; color: var(--ink); font: 500 1.05rem var(--sans); text-align: left; cursor: pointer; }
+.nd-item .ic { width: 22px; height: 22px; }
+.nd-item.on, .nd-item:active { background: var(--sunk); }
+.nd-chats { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; padding-top: 12px; }
+.nd-sec, .nd-day { padding: 6px 12px 4px; font: 600 12px var(--sans); color: var(--muted); }
+.nd-day { padding-top: 10px; }
+.nd-chat-item { padding: 10px 12px; border: 0; border-radius: 12px; background: none; color: var(--ink); font: 400 1rem var(--sans); text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.nd-chat-item.on, .nd-chat-item:active { background: var(--sunk); }
+.nd-more { align-self: flex-start; padding: 10px 12px; border: 0; background: none; color: var(--muted); font: 400 1rem var(--sans); cursor: pointer; }
+.nd-empty { padding: 4px 12px; color: var(--muted); font-size: 14px; }
+.nd-privacy { display: flex; gap: 6px; align-items: center; margin: auto 12px 0; padding-top: 12px; color: var(--muted); font-size: 12px; }
+.nd-privacy .ic { width: 13px; height: 13px; flex: none; }
+.nd-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 6px 0 6px; }
+.nd-new { display: inline-flex; align-items: center; gap: 10px; height: 54px; padding: 0 26px; border: 0; border-radius: 99px; background: var(--ink); color: var(--paper); font: 600 1.1rem var(--sans); cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+.nd-new .ic { width: 20px; height: 20px; }
+.nd-av { width: 54px; height: 54px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--accent); color: #fff; font: 600 15px var(--sans); cursor: pointer; box-shadow: 0 0 0 4px var(--paper) inset; }
+/* the AI tab no longer has its own drawer */
+.ai-head { grid-template-columns: 1fr 40px !important; }
+.ai-title { text-align: left !important; }
+/* Wide screens: the panel is a permanent sidebar */
+@media (min-width: 900px) {
+  body.has-drawer .menu-btn { display: none; }
+  body.has-drawer #shell { margin-left: 280px; transform: none !important; border-radius: 0 !important; box-shadow: none !important; height: auto !important; overflow: visible !important; }
+  body.has-drawer .nd { width: 280px; transform: none; opacity: 1; border-right: 1px solid var(--line); }
+  .ai-layout { display: block !important; }
+}
+@media (prefers-reduced-motion: reduce) { #shell, .nd { transition: none; } }
+/* Empty chat: welcome in the middle, message box at the bottom (like ChatGPT) */
+.ai-tab { min-height: calc(100vh - 96px - env(safe-area-inset-top)); display: flex !important; flex-direction: column; }
+.ai-tab .msgs { flex: 1; }

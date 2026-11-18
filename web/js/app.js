@@ -72,6 +72,8 @@ const ICONS = {
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m14 6 4 4"/>',
   menu: '<path d="M4 7h16M4 12h16M4 17h10"/>',
+  home: '<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
 };
 const ic = n => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
@@ -1103,10 +1105,10 @@ function swipeView() {
    drawer out, drag left to put it back. Vertical scrolling and code blocks are left alone. */
 let dz = null;
 document.addEventListener('touchstart', e => {
-  if (S.view !== 'chat' || S.rt || window.innerWidth >= 900 || e.touches.length !== 1) return;
+  if (!document.body.classList.contains('has-drawer') || S.rt || window.innerWidth >= 900 || e.touches.length !== 1) return;
   const t = e.touches[0], el = e.target;
-  if (el.closest('pre, textarea, input, .live-strip, .sw-stage')) return;
-  const drawer = document.querySelector('.ai-drawer');
+  if (el.closest('pre, textarea, input, .swipe-screen, .lf-tabs, #sheet, .dg')) return;
+  const drawer = document.querySelector('.nd');
   if (!drawer) return;
   dz = { x: t.clientX, y: t.clientY, open: !!S.drawer, drawer, w: drawer.offsetWidth, on: false };
 }, { passive: true });
@@ -1119,15 +1121,19 @@ document.addEventListener('touchmove', e => {
     dz.on = true; dz.drawer.style.transition = 'none';
   }
   const x = dz.open ? Math.min(0, dx) : Math.min(0, -dz.w + dx);
-  dz.drawer.style.transform = `translateX(${x}px)`; dz.x2 = dx;
+  dz.drawer.style.transform = `translateX(${x}px)`; dz.drawer.style.opacity = 1; dz.x2 = dx;
+  const shell = document.getElementById('shell');
+  if (shell) { shell.style.transition = 'none'; shell.style.transform = `translateX(${dz.w + x}px)`; shell.style.borderRadius = '28px'; }
 }, { passive: true });
 document.addEventListener('touchend', () => {
   if (!dz) return;
   const d = dz; dz = null;
   if (!d.on) return;
-  d.drawer.style.transition = ''; d.drawer.style.transform = '';
+  d.drawer.style.transition = ''; d.drawer.style.transform = ''; d.drawer.style.opacity = '';
+  const shell = document.getElementById('shell');
+  if (shell) { shell.style.transition = ''; shell.style.transform = ''; shell.style.borderRadius = ''; }
   const open = d.open ? d.x2 > -d.w * 0.3 : d.x2 > Math.min(90, d.w * 0.3);
-  if (open !== !!S.drawer) { S.drawer = open; render(); }
+  setDrawer(open);
 });
 
 const SW_AT = 100; // px past which a release counts
@@ -1394,6 +1400,51 @@ function dayLabel(t) {
   if (days < 7) return new Date(t).toLocaleDateString(undefined, { weekday: 'long' });
   return new Date(t).toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
 }
+/* App-wide side panel, ChatGPT style: sections, recent chats, New chat + profile. */
+function navDrawerHtml(key) {
+  const a = store.account(), list = store.chats(), cur = store.chatCur();
+  const name = a?.name || a?.email || 'You';
+  const initials = name.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || 'Y';
+  const item = (v, label, icon, on) => `<button class="nd-item ${on ? 'on' : ''}" data-act="ndgo" data-v="${v}">${ic(icon)}<span>${label}</span></button>`;
+  const showAll = S.ndAll || list.length <= 6;
+  let chats = '';
+  if (showAll) {
+    const groups = [];
+    for (const c of list) { const g = dayLabel(c.at); const last = groups[groups.length - 1]; if (last?.label === g) last.items.push(c); else groups.push({ label: g, items: [c] }); }
+    chats = groups.map(g => `<span class="nd-day">${esc(g.label)}</span>${g.items.map(c => `<button class="nd-chat-item ${key === 'chat' && c.id === cur ? 'on' : ''}" data-act="ndchat" data-id="${c.id}">${esc(c.title)}</button>`).join('')}`).join('');
+  } else chats = list.slice(0, 6).map(c => `<button class="nd-chat-item ${key === 'chat' && c.id === cur ? 'on' : ''}" data-act="ndchat" data-id="${c.id}">${esc(c.title)}</button>`).join('');
+  return `<aside class="nd" aria-label="Menu">
+    <div class="nd-head"><b>PrepPilot</b><button class="nd-round" data-act="ndgo" data-v="search" aria-label="Search topics">${ic('search')}</button></div>
+    <nav class="nd-nav">
+      ${item('home', 'Home', 'home', key === 'home')}
+      ${item('deck', 'Cards', 'cards', key === 'deck')}
+      ${item('jobfocus', 'Job focus', 'target', key === 'focus')}
+      ${item('live', 'Live AI interview', 'mic', false)}
+      ${item('custom', 'Custom subjects', 'plus', key === 'custom')}
+      ${hasPro() || isAdmin() ? '' : item('plans', 'Pricing', 'spark', false)}
+    </nav>
+    <div class="nd-chats">${list.length ? `<span class="nd-sec">Chats</span>${chats}${list.length > 6 ? `<button class="nd-more" data-act="ndall">${S.ndAll ? 'Show less' : 'See all…'}</button>` : ''}` : '<p class="nd-empty">Your chats with the AI coach appear here.</p>'}
+      <p class="nd-privacy">${ic('lock')}Chats stay on this device. No memory is kept.</p></div>
+    <div class="nd-foot"><button class="nd-new" data-act="ndnewchat">${ic('edit')}Chat</button><button class="nd-av" data-act="ndgo" data-v="settings" aria-label="Profile">${esc(initials)}</button></div>
+  </aside>`;
+}
+function syncDrawer(key) {
+  const on = !!(profile() && signedIn() && !['landing', 'login', 'onboard'].includes(key));
+  document.body.classList.toggle('has-drawer', on);
+  document.body.classList.toggle('drawer-open', on && !!S.drawer);
+  const el = document.getElementById('appDrawer');
+  if (el) el.innerHTML = on ? navDrawerHtml(key) : '';
+}
+function setDrawer(open) {
+  S.drawer = open;
+  document.body.classList.toggle('drawer-open', !!open && document.body.classList.contains('has-drawer'));
+}
+// Tapping the slid-away page closes the panel.
+document.addEventListener('click', e => {
+  if (!document.body.classList.contains('drawer-open') || window.innerWidth >= 900) return;
+  if (e.target.closest('#shell') && !e.target.closest('.menu-btn')) { e.preventDefault(); e.stopPropagation(); setDrawer(false); }
+}, true);
+
 function chatDrawerHtml() {
   const list = store.chats(), cur = store.chatCur();
   const groups = [];
@@ -1438,8 +1489,8 @@ function chatView() {
   // After a few messages, one gentle nudge towards saying it out loud.
   const nudge = !S.rt && msgs.filter(m => m.role === 'assistant').length >= 3 && !isAdmin() ? `<button class="live-nudge" data-act="${liveState().credits || store.account()?.plan === 'pro' ? 'livesetup' : 'plans'}">${ic('mic')}<span>Ready to say it out loud? <b>Run a Live AI mock interview</b></span>${ic('right')}</button>` : '';
   const cur = store.chats().find(c => c.id === store.chatCur());
-  return `<div class="ai-layout">${chatDrawerHtml()}<div class="stack chat ai-tab">
-    <div class="ai-head"><button class="iconbtn plain ai-menu" data-act="drawer" aria-label="Chats" aria-expanded="${!!S.drawer}">${ic('menu')}</button>
+  return `<div class="ai-layout"><div class="stack chat ai-tab">
+    <div class="ai-head">
       <h1 class="ai-title">${esc(cur?.title || 'AI coach')}</h1>
       ${S.rt ? '<span></span>' : `<button class="iconbtn plain" data-act="newchat" aria-label="New chat" title="New chat">${ic('edit')}</button>`}</div>
     ${S.rt ? voicePanel() : S.paywall ? paywallCard() : liveStrip()}
@@ -1977,6 +2028,7 @@ function render() {
   const keep = input && key === 'chat' ? { value: input.value, focus: document.activeElement === input } : null;
   document.querySelectorAll('nav [data-nav]').forEach(b => b.setAttribute('aria-current', String(b.dataset.nav === (S.view === 'learn' ? 'home' : S.view))));
   document.querySelector('nav').hidden = !p || S.showPlans || key === 'landing' || key === 'login';
+  syncDrawer(key);
   document.getElementById('topRight').innerHTML = topRight();
   // The home map assembles (tiles stagger in) only when the user arrives at
   // home, not on every background re-render.
@@ -2460,7 +2512,20 @@ document.addEventListener('click', async e => {
   else if (a === 'prefmode') { setDeckMode(b.dataset.v); render(); }
   else if (a === 'newdeck') startNewDeck();
   else if (a === 'newchat') { store.newChat(); S.chatContext = ''; S.drawer = false; render(); document.getElementById('chatInput')?.focus(); }
-  else if (a === 'drawer') { S.drawer = !S.drawer; render(); }
+  else if (a === 'drawer') { setDrawer(!S.drawer); }
+  else if (a === 'ndall') { S.ndAll = !S.ndAll; syncDrawer(S.lastView); }
+  else if (a === 'ndchat') { store.setChatCur(id); setDrawer(false); S.view = 'chat'; S.showPlans = false; render(); }
+  else if (a === 'ndnewchat') { store.newChat(); S.chatContext = ''; setDrawer(false); S.view = 'chat'; S.showPlans = false; render(); setTimeout(() => document.getElementById('chatInput')?.focus(), 50); }
+  else if (a === 'ndgo') {
+    const v = b.dataset.v; setDrawer(false); S.showPlans = false;
+    if (v === 'search') { S.view = 'home'; render(); scrollToY(0); setTimeout(() => document.getElementById('learnSearch')?.focus(), 80); }
+    else if (v === 'deck') startDeck(null);
+    else if (v === 'jobfocus') { S.view = 'focus'; render(); }
+    else if (v === 'live') { S.view = 'chat'; render(); liveSetupSheet(); }
+    else if (v === 'plans') { S.showPlans = true; render(); }
+    else { S.view = v; render(); }
+    scrollToY(0);
+  }
   else if (a === 'speak') { store.setSpeak(!store.speak()); if (!store.speak()) voice.stopSpeaking(); render(); }
   else if (a === 'openchat') { store.setChatCur(id); S.drawer = false; render(); }
   else if (a === 'delchat') { store.deleteChat(id); render(); }
