@@ -162,6 +162,8 @@ export default function App() {
           // Off: the app has its own Back buttons, and an edge swipe going 'back' in web history
           // fought the card swipes (it felt like jumping to the previous app).
           allowsBackForwardNavigationGestures={false}
+          // No ^ v Done bar above the keyboard (like native chat apps).
+          hideKeyboardAccessoryView
           // iOS momentum scrolling. Must be set explicitly: on the new architecture an unset value
           // reaches the native view as 0, which stops the page dead the moment the finger lifts
           // (the "one line per swipe" feel). 'normal' is Safari's own rate.

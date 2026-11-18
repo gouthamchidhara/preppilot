@@ -1136,6 +1136,23 @@ document.addEventListener('touchend', () => {
   setDrawer(open);
 });
 
+/* Keyboard open on a phone: pin the chat input right on top of the keyboard (iOS shrinks only the
+   visual viewport, so a bottom-docked box would otherwise float with a gap or hide under the keys). */
+function placeDock() {
+  const vv = window.visualViewport, dock = document.querySelector('.ai-dock');
+  const kb = !!(vv && dock && window.innerHeight - vv.height > 120 && document.activeElement?.id === 'chatInput');
+  document.documentElement.classList.toggle('kb-open', kb);
+  if (!dock) return;
+  if (kb) dock.style.top = `${vv.offsetTop + vv.height - dock.offsetHeight}px`;
+  else dock.style.top = '';
+}
+if (window.visualViewport) {
+  visualViewport.addEventListener('resize', placeDock);
+  visualViewport.addEventListener('scroll', placeDock);
+}
+document.addEventListener('focusin', e => { if (e.target.id === 'chatInput') { setTimeout(placeDock, 50); setTimeout(() => { placeDock(); scrollEnd(); }, 320); } });
+document.addEventListener('focusout', e => { if (e.target.id === 'chatInput') setTimeout(placeDock, 50); });
+
 const SW_AT = 100; // px past which a release counts
 let sw = null, swRaf = 0;
 function swFlip() {
