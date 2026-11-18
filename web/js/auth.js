@@ -22,7 +22,14 @@ export const signedIn = () => !!store.session() || !!store.accessCode();
 let onChange = () => {};
 export function onAccountChange(fn) { onChange = fn; }
 
-export function setAccount(a) { if (a) { store.setAccount(a); onChange(a); } }
+// In the app, tell the native side who is signed in as soon as we know, so the store account is
+// ready before anyone taps Buy (that lookup used to add a second or two to the purchase sheet).
+let identified = '';
+export function setAccount(a) {
+  if (!a) return;
+  store.setAccount(a); onChange(a);
+  if (a.key && a.key !== identified && window.ReactNativeWebView) { identified = a.key; toNative({ type: 'identify', userKey: a.key }); }
+}
 
 async function exchange(provider, idToken, name) {
   const res = await fetch(`${apiBase()}/api/auth/${provider}`, {

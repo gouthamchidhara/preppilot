@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -23,7 +23,7 @@ if (extra.googleWebClientId) {
 if (rcKey) Purchases.configure({ apiKey: rcKey });
 const LIVE_PRODUCT = 'mock_session_60min'; // store product id for a Live AI session
 
-type FromWeb = { type: 'signin'; provider: 'google' | 'apple' } | { type: 'purchase' | 'restore'; userKey: string } | { type: 'buyLive'; userKey: string } | { type: 'signout' } | { type: 'badge'; count: number } | { type: 'daily'; title: string; body: string } | { type: 'promptNotifications' };
+type FromWeb = { type: 'signin'; provider: 'google' | 'apple' } | { type: 'identify'; userKey: string } | { type: 'purchase' | 'restore'; userKey: string } | { type: 'buyLive'; userKey: string } | { type: 'signout' } | { type: 'badge'; count: number } | { type: 'daily'; title: string; body: string } | { type: 'promptNotifications' };
 
 export default function App() {
   const web = useRef<WebView>(null);
@@ -61,14 +61,32 @@ export default function App() {
     }
   }
 
+  // Purchases are made ready ahead of time: the store account is logged in as soon as the web app
+  // knows who is signed in, and the products are fetched at launch. A tap on Buy then goes straight
+  // to Apple's sheet instead of waiting on two network round-trips first.
+  const rcUser = useRef<string | null>(null);
+  const offeringsRef = useRef<Awaited<ReturnType<typeof Purchases.getOfferings>> | null>(null);
+  const ensureUser = useCallback(async (userKey: string) => {
+    if (rcUser.current === userKey) return;
+    await Purchases.logIn(userKey); // RevenueCat app_user_id === PrepPilot user key
+    rcUser.current = userKey;
+  }, []);
+  const getOfferings = useCallback(async () => {
+    if (offeringsRef.current) return offeringsRef.current;
+    const o = await Purchases.getOfferings();
+    offeringsRef.current = o;
+    return o;
+  }, []);
+  useEffect(() => { if (rcKey) getOfferings().catch(() => {}); }, [getOfferings]);
+
   async function purchase(userKey: string, restore = false) {
     if (!rcKey) return fail('In-app purchases are not set up yet.');
     try {
-      await Purchases.logIn(userKey); // RevenueCat app_user_id === PrepPilot user key
+      await ensureUser(userKey);
       if (restore) {
         await Purchases.restorePurchases();
       } else {
-        const offerings = await Purchases.getOfferings();
+        const offerings = await getOfferings();
         // The subscription, never the Live AI consumable (which may sit in the same offering).
         const pkgs = offerings.current?.availablePackages ?? [];
         const pkg = offerings.current?.monthly ?? pkgs.find(p => p.product.identifier.startsWith('pro_monthly')) ?? pkgs.find(p => p.product.identifier !== LIVE_PRODUCT);
@@ -86,8 +104,8 @@ export default function App() {
   async function buyLiveSession(userKey: string) {
     if (!rcKey) return fail('In-app purchases are not set up yet.');
     try {
-      await Purchases.logIn(userKey);
-      const offerings = await Purchases.getOfferings();
+      await ensureUser(userKey);
+      const offerings = await getOfferings();
       // Find the Live AI consumable across all offerings
       const allPkgs = Object.values(offerings.all).flatMap(o => o.availablePackages);
       const livePkg = allPkgs.find(p => p.product.identifier === LIVE_PRODUCT);
@@ -105,6 +123,7 @@ export default function App() {
     let m: FromWeb;
     try { m = JSON.parse(e.nativeEvent.data); } catch { return; }
     if (m.type === 'signin') return signIn(m.provider);
+    if (m.type === 'identify') { if (rcKey) ensureUser(m.userKey).catch(() => {}); if (rcKey) getOfferings().catch(() => {}); return; }
     if (m.type === 'purchase') return purchase(m.userKey);
     if (m.type === 'buyLive') return buyLiveSession(m.userKey);
     if (m.type === 'restore') return purchase(m.userKey, true);
@@ -114,6 +133,7 @@ export default function App() {
     if (m.type === 'signout') {
       GoogleSignin.signOut().catch(() => {});
       if (rcKey) Purchases.logOut().catch(() => {});
+      rcUser.current = null;
     }
   }
 
