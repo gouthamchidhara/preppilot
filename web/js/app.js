@@ -366,6 +366,83 @@ function loginView() {
   </div>`;
 }
 
+/* ---------- Landing v2 preview (?v2): feature showcase + Free vs Pro ---------- */
+const LANDING_V2 = (() => { try { return new URLSearchParams(location.search).has('v2'); } catch { return false; } })();
+const FEATURES = [
+  { k: 'cards', name: 'Flashcards', line: 'One or two lines each, for the tech you already use.', pts: ['30+ roles, Java to cloud to AI', 'Misses come back first', 'Animated diagrams for the tricky parts'],
+    demo: () => `<div class="fd fd-cards">
+      <div class="fdc fdc-3"></div><div class="fdc fdc-2"></div>
+      <div class="fdc fdc-1"><div class="fdc-in">
+        <div class="fdc-front"><span class="fd-tag">Java · Collections</span><b>How does a HashMap find a value?</b><span class="fd-tap">Tap to flip</span></div>
+        <div class="fdc-back"><span class="fd-tag">Answer</span><b>Hash the key → pick a bucket → compare with equals.</b><span class="fd-meta">O(1) average · tree when crowded</span></div>
+      </div></div>
+      <span class="fd-stamp">${ic('check')} Got it</span></div>` },
+  { k: 'live', name: 'Live mock interview', line: 'A voice interviewer that asks, listens and grades.', pts: ['Speaks to you, waits while you think', '“How to answer” points as each question lands', 'Strong / Ok / Weak after every answer'], pro: true,
+    demo: () => `<div class="fd fd-live">
+      <div class="fdl-who"><span class="l-avatar">${ic('mic')}</span><b>Interviewer</b><span class="l-wave">${Array.from({ length: 7 }, (_, i) => `<i style="--w:${i}"></i>`).join('')}</span></div>
+      <p class="fdl-q">How does Kafka keep order for one customer?</p>
+      <div class="fdl-hint"><span class="fd-tag">How to answer</span><ul><li style="--k:0">Key by customer ID</li><li style="--k:1">Same key → same partition</li><li style="--k:2">Order holds per partition</li></ul></div>
+      <div class="fdl-you"><span class="fd-tag">You</span>“We key each message by customer ID, so…”</div>
+      <span class="fdl-grade">Strong.</span></div>` },
+  { k: 'job', name: 'Job focus', line: 'Paste the job post. Get the 5 skills it will test.', pts: ['Top 5 skills, picked from the posting', '8 quick cards for each', 'Ready in seconds, saved for later'], pro: true,
+    demo: () => `<div class="fd fd-job">
+      <div class="fdj-post"><i></i><i style="width:88%"></i><i style="width:64%"></i></div>
+      <div class="fdj-chips">${['TypeScript', 'React 18', 'Node.js', 'PostgreSQL', 'GraphQL'].map((n, i) => `<span style="--k:${i}"><b>${i + 1}</b>${n}<em>8</em></span>`).join('')}</div>
+      <div class="fdj-card"><span class="fd-tag">React 18 · card 1 of 8</span><b>What does startTransition do?</b></div></div>` },
+  { k: 'coach', name: 'AI coach', line: 'Ask anything about your prep, get a straight answer.', pts: ['Grades your answers honestly', 'Explains with your stack’s examples', 'Stays on interview prep'],
+    demo: () => `<div class="fd fd-coach">
+      <div class="fdm fdm-you">Grade my answer: “indexes always make queries faster.”</div>
+      <div class="fdm fdm-dots"><i></i><i></i><i></i></div>
+      <div class="fdm fdm-ai"><b>Weak.</b> Indexes speed up reads but slow writes, and won’t help low-selectivity columns or <code>LIKE '%x'</code>. Say when you’d skip one.</div></div>` },
+  { k: 'progress', name: 'Readiness map', line: 'See what’s solid and what’s shaky, at a glance.', pts: ['Every topic, scored as you go', 'Daily target and streak', 'Knows your interview date'],
+    demo: () => `<div class="fd fd-prog">
+      <div class="fdp-ring"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.5"/><circle class="fdp-arc" cx="18" cy="18" r="15.5"/></svg><b>72%</b><span>ready</span></div>
+      <div class="fdp-tiles">${['Java', 'Spring', 'SQL', 'Kafka', 'AWS', 'Docker', 'System design', 'Behavioral'].map((n, i) => `<span class="fdp-t s${[3, 3, 2, 1, 2, 0, 1, 3][i]}" style="--k:${i}">${n}</span>`).join('')}</div></div>` },
+];
+let featTimer = null;
+function featHtml(i) {
+  const f = FEATURES[i];
+  return `<div class="lf-demo" data-k="${f.k}">${f.demo()}</div>
+    <div class="lf-copy"><h3>${esc(f.name)}${f.pro ? ' <span class="tag">Pro</span>' : ''}</h3><p>${esc(f.line)}</p>${ticks(f.pts)}</div>`;
+}
+function featuresHtml() {
+  const i = S.feat || 0;
+  return `<section class="l-feat" aria-label="What you get">
+    <p class="l-tag">## what you get</p>
+    <h2 class="l-h2">Everything you need for the interview. Nothing you don’t.</h2>
+    <div class="lf-tabs" role="tablist">${FEATURES.map((f, j) => `<button class="lf-tab ${j === i ? 'on' : ''}" role="tab" aria-selected="${j === i}" data-act="feat" data-i="${j}"><span>${esc(f.name)}</span><i class="lf-prog"></i></button>`).join('')}</div>
+    <div class="lf-stage" id="lfStage">${featHtml(i)}</div>
+  </section>`;
+}
+function showFeat(i, user) {
+  S.feat = (i + FEATURES.length) % FEATURES.length;
+  const st = document.getElementById('lfStage');
+  if (!st) return stopFeat();
+  st.innerHTML = featHtml(S.feat);
+  document.querySelectorAll('.lf-tab').forEach((b, j) => { b.classList.toggle('on', j === S.feat); b.setAttribute('aria-selected', String(j === S.feat)); b.classList.remove('run'); void b.offsetWidth; if (j === S.feat) b.classList.add('run'); });
+  if (user) startFeat();
+}
+function startFeat() {
+  stopFeat();
+  if (!document.getElementById('lfStage')) return;
+  document.querySelector('.lf-tab.on')?.classList.add('run');
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+  featTimer = setInterval(() => showFeat((S.feat || 0) + 1), 6000);
+}
+function stopFeat() { clearInterval(featTimer); featTimer = null; }
+function planCompare() {
+  const o = offer();
+  return `<section class="l-plans" aria-label="Free and Pro">
+    <p class="l-tag">## pricing</p>
+    <h2 class="l-h2">Start free. Go Pro for the interview week.</h2>
+    <div class="lp-grid">
+      <div class="lp-col"><b>Free</b><span class="lp-price">$0</span>${ticks(['Your plan and core topics', 'Flashcards that bring misses back', `${o.freeMsgs} AI coach messages to try`, 'Readiness map'])}</div>
+      <div class="lp-col pro"><b>Pro</b><span class="lp-price">${esc(o.proPrice)}</span>${ticks(['Every topic and diagram', 'Unlimited AI coach', 'Job focus: top 5 skills × 8 cards', `${o.proLiveN} × ${o.proLive}-min live mock interviews a month`])}</div>
+    </div>
+    <div class="row" style="justify-content:center"><button class="btn primary lg" data-act="startonboard">Get started, it’s free</button></div>
+  </section>`;
+}
+
 function landingView() {
   const demo = S.demo;
   const q = demo?.q;
@@ -397,6 +474,7 @@ function landingView() {
       ${heroAnim()}
       <p class="l-giant" aria-hidden="true">recall<span class="l-giant-dot"></span></p>
     </section>
+    ${LANDING_V2 ? featuresHtml() : ''}
     ${storyHtml()}
     ${storyCta()}
 
@@ -437,6 +515,7 @@ function landingView() {
       </div>
     </section>
 
+    ${LANDING_V2 ? planCompare() : ''}
     <section class="l-end">
       <h2 class="l-h2">Pick your role and start</h2>
       <p class="muted">Search ${getCatalog().roles.length} roles, or paste a few lines about your experience and we’ll pick for you.</p>
@@ -1544,7 +1623,7 @@ function render() {
   if (native() && key === 'home' && profile()) syncNativeHome();
   if (key === 'home' && profile()) loadFresh();
   if (key === 'landing' && !S.demo) loadDemo();
-  if (key === 'landing') { storyLast = -1; requestAnimationFrame(paintStory); }
+  if (key === 'landing') { storyLast = -1; requestAnimationFrame(paintStory); if (changed || !featTimer) startFeat(); } else stopFeat();
   // The plans-screen diagram plays itself when the screen opens; anywhere
   // else the player stops so timers never outlive their screen.
   if (key === 'plans' && changed) startDgAutoplay();
@@ -1905,6 +1984,7 @@ document.addEventListener('click', async e => {
   else if (a === 'startonboard') { S.login = false; S.onboard = true; S.guest = true; render(); }
   else if (a === 'login') { S.login = true; render(); }
   else if (a === 'loginback') { S.login = false; render(); }
+  else if (a === 'feat') showFeat(Number(b.dataset.i) || 0, true);
   else if (a === 'demoreveal') { if (S.demo) { S.demo.reveal = true; render(); } }
   else if (a === 'demoshuffle') loadDemo();
   else if (a === 'demolane') loadDemo(Number(b.dataset.i));
