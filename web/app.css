@@ -661,3 +661,26 @@ body:has(.landing) #topRight { margin-left: auto; }
 @media (min-width: 760px) { .landing .l-giant { margin-top: 10px; } }
 .l-after { text-align: center; padding: 8px 0 12px; }
 .l-after .l-cta { justify-content: center; margin: 18px 0 8px; }
+
+/* scroll story, more alive: speaking waveform, words rising, a memory spark, answers typing in */
+.l-who { display: flex; align-items: center; gap: 10px; margin: 18px 0 8px; font: 600 13px var(--sans); color: var(--muted); }
+.l-avatar { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--sunk); color: var(--ink-soft); }
+.l-avatar .ic { width: 15px; height: 15px; }
+.l-wave { display: inline-flex; align-items: center; gap: 3px; height: 18px; opacity: clamp(0, calc((.42 - var(--p)) * 14), 1); }
+.l-wave i { width: 3px; height: 100%; border-radius: 3px; background: var(--accent); transform-origin: center; animation: l-wave .9s ease-in-out infinite; animation-delay: calc(var(--w) * -.13s); }
+@keyframes l-wave { 0%, 100% { transform: scaleY(.25); } 50% { transform: scaleY(1); } }
+.l-q .w { display: inline-block; transform: translate3d(0, calc((1 - var(--t)) * 8px), 0); }
+.l-dot { position: relative; }
+.l-dot i { position: absolute; inset: -6px; border-radius: 50%; border: 2px solid var(--dot); opacity: 0; }
+.l-story.thinking .l-dot i { animation: l-spark 1.1s ease-out infinite; }
+@keyframes l-spark { from { transform: scale(.4); opacity: .8; } to { transform: scale(2.2); opacity: 0; } }
+.l-ans li { display: grid; grid-template-columns: 22px 1fr; column-gap: 8px; align-items: start; }
+.l-ans li > span:last-child { grid-column: 2; }
+.l-ans code { grid-column: 2; clip-path: inset(0 calc((1 - var(--t)) * 100%) 0 0); }
+.l-tick { grid-row: 1 / span 2; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); margin-top: 2px; transform: scale(calc(.4 + .6 * var(--t))); }
+.l-tick .ic { width: 12px; height: 12px; }
+@media (prefers-reduced-motion: reduce) {
+  .l-wave i, .l-story.thinking .l-dot i { animation: none; }
+  .l-q .w, .l-tick { transform: none !important; }
+  .l-ans code { clip-path: none; }
+}

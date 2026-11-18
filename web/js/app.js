@@ -275,25 +275,50 @@ const LANES = [
 
 // Landing scroll story: an interviewer's question writes itself as you scroll, there is the
 // blank moment, then the answer comes back line by line. Scrolling up rewinds it.
-const STORY = {
-  q: 'So… walk me through how a HashMap actually finds a value.',
-  a: [
+// A different interview moment on each visit: the question, then the lines that come back.
+const STORIES = [
+  { tech: 'Java', q: 'So… walk me through how a HashMap actually finds a value.', a: [
     ['hashCode()', 'turns the key into a number that picks the bucket'],
     ['equals()', 'checks which entry in that bucket is really yours'],
     ['0.75 load factor', 'past that, the table doubles and everything is rehashed'],
-    ['Java 8+', 'a crowded bucket turns into a tree, so lookups stay fast'],
-  ],
-};
+    ['Java 8+', 'a crowded bucket turns into a tree, so lookups stay fast']] },
+  { tech: 'Kubernetes', q: 'A pod keeps restarting in production. Where do you look first?', a: [
+    ['kubectl describe pod', 'events show OOMKilled, failed probes or image pulls'],
+    ['kubectl logs --previous', 'the crash output from the container that just died'],
+    ['liveness probe', 'too strict, and Kubernetes kills a slow but healthy app'],
+    ['limits', 'memory over the limit means the kernel kills it, exit 137']] },
+  { tech: 'React', q: 'Why does this component re-render when nothing on screen changed?', a: [
+    ['new props', 'a fresh object or function each render looks like a change'],
+    ['parent render', 'children re-render too, unless wrapped in React.memo'],
+    ['useMemo / useCallback', 'keep the same reference between renders'],
+    ['context', 'every consumer re-renders when the value changes']] },
+  { tech: 'SQL', q: 'This query was fast last week and slow today. How do you find out why?', a: [
+    ['EXPLAIN ANALYZE', 'shows the real plan and where the time goes'],
+    ['seq scan', 'a missing or unused index on the filter column'],
+    ['stale statistics', 'ANALYZE so the planner sees the new data size'],
+    ['locks', 'check for a long transaction blocking the table']] },
+  { tech: 'Python', q: 'You added threads and the CPU-heavy job got no faster. Why?', a: [
+    ['the GIL', 'only one thread runs Python bytecode at a time'],
+    ['threads', 'still great for waiting on network and disk'],
+    ['multiprocessing', 'separate processes, so every core does real work'],
+    ['asyncio', 'one thread juggling many waits, not more CPU']] },
+  { tech: 'Git', q: 'A bad commit is already on main and others have pulled it. What do you do?', a: [
+    ['git revert <sha>', 'adds a new commit that undoes it, history stays intact'],
+    ['no force-push', 'rewriting shared history breaks everyone else'],
+    ['-m 1', 'needed when the commit you revert is a merge'],
+    ['then fix forward', 'a proper fix lands in its own commit with a test']] },
+];
+let STORY = STORIES[Math.floor(Math.random() * STORIES.length)];
 function storyHtml() {
   const words = STORY.q.split(' ');
   return `<section class="l-story" id="lStory" aria-label="How it feels in the interview">
     <div class="l-stage">
       <div class="l-stage-in">
-        <p class="l-tag">## the moment that matters</p>
-        <p class="l-who">Interviewer</p>
+        <p class="l-tag">## the moment that matters · ${esc(STORY.tech)}</p>
+        <div class="l-who"><span class="l-avatar" aria-hidden="true">${ic('mic')}</span><span>Interviewer</span><span class="l-wave" aria-hidden="true">${Array.from({ length: 7 }, (_, i) => `<i style="--w:${i}"></i>`).join('')}</span></div>
         <p class="l-q" aria-label="${esc(STORY.q)}" style="--n:${words.length}">${words.map((w, i) => `<span class="w" style="--i:${i}">${esc(w)}</span>`).join(' ')}<span class="l-caret" aria-hidden="true"></span></p>
-        <p class="l-blank" aria-hidden="true"><span class="l-dot"></span><span class="l-blank-t">you, a second later</span></p>
-        <ol class="l-ans" style="--n:${STORY.a.length}">${STORY.a.map(([k, v], i) => `<li style="--i:${i}"><code>${esc(k)}</code><span>${esc(v)}</span></li>`).join('')}</ol>
+        <p class="l-blank" aria-hidden="true"><span class="l-dot"><i></i></span><span class="l-blank-t">you, a second later…</span></p>
+        <ol class="l-ans" style="--n:${STORY.a.length}">${STORY.a.map(([k, v], i) => `<li style="--i:${i}"><span class="l-tick" aria-hidden="true">${ic('check')}</span><code>${esc(k)}</code><span>${esc(v)}</span></li>`).join('')}</ol>
         <p class="l-done">That’s a card you went through last Tuesday. <b>It came back.</b></p>
       </div>
     </div>
