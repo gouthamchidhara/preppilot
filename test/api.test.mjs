@@ -446,9 +446,9 @@ test('Pro messages: unlimited for normal use, with a daily fair-use ceiling', as
 test('only admins can read guide suggestions', async () => {
   const user = await signIn('someone@gmail.com', 'someone');
   await call('POST suggestions', { text: 'Please add a Terraform guide with state locking', topic: 'Terraform' }, user);
-  assert.equal((await call('POST admin/suggestions', {}, user)).status, 403);
+  assert.equal((await call('POST suggestions/list', {}, user)).status, 403);
   const admin = await signIn('boss@gmail.com', 'boss');
-  const r = await call('POST admin/suggestions', {}, admin);
+  const r = await call('POST suggestions/list', {}, admin);
   assert.equal(r.status, 200);
   assert.ok(r.body.suggestions.some(x => x.topic === 'Terraform'));
 });

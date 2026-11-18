@@ -1034,7 +1034,7 @@ async function startVoice(mode) {
 
 // Admin: guide suggestions from users (stored on the server; no email is sent).
 function adminSuggestions() {
-  if (!S.adminSug) { S.adminSug = { loading: true, list: [] }; ai.post('/api/admin/suggestions', {}).then(d => { S.adminSug = { list: d.suggestions || [] }; if (S.view === 'settings') render(); }).catch(e => { S.adminSug = { error: e.message, list: [] }; if (S.view === 'settings') render(); }); }
+  if (!S.adminSug) { S.adminSug = { loading: true, list: [] }; ai.post('/api/suggestions/list', {}).then(d => { S.adminSug = { list: d.suggestions || [] }; if (S.view === 'settings') render(); }).catch(e => { S.adminSug = { error: e.message, list: [] }; if (S.view === 'settings') render(); }); }
   const g = S.adminSug;
   return `<section class="stack"><div class="sec-head"><h3>Suggestions from users</h3><button class="link quiet small" data-act="reloadsug">Refresh</button></div>
     ${g.loading ? '<p class="muted">Loading…</p>' : g.error ? `<p class="note warn">${esc(g.error)}</p>` : !g.list.length ? '<p class="muted">No suggestions yet.</p>'
