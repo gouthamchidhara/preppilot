@@ -17,7 +17,8 @@ export function limits() {
     adminCallSec: num('ADMIN_CALL_SEC', 4 * 60 * 60), // admins: any voice call up to 4 hours
     // Pro can run Live AI from its monthly voice minutes, up to this long in one go.
     proLiveSec: num('PRO_LIVE_SEC', 30 * 60),
-    proLiveSessions: num('PRO_LIVE_SESSIONS', 2), // Live AI sessions included in each Pro month
+    proLiveSessions: num('PRO_LIVE_SESSIONS', 2), // legacy; Pro now has a minutes bank
+    proLiveBankSec: num('PRO_LIVE_BANK_SEC', 60 * 60), // Live AI minutes in each Pro month; only connected time counts
     minCallSec: 20,
   };
 }
@@ -63,8 +64,9 @@ export function usageStatus(user, now = Date.now()) {
     voiceSecLeft: Math.max(0, lim.voiceSec - bucket.voiceSec),
     sessionCredits: user.sessionCredits || 0,
     msgsUnlimited: plan === 'pro',
-    proLiveLeft: plan === 'pro' ? Math.max(0, L.proLiveSessions - (user.pro?.liveUsed || 0)) : 0,
-    proLiveSecLeft: plan === 'pro' ? Math.max(0, Math.floor(((user.proLiveUntil || 0) - now) / 1000)) : 0,
+    // Pro Live AI is a monthly bank: proLiveSecLeft seconds, proLiveLeft whole minutes.
+    proLiveSecLeft: plan === 'pro' ? Math.max(0, L.proLiveBankSec - (user.pro?.liveSecUsed || 0)) : 0,
+    proLiveLeft: plan === 'pro' ? Math.floor(Math.max(0, L.proLiveBankSec - (user.pro?.liveSecUsed || 0)) / 60) : 0,
     liveSecLeft,
     limits: { msgs: lim.msgs, voiceSec: lim.voiceSec, period: lim.period },
     proUntil: plan === 'pro' ? user.proUntil : undefined,

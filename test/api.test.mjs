@@ -405,19 +405,23 @@ test('profile suggest: signed-in only, maps experience to known roles', async ()
   assert.ok([200, 422].includes(r.status));
 });
 
-test('Pro includes two 30-minute Live AI sessions a month; a dropped call resumes the same one', async () => {
-  const { startProLive, status: st } = await import('../api/src/lib/account.js');
+test('Pro Live AI is a monthly minutes bank: only connected time is counted', async () => {
+  const { startProLive, recordCall: rec, endCall: end, status: st } = await import('../api/src/lib/account.js');
   await signIn('prolive@gmail.com', 'prolive');
   const key = 'google:prolive';
   await call('POST billing/revenuecat', { event: { type: 'INITIAL_PURCHASE', app_user_id: key, entitlement_ids: ['pro'], expiration_at_ms: Date.now() + 30 * 86400000 } }, { authorization: 'Bearer hook-secret' });
   const t0 = Date.now();
-  assert.deepEqual(await startProLive(key, t0), { ok: true, allowedSec: 1800, resumed: false });
-  assert.deepEqual(await startProLive(key, t0 + 600000), { ok: true, allowedSec: 1200, resumed: true });
-  assert.equal((await st({ key }, t0)).proLiveLeft, 1);
-  assert.equal((await startProLive(key, t0 + 1900000)).ok, true);
-  assert.equal((await startProLive(key, t0 + 4000000)).ok, false);
+  assert.equal((await st({ key }, t0)).proLiveLeft, 60);
+  const m = await startProLive(key, t0);
+  assert.deepEqual(m, { ok: true, allowedSec: 3600, resumed: false });
+  // talk for 1 minute, hang up: only 60 s are charged
+  await rec({ id: 'pl1', key, start: t0, allowedSec: m.allowedSec, plan: 'prolive', day: '2026-11-18' });
+  await end('pl1', { key, now: t0 + 60000 });
+  assert.equal((await st({ key }, t0)).proLiveLeft, 59);
+  // next call may use the rest
+  assert.equal((await startProLive(key, t0 + 120000)).allowedSec, 3540);
   const h = (await call('GET health')).body.plans.pro;
-  assert.equal(h.liveMin, 30); assert.equal(h.liveSessions, 2); assert.equal(h.price, '$10.99/month');
+  assert.equal(h.liveMin, 60); assert.equal(h.liveBank, true);
 });
 
 test('AI stays on interview prep: off-scope asks get a fixed reply and cost nothing', async () => {

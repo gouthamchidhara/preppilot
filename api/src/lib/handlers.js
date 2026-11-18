@@ -120,6 +120,22 @@ export async function handleRealtime(req, log) {
 
   // Live AI: one credit buys a 60-minute window. Beta-code sessions have no account, so no credits.
   if (v.mode === 'live') {
+    // Pro minutes first (only talk time counts), unless a paid hour is already running.
+    if (!w.ident.viaCode) {
+      const u0 = await loadUser(w.ident);
+      const s1 = await status(w.ident, now);
+      if (s1?.plan === 'pro' && (s1.proLiveSecLeft || 0) >= L.minCallSec && !((u0?.mockUntil || 0) > now + 20000)) {
+        const pm = await startProLive(w.ident.key, now);
+        if (pm.ok) {
+          const allowedSec = v.live?.lengthMin ? Math.min(pm.allowedSec, v.live.lengthMin * 60) : pm.allowedSec;
+          try {
+            const out = await startRealtime(v, log);
+            if (out.callId) await recordCall({ id: out.callId, key: w.ident.key, start: Date.now(), allowedSec, plan: 'prolive', day: today(now) });
+            return json(200, { sdp: out.sdp, callId: out.callId, allowedSec, degraded: out.degraded, live: true, fromPlan: true, account: await status(w.ident) });
+          } catch (e) { return fail(e, log); }
+        }
+      }
+    }
     let m = w.ident.viaCode ? { ok: true, allowedSec: L.liveCallSec, resumed: true } : await startLiveSession(w.ident.key, now);
     if (!m.ok) {
       // No paid hour: Pro includes two 30-minute Live AI sessions a month.
@@ -133,11 +149,11 @@ export async function handleRealtime(req, log) {
       }
       if (s0?.plan === 'pro') {
         const pm = await startProLive(w.ident.key, now);
-        if (!pm.ok) return json(402, { error: `You have used this month's ${L.proLiveSessions} Pro Live AI sessions. A one-time session gives you a full hour.`, code: 'no_credit' });
+        if (!pm.ok) return json(402, { error: `You have used this month's ${Math.round(L.proLiveBankSec / 60)} Pro Live AI minutes. They refill with your next Pro month, or a one-time session gives you a full hour now.`, code: 'no_credit' });
         const allowedSec = v.live?.lengthMin ? Math.min(pm.allowedSec, v.live.lengthMin * 60) : pm.allowedSec;
         try {
           const out = await startRealtime(v, log);
-          if (out.callId) await recordCall({ id: out.callId, key: w.ident.key, start: Date.now(), allowedSec, plan: 'live', day: today(now) });
+          if (out.callId) await recordCall({ id: out.callId, key: w.ident.key, start: Date.now(), allowedSec, plan: 'prolive', day: today(now) });
           return json(200, { sdp: out.sdp, callId: out.callId, allowedSec, degraded: out.degraded, live: true, fromPlan: true, resumed: pm.resumed, account: await status(w.ident) });
         } catch (e) {
           if (!pm.resumed) await cancelProLive(w.ident.key);
@@ -310,7 +326,7 @@ export function handleHealth() {
     liveInterviewIos: process.env.LIVE_INTERVIEW_IOS === 'on',
     plans: {
       free: { msgs: L.free.msgs, voiceMin: Math.floor(L.free.voiceSec / 60) },
-      pro: { msgs: L.pro.msgs, msgsUnlimited: true, voiceMin: Math.floor(L.pro.voiceSec / 60), liveMin: Math.floor(L.proLiveSec / 60), liveSessions: L.proLiveSessions, price: proPriceLabel() },
+      pro: { msgs: L.pro.msgs, msgsUnlimited: true, voiceMin: Math.floor(L.pro.voiceSec / 60), liveMin: Math.floor(L.proLiveBankSec / 60), liveSessions: 0, liveBank: true, price: proPriceLabel() },
       live: { minutes: Math.floor(L.liveCallSec / 60), price: livePriceLabel() },
     },
   });

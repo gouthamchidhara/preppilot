@@ -186,7 +186,7 @@ function offer() {
   const n = parseFloat(amount.replace(/[^\d.]/g, ''));
   return {
     freeMsgs: P?.free.msgs ?? 15, freeVoice: P?.free.voiceMin ?? 2,
-    proMsgs: P?.pro.msgs ?? 500, proVoice: P?.pro.voiceMin ?? 0, proLive: P?.pro.liveMin ?? 30, proLiveN: P?.pro.liveSessions ?? 2, proPrice: `${amount}/${per}`, proAmount: amount, proPer: per,
+    proMsgs: P?.pro.msgs ?? 500, proVoice: P?.pro.voiceMin ?? 0, proLive: P?.pro.liveMin ?? 60, proLiveN: P?.pro.liveSessions ?? 0, proPrice: `${amount}/${per}`, proAmount: amount, proPer: per,
     perDay: amount.trim().startsWith('$') && n > 0 && per === 'month' ? `About ${Math.round((n / 30) * 100)}¢ a day` : '',
     livePrice: P?.live?.price || '$15.99', liveMin: P?.live?.minutes ?? 60,
   };
@@ -474,7 +474,7 @@ function planCompare() {
     <h2 class="l-h2">Start free. Go Pro for the interview week.</h2>
     <div class="lp-grid">
       <div class="lp-col"><b>Free</b><span class="lp-price">$0</span>${ticks(['Your plan and core topics', 'Flashcards that bring misses back', `${o.freeMsgs} AI coach messages to try`, 'Readiness map'])}</div>
-      <div class="lp-col pro"><b>Pro</b><span class="lp-price">${esc(o.proPrice)}</span>${ticks(['Every topic and diagram', 'Unlimited AI coach', 'Job focus: top 5 skills with flashcards', `${o.proLiveN} × ${o.proLive}-min live mock interviews a month`])}</div>
+      <div class="lp-col pro"><b>Pro</b><span class="lp-price">${esc(o.proPrice)}</span>${ticks(['Every topic and diagram', 'Unlimited AI coach', 'Job focus: top 5 skills with flashcards', `${o.proLive} Live AI minutes a month, used only while you talk`])}</div>
     </div>
     <div class="row" style="justify-content:center"><button class="btn primary lg" data-act="startonboard">Get started, it’s free</button></div>
   </section>`;
@@ -684,13 +684,13 @@ function livePromo() {
     ? ['Session in progress', 'Your practice test is still open', `${Math.ceil(left / 60)} minutes left. Rejoin and pick up where you stopped.`, '<button class="btn invert lg" data-act="livesetup">Rejoin the session</button>']
     : credits
       ? [`${credits} session${credits > 1 ? 's' : ''} ready`, 'Live AI is ready when you are', iv ? 'Use it for a spoken practice test, or keep it listening during your real interview for talking points on screen.' : 'Use it for a spoken practice test, or an open conversation with AI.', '<button class="btn invert lg" data-act="livesetup">Start the practice test</button>']
-      : (store.account()?.plan === 'pro') ? [`${store.account()?.proLiveLeft ?? o.proLiveN} of ${o.proLiveN} left this month`, `Live AI, ${o.proLive} minutes`, iv ? 'A spoken practice test, an open conversation, or talking points during your interview, without a break. For a full hour, add a one-time session.' : 'A spoken practice test or an open conversation, without a break. For a full hour, add a one-time session.', '<button class="btn invert lg" data-act="livesetup">Start Live AI</button>']
+      : (store.account()?.plan === 'pro') ? [`${store.account()?.proLiveLeft ?? o.proLive} of ${o.proLive} min left this month`, `Live AI, ${o.proLive} minutes a month`, iv ? 'A spoken practice test, an open conversation, or talking points during your interview, without a break. For a full hour, add a one-time session.' : 'A spoken practice test or an open conversation, without a break. For a full hour, add a one-time session.', '<button class="btn invert lg" data-act="livesetup">Start Live AI</button>']
       : [`${o.liveMin} minutes, one-time`, 'Live AI for 60 minutes', iv ? 'Run a spoken practice test the day before. Then, in the interview itself, leave it listening: a few talking points appear on screen as each question is asked.' : 'Run a spoken practice test the day before, or an open conversation to warm up.', '<button class="btn invert lg" data-act="plans">See pricing</button>'];
   return `<section class="card stacked live-hero" aria-label="Live AI">
-    <div class="card-head"><span>${isProUser ? `Live AI, ${o.proLive} minutes` : `Live AI, ${o.liveMin} minutes`}</span><span>${esc(head)}</span></div>
+    <div class="card-head"><span>${isProUser ? `Live AI, ${o.proLive} min a month` : `Live AI, ${o.liveMin} minutes`}</span><span>${esc(head)}</span></div>
     <h2>${esc(title)}</h2>
     <p style="margin-top:8px">${esc(text)}</p>
-    <ul class="live-points"><li>Practice test with a verdict</li>${iv ? '<li>Talking points during your interview</li>' : ''}<li>${isProUser ? `No break for ${o.proLive} minutes` : 'Continuous for the full hour'}</li></ul>
+    <ul class="live-points"><li>Practice test with a verdict</li>${iv ? '<li>Talking points during your interview</li>' : ''}<li>${isProUser ? 'Only the minutes you talk are counted' : 'One 60-minute clock: it keeps running once you start'}</li></ul>
     <div class="row" style="margin-top:18px">${cta}</div>
   </section>`;
 }
@@ -1321,7 +1321,7 @@ function usageMeters(a) {
   if (!a || a.unlimited || !a.limits) return '';
   return `<div class="meters">
     ${a.msgsUnlimited ? '<div><div class="meter-top"><span>AI messages</span><b>Unlimited</b></div><div class="bar"><i style="width:100%"></i></div></div>' : meter('AI messages left', a.msgsLeft, a.limits.msgs, `${a.msgsLeft} / ${a.limits.msgs}`)}
-    ${a.plan === 'pro' ? meter('Live AI sessions left', a.proLiveLeft ?? 0, offer().proLiveN, `${a.proLiveLeft ?? 0} of ${offer().proLiveN}`) : meter('Voice minutes left', a.voiceSecLeft, a.limits.voiceSec, `${mins(a.voiceSecLeft)} / ${mins(a.limits.voiceSec)}`)}
+    ${a.plan === 'pro' ? meter('Live AI minutes left', a.proLiveLeft ?? 0, offer().proLive, `${a.proLiveLeft ?? 0} of ${offer().proLive} min`) : meter('Voice minutes left', a.voiceSecLeft, a.limits.voiceSec, `${mins(a.voiceSecLeft)} / ${mins(a.limits.voiceSec)}`)}
   </div>`;
 }
 
@@ -1402,10 +1402,10 @@ function allowanceCard(a) {
   const o = offer();
   if (a?.unlimited) return '';
   if (a?.plan === 'pro') return `<section class="panel stack tight"><div class="row between"><b>Your Pro AI this month</b><span class="tag pro">Pro</span></div>
-    ${usageMeters(a)}<p class="muted small">Live AI: ${a.proLiveLeft ?? o.proLiveN} of ${o.proLiveN} sessions of ${o.proLive} minutes left this month. Need a full hour? A one-time session is ${esc(o.livePrice)}.</p></section>`;
+    ${usageMeters(a)}<p class="muted small">Live AI: ${a.proLiveLeft ?? o.proLive} of ${o.proLive} minutes left this month. Only the time you talk is counted. Need a full hour more? A one-time session is ${esc(o.livePrice)}.</p></section>`;
   return `<section class="panel stack tight"><b>Free to try</b>
     ${usageMeters(a)}
-    <p class="muted small">Pro (${esc(o.proPrice)}): unlimited AI messages and ${o.proLiveN === 2 ? 'two' : o.proLiveN} ${o.proLive}-minute Live AI sessions a month. <button class="link" data-act="plans">See pricing</button></p></section>`;
+    <p class="muted small">Pro (${esc(o.proPrice)}): unlimited AI messages and ${o.proLive} Live AI minutes a month, counted only while you talk. <button class="link" data-act="plans">See pricing</button></p></section>`;
 }
 
 // The Live AI offer, one slim row that is always on the AI tab: the paid product, never buried.
@@ -1481,8 +1481,8 @@ function liveStrip() {
   const [sub, label, act] = isAdmin() ? ['Admin · no limits', 'Start', 'livesetup']
     : left >= 20 ? [`Session open · ${Math.ceil(left / 60)} min left`, 'Rejoin', 'livesetup']
     : credits ? [`${credits} session${credits > 1 ? 's' : ''} ready · voice, graded`, 'Start', 'livesetup']
-    : pro ? [`${a?.proLiveLeft ?? o.proLiveN} of ${o.proLiveN} left this month · ${o.proLive} min each`, 'Start', 'livesetup']
-    : [`${o.liveMin} min · spoken, scored · ${o.livePrice}`, 'Try it', 'plans'];
+    : pro ? [`${a?.proLiveLeft ?? o.proLive} of ${o.proLive} min left · only talk time counts`, 'Start', 'livesetup']
+    : [`${o.liveMin}-min session · ${o.livePrice} · clock runs once started`, 'Try it', 'plans'];
   return `<section class="live-strip" aria-label="Live AI mock interview">
     <span class="ls-wave" aria-hidden="true">${Array.from({ length: 5 }, (_, i) => `<i style="--w:${i}"></i>`).join('')}</span>
     <div class="grow"><b>Live AI mock interview</b><span>${esc(sub)}</span></div>
@@ -1556,8 +1556,8 @@ function liveSetupSheet() {
   const pro = store.account()?.plan === 'pro' || store.account()?.unlimited;
   const proLeft = store.account()?.proLiveLeft ?? 0, proWin = store.account()?.proLiveSecLeft || 0;
   const admin = isAdmin();
-  const fromPlan = !admin && left < 20 && !credits && pro && (proLeft > 0 || proWin >= 20);
-  const state = admin ? 'Admin account: no limits.' : left >= 20 ? `Your session is still open with ${Math.ceil(left / 60)} minutes left.` : credits ? `You have ${credits} session${credits > 1 ? 's' : ''} ready.` : fromPlan ? (proWin >= 20 ? `Your Pro session is still open with ${Math.ceil(proWin / 60)} minutes left.` : `Included in Pro: ${proLeft} of ${offer().proLiveN} sessions of ${offer().proLive} minutes left this month. For a full hour, buy a one-time session.`) : 'You need a Live AI session to start. See pricing for the options.';
+  const fromPlan = !admin && left < 20 && !credits && pro && proWin >= 60;
+  const state = admin ? 'Admin account: no limits.' : left >= 20 ? `Your session is still open with ${Math.ceil(left / 60)} minutes left.` : credits ? `You have ${credits} one-time session${credits > 1 ? 's' : ''} ready. Heads up: starting one begins a fixed 60-minute clock. It keeps running if you leave, and unused minutes are not given back.` : fromPlan ? `Included in Pro: ${proLeft} of ${offer().proLive} minutes left this month. Only the time you are connected is counted, so you can stop and come back any time.` : 'You need a Live AI session to start. See pricing for the options.';
   const opt = (v, t, d) => `<label class="use-opt"><input type="radio" name="use" value="${v}" ${use === v ? 'checked' : ''}><span><b>${t}</b><span class="muted small">${d}</span></span></label>`;
   sheet(`<form id="liveSetupForm" class="stack">
     <h2>Live AI, 60 minutes</h2>
@@ -1906,14 +1906,14 @@ function plansView() {
     ['Animated diagrams for every topic', no, yes, '–'],
     ['AI messages about your prep', `${o.freeMsgs} to try`, 'Unlimited', '–'],
     ['Voice practice', `${o.freeVoice} min to try`, `In your Live AI sessions`, `${o.liveMin} min, continuous`],
-    ['Uninterrupted Live AI', no, `${o.proLiveN} × ${o.proLive} min a month`, `${o.liveMin} min, once`],
+    ['Live AI voice interviews', no, `${o.proLive} min a month, only talk time counts`, `${o.liveMin} min in one go, clock runs once started`],
     ['Spoken practice test with a verdict', no, yes, yes],
     ...(S.liveInterviewIos ? [['Talking points during your real interview', no, yes, yes]] : []),
     ['Custom subjects', no, 'Up to 5', '–'],
   ];
   const liveBtn = left >= 20 ? '<button class="btn invert block lg" data-act="livesetup">Rejoin your session</button>'
     : credits ? `<button class="btn invert block lg" data-act="livesetup">Start a session (${credits} ready)</button>`
-    : `<button class="btn invert block lg" data-act="buylive" ${dis}>${S.buyBusy === 'live' ? `Opening the ${storeName()}…` : `Buy one session, ${esc(o.livePrice)}`}</button>`;
+    : `<button class="btn invert block lg" data-act="buylive" ${dis}>${S.buyBusy === 'live' ? `Opening the ${storeName()}…` : `Buy one session, ${esc(o.livePrice)}`}</button><p class="muted small live-fixed-note">One fixed 60-minute session: the clock starts when you begin and keeps running if you step away. Minutes left when it ends are not returned.</p>`;
   return `<div class="stack loose pricing">
     <div class="row between" style="margin-bottom:-14px"><span></span><button class="iconbtn plain" data-act="pickfree" aria-label="Close">${ic('x')}</button></div>
     <div class="head">
@@ -1931,7 +1931,7 @@ function plansView() {
       <section class="tier">
         <div class="tier-name">Pro</div>
         <div class="price">${esc(o.proAmount)}<span>/ ${esc(o.proPer)}</span></div>
-        <p class="muted small">Every topic, every card and diagram, and ${o.proLiveN === 2 ? 'two' : o.proLiveN} ${o.proLive}-minute Live AI sessions a month.${o.perDay ? ` ${esc(o.perDay)}.` : ''}</p>
+        <p class="muted small">Every topic, every card and diagram, and ${o.proLive} Live AI minutes a month, counted only while you talk.${o.perDay ? ` ${esc(o.perDay)}.` : ''}</p>
         ${isPro ? '<button class="btn block" disabled>Your plan</button>' : `<button class="btn primary block" data-act="buysub" ${dis}>${S.buyBusy === 'pro' ? `Opening the ${storeName()}…` : 'Start Pro'}</button>`}
       </section>
       <section class="tier card live-hero">
@@ -2384,8 +2384,10 @@ document.addEventListener('submit', async e => {
     closeSheet();
     const { credits, left } = liveState();
     const ac = store.account();
-    const proOk = isAdmin() || (ac?.plan === 'pro' && ((ac.proLiveLeft ?? 0) > 0 || (ac.proLiveSecLeft || 0) >= 20));
+    const proOk = isAdmin() || (ac?.plan === 'pro' && (ac.proLiveSecLeft || 0) >= 60);
     if (left < 20 && !credits && !proOk) { S.showPlans = true; return render(); }
+    // A one-time session is a fixed 60-minute clock: say so before it starts.
+    if (left < 20 && credits && !proOk && !confirm('Start your 60-minute Live AI session now?\n\nThe 60 minutes start counting now and keep running even if you leave. Unused minutes are not returned.')) return;
     S.view = 'chat'; render();
     return startVoice('live');
   }

@@ -158,7 +158,8 @@ export async function endCall(id, { key, now = Date.now(), hangup } = {}) {
   if (!ended) return null;
   try { await hangup?.(id); } catch { /* call may already be over */ }
   const usedSec = Math.min(ended.allowedSec, Math.ceil((now - ended.start) / 1000));
-  await refundVoice(ended.key, ended.allowedSec - usedSec, ended.plan, ended.day, now);
+  if (ended.plan === 'prolive') await chargeProLive(ended.key, usedSec, now);
+  else await refundVoice(ended.key, ended.allowedSec - usedSec, ended.plan, ended.day, now);
   return { ...ended, usedSec };
 }
 
@@ -167,7 +168,9 @@ export async function sweepCalls(hangup, now = Date.now()) {
   const db = await getDb();
   const overdue = await db.list('calls', c => c.status === 'active' && c.start + c.allowedSec * 1000 + 15000 < now);
   for (const c of overdue) {
-    await db.update('calls', c.id, x => (x && x.status === 'active' ? { ...x, status: 'expired', endedAt: now } : undefined));
+    let mine = false;
+    await db.update('calls', c.id, x => { if (x && x.status === 'active') { mine = true; return { ...x, status: 'expired', endedAt: now }; } return undefined; });
+    if (mine && c.plan === 'prolive') await chargeProLive(c.key, c.allowedSec, now);
     try { await hangup(c.id); } catch { /* already gone */ }
   }
   return overdue.length;
@@ -221,22 +224,24 @@ export async function startProLive(key, now = Date.now()) {
   await (await getDb()).update('users', key, u => {
     if (!u || u.deleted) return undefined;
     rollPeriod(u, now);
-    const left = Math.floor(((u.proLiveUntil || 0) - now) / 1000);
-    if (left >= L.minCallSec) { out = { ok: true, allowedSec: left, resumed: true }; return undefined; }
-    if ((u.pro.liveUsed || 0) >= L.proLiveSessions) return undefined;
-    u.pro.liveUsed = (u.pro.liveUsed || 0) + 1;
-    u.proLiveUntil = now + L.proLiveSec * 1000;
-    out = { ok: true, allowedSec: L.proLiveSec, resumed: false };
+    // Minutes bank: the call may run for whatever is left; only connected time is charged, on hang-up.
+    const left = Math.max(0, L.proLiveBankSec - (u.pro.liveSecUsed || 0));
+    if (left < L.minCallSec) return u;
+    out = { ok: true, allowedSec: left, resumed: false };
     return u;
   });
   return out;
 }
 
-export async function cancelProLive(key) {
+export async function cancelProLive() { /* nothing is reserved up front any more */ }
+
+// Pro minutes bank: charge the seconds a call was actually connected.
+export async function chargeProLive(key, sec, now = Date.now()) {
+  if (!(sec > 0)) return;
   await (await getDb()).update('users', key, u => {
-    if (!u?.pro) return undefined;
-    u.pro.liveUsed = Math.max(0, (u.pro.liveUsed || 0) - 1);
-    delete u.proLiveUntil;
+    if (!u) return undefined;
+    rollPeriod(u, now);
+    u.pro.liveSecUsed = (u.pro.liveSecUsed || 0) + Math.ceil(sec);
     return u;
   });
 }
