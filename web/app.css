@@ -596,25 +596,15 @@ pre code { background: none; border: 0; padding: 0; }
 .field-tile { text-align: left; cursor: pointer; font: inherit; color: inherit; }
 .field-tile:hover { border-color: var(--line-strong); }
 
-/* ---------- landing: one bold scene, the scroll story, engineer labels ---------- */
-:root { --scene: #17324d; --scene-ink: #f2efe8; --scene-soft: rgba(242, 239, 232, .62); --dot: #ff6b4a; }
+/* ---------- landing: same theme as the rest of the app, the scroll story, engineer labels ---------- */
+:root { --dot: #e2583e; }
+@media (prefers-color-scheme: dark) { :root { --dot: #ff8a6e; } }
 .l-tag { font: 500 12.5px/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace; color: var(--muted); letter-spacing: 0; margin: 0 0 8px; }
-.l-hero { position: relative; overflow: hidden; background: var(--scene); color: var(--scene-ink); border-radius: 22px; padding: 26px 20px 0; margin-top: 4px; }
-.l-hero .l-tag, .l-hero .muted, .l-hero .l-sub { color: var(--scene-soft); }
-.l-hero .l-title { color: var(--scene-ink); }
-.l-hero .btn.primary { background: var(--scene-ink); color: var(--scene); border-color: var(--scene-ink); }
-.l-hero .l-pitch { background: rgba(242, 239, 232, .08); color: var(--scene-soft); border-left-color: var(--dot); }
-.l-hero .l-pitch strong { color: var(--scene-ink); }
-.l-hero .l-pitch-video, .l-hero .l-pitch-cards { background: rgba(242, 239, 232, .1); border-color: rgba(242, 239, 232, .25); color: var(--scene-ink); }
-.l-hero .l-pitch-arrow { color: var(--dot); }
+.l-hero { position: relative; padding-top: 6px; overflow-x: clip; }
 .l-hero .hero-anim { position: relative; z-index: 1; }
-.l-hero .ha-caption { color: var(--scene-soft); }
-.l-giant { position: relative; margin: -46px -6px -18px; font: 700 clamp(5.5rem, 30vw, 15rem)/.78 var(--sans); letter-spacing: -.06em; color: rgba(242, 239, 232, .1); pointer-events: none; user-select: none; white-space: nowrap; }
+.l-giant { position: relative; margin: -40px -4px 0; padding-bottom: .05em; font: 700 clamp(5.5rem, 30vw, 15rem)/.78 var(--sans); letter-spacing: -.06em; color: color-mix(in srgb, var(--ink) 7%, transparent); pointer-events: none; user-select: none; white-space: nowrap; }
 .l-giant-dot { display: inline-block; width: .16em; height: .16em; margin-left: .04em; border-radius: 50%; background: var(--dot); vertical-align: baseline; }
-@media (min-width: 760px) {
-  .l-hero { padding: 44px 40px 0; }
-  .l-giant { grid-column: 1 / -1; margin-top: -70px; }
-}
+@media (min-width: 760px) { .l-giant { grid-column: 1 / -1; margin-top: -60px; } }
 
 .l-story { height: 260vh; margin: -10px 0; }
 .l-stage { position: sticky; top: 0; height: 100vh; display: flex; align-items: center; }
