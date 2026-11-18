@@ -5,6 +5,15 @@ Full background for each item: `docs/LAUNCH-CHECKLIST.md`. Tick items here as th
 
 Status in one line: the site and app work; **paid purchases do not unlock anything yet**, because RevenueCat is not connected to the server.
 
+## 0. Site down (18 November, from about 05:00 UTC)
+
+- [ ] **Every address returns Azure's generic "404: Not found"**, including `/api/health`, on `preppilot.us`, `www` and `lively-pond-0ad55040f.8.azurestaticapps.net`. GitHub deploy runs 55, 56 (branch) and 57 (`main`, known-good content) all report "Deployment Complete" to the right site, yet nothing is served. Not caused by code: redeploying `main` gives the same 404. Check in the Azure Portal:
+  - Static Web App `swa-preppilot-cmncqy5swqngi` → Environments: does Production show a recent deployment and status Ready?
+  - Activity log on the resource and resource group: any change since 17 November evening (plan, environments, deletion, custom domain, "default domain")?
+  - Subscription: Active, no spending limit hit or disabled state.
+  - Service Health: any Static Web Apps incident in East US 2.
+  - Last resort: `./deploy.ps1` redeploys the infrastructure and content.
+
 ## 1. Before anyone can pay
 
 - [x] **Merge `claude/eloquent-pasteur-wdc9yd` into `main`.** Done 17 November 2026 (fast-forward to `a31efcf`); Azure now serves `main`. (The Google sign-in fix `ffb3865` is in.)
