@@ -934,7 +934,8 @@ function deckView() {
     <div class="bar"><i style="width:${(S.di * 100) / d.cards.length}%"></i></div>
     ${d.free && S.di === 0 ? `<p class="note small row between"><span>Shuffled on Free. Pro takes you through every card in your workflow’s order.</span><button class="link" data-act="plans">See Pro</button></p>` : ''}
     ${singleTopic && diagramFor(singleTopic) ? `<div class="row between"><span></span><button class="link quiet small" data-act="dgsheet" data-id="${singleTopic}">How it works — see the diagram</button></div>` : ''}
-    <article class="card stacked flash" id="flash">
+    <article class="card stacked flash ${S.reveal ? 'can-swipe' : 'can-tap'}" id="flash">
+      <span class="sw-tag sw-got" aria-hidden="true">${ic('check')}Got it</span><span class="sw-tag sw-miss" aria-hidden="true">${ic('x')}Missed</span>
       <div class="card-head"><span>${esc(t?.name || q.topic)}</span><span class="level">${q.kind ? FIELD_KINDS[q.kind] : ['', 'Fundamentals', 'Applied', 'Advanced'][q.l] || ''}</span></div>
       <p class="q">${fmt(q.q)}</p>
       ${S.reveal ? `<div class="ans">${fmt(q.a)}</div>` : ''}
@@ -942,7 +943,8 @@ function deckView() {
         <div class="row"><button class="btn miss lg" data-act="grade" data-ok="0">Missed it</button><button class="btn got lg" data-act="grade" data-ok="1">Got it</button></div>
         <div class="row between small"><button class="link quiet" data-act="askq">Go deeper with AI</button>${betaNote(t, `question: ${q.q}`)}</div>`
       : '<button class="btn primary lg block" data-act="reveal">Show the answer</button><p class="muted small" style="text-align:center">Say your answer out loud first.</p>'}
-      <p class="muted small kbd-hint" style="text-align:center">Space to reveal · ← missed · → got it</p></div>
+      <p class="muted small kbd-hint" style="text-align:center">Space to reveal · ← missed · → got it</p>
+      <p class="muted small touch-hint" style="text-align:center">${S.reveal ? 'Swipe right if you got it, left if you missed it' : 'Tap the card to flip it'}</p></div>
     </article>
   </div>`;
 }
@@ -1738,7 +1740,7 @@ async function openTopic(id) {
 
 // Grade a flashcard: stamp the verdict on the card so the user sees it land,
 // then deal the next one. Extracted so the keyboard can grade too.
-function gradeCard(ok) {
+function gradeCard(ok, swiped = false) {
   if (S.grading || !S.deck || S.di >= S.deck.cards.length) return;
   const q = S.deck.cards[S.di], prog = store.progress();
   prog[q.id] = review(prog[q.id], ok); store.setProgress(prog);
@@ -1746,6 +1748,13 @@ function gradeCard(ok) {
   store.setActivity(recordActivity(store.activity(), todayKey(), ok));
   S.grading = true;
   const flash = document.getElementById('flash');
+  if (swiped) {
+    // The swipe itself was the verdict: no stamp, straight to the next card.
+    setTimeout(() => { S.grading = false; S.deck.results.push(ok); S.di++; S.reveal = false;
+      if (S.di >= S.deck.cards.length && native() && !store.notifAsked()) { store.setNotifAsked(true); promptNotifications(); }
+      render(); }, 230);
+    return;
+  }
   if (flash) {
     flash.insertAdjacentHTML('beforeend', `<div class="verdict ${ok ? 'ok' : 'miss'}" aria-hidden="true">
       <svg viewBox="0 0 64 64"><circle class="v-ring dg-draw" cx="32" cy="32" r="28" pathLength="100" style="animation-duration:.6s"/>
@@ -1762,6 +1771,51 @@ function gradeCard(ok) {
     render();
   }, 1100);
 }
+
+/* Swipe a flashcard: right = got it, left = missed. Tap (before the answer) flips it.
+   Pointer events cover touch, pen and mouse; vertical scrolling stays native (touch-action: pan-y). */
+const SWIPE_AT = 90; // px past which a release counts as a decision
+let sw = null;
+app.addEventListener('pointerdown', e => {
+  const card = e.target.closest('#flash');
+  if (!card || S.grading || e.button > 0 || e.target.closest('button, a, summary, input, textarea')) return;
+  sw = { card, x: e.clientX, y: e.clientY, t: performance.now(), dx: 0, id: e.pointerId, drag: false };
+});
+app.addEventListener('pointermove', e => {
+  if (!sw || e.pointerId !== sw.id) return;
+  const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+  if (!sw.drag) {
+    if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { sw = null; return; } // a scroll, not a swipe
+    if (Math.abs(dx) < 8 || !S.reveal) return;
+    sw.drag = true; sw.card.setPointerCapture?.(e.pointerId); sw.card.classList.add('dragging');
+  }
+  sw.dx = dx;
+  const k = Math.max(-1, Math.min(1, dx / SWIPE_AT));
+  sw.card.style.transform = `translate3d(${dx}px, ${Math.abs(dx) * 0.04}px, 0) rotate(${dx / 18}deg)`;
+  sw.card.style.setProperty('--got', Math.max(0, k).toFixed(2));
+  sw.card.style.setProperty('--miss', Math.max(0, -k).toFixed(2));
+});
+function endSwipe(e) {
+  if (!sw || (e && e.pointerId !== sw.id)) return;
+  const { card, dx, drag, t } = sw; sw = null;
+  if (!drag) { // a tap: flip the card if the answer is still hidden
+    if (e?.type === 'pointerup' && !S.reveal && !e.target.closest('button, a')) { S.reveal = true; render(); }
+    return;
+  }
+  card.classList.remove('dragging');
+  const fast = Math.abs(dx) / Math.max(1, performance.now() - t) > 0.6; // a quick flick counts too
+  if (Math.abs(dx) >= SWIPE_AT || (fast && Math.abs(dx) > 40)) {
+    const ok = dx > 0;
+    card.classList.add('fly');
+    card.style.transform = `translate3d(${ok ? 140 : -140}vw, 40px, 0) rotate(${ok ? 28 : -28}deg)`;
+    gradeCard(ok, true);
+  } else {
+    card.classList.add('snap'); card.style.transform = ''; card.style.setProperty('--got', 0); card.style.setProperty('--miss', 0);
+    setTimeout(() => card.classList.remove('snap'), 260);
+  }
+}
+app.addEventListener('pointerup', endSwipe);
+app.addEventListener('pointercancel', endSwipe);
 
 function aiFailed(err) {
   if (err.code === 'quota') { S.paywall = true; S.view = 'chat'; }
