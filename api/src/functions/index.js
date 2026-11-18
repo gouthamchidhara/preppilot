@@ -6,7 +6,7 @@ const toReq = async request => {
   if (request.method === 'POST') {
     try { body = await request.json(); } catch { /* empty or invalid body -> handler validation returns 400 */ }
   }
-  return { body, headers: Object.fromEntries([...request.headers].map(([k, v]) => [k.toLowerCase(), v])), ip: '' };
+  return { body, headers: Object.fromEntries([...request.headers].map(([k, v]) => [k.toLowerCase(), v])), query: Object.fromEntries(request.query || []), ip: '' };
 };
 const toRes = r => ({ status: r.status, jsonBody: r.body, headers: { 'cache-control': 'no-store', ...r.headers } });
 

@@ -266,7 +266,9 @@ export async function handleSweep() {
 
 /* ---------- billing ---------- */
 export async function handleRevenueCatWebhook(req, log) {
-  if (!webhookAuthorized(req.headers.authorization)) return json(401, { error: 'unauthorized' });
+  // Azure Static Web Apps replaces the Authorization header with its own token before the function
+  // sees it, so RevenueCat's webhook URL carries the shared secret as ?auth=… instead.
+  if (!webhookAuthorized(req.headers.authorization) && !webhookAuthorized(req.query?.auth)) return json(401, { error: 'unauthorized' });
   try { return json(200, await applyWebhook(req.body)); } catch (e) { log?.(`webhook: ${e.message}`); return json(500, { error: 'webhook failed' }); }
 }
 

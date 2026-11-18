@@ -31,7 +31,7 @@ createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   try {
     if (url.pathname.startsWith('/api/')) {
-      const r = { body: req.method === 'POST' ? await readBody(req) : null, headers: req.headers, ip: req.socket.remoteAddress };
+      const r = { body: req.method === 'POST' ? await readBody(req) : null, headers: req.headers, query: Object.fromEntries(url.searchParams), ip: req.socket.remoteAddress };
       const route = url.pathname.slice(5);
       const handler = ROUTES[`${req.method} ${route}`];
       const out = handler ? await handler(r, console.warn) : { status: 404, body: { error: 'not found' }, headers: {} };

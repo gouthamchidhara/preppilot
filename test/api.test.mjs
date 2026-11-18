@@ -462,3 +462,10 @@ test('admins have no limits: long voice calls, Live AI without a session, no rat
   const v = (await import('../api/src/lib/realtime.js')).validateRealtime({ sdp: 'v=0', mode: 'live', live: { lengthMin: 240 } });
   assert.equal(v.live.lengthMin, 240);
 });
+
+test('RevenueCat webhook also accepts the secret in the URL (Azure replaces Authorization)', async () => {
+  const ok = await ROUTES['POST billing/revenuecat']({ body: { event: { type: 'TEST' } }, headers: { authorization: 'Bearer azure-platform-token' }, query: { auth: 'Bearer hook-secret' } });
+  assert.equal(ok.status, 200);
+  const bad = await ROUTES['POST billing/revenuecat']({ body: { event: { type: 'TEST' } }, headers: {}, query: { auth: 'wrong' } });
+  assert.equal(bad.status, 401);
+});
