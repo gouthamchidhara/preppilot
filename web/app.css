@@ -1141,3 +1141,17 @@ html:has(.swipe-screen), body:has(.swipe-screen) { overscroll-behavior: none; }
 h1, h2, h3, .l-title, .ls-title, .flash .q, .sw-q { letter-spacing: -.02em; }
 h1, .ls-title, .l-title { font-weight: 700 !important; }
 h2, h3 { font-weight: 650; }
+
+/* Chat input dock: an opaque strip with a soft fade above, so messages scroll cleanly underneath */
+.ai-dock { position: sticky; bottom: calc(var(--tabs) + env(safe-area-inset-bottom)); z-index: 5; margin: 0 -20px; padding: 10px 20px 12px; background: var(--desk); }
+.ai-dock::before { content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: 28px; background: linear-gradient(to bottom, transparent, var(--desk)); pointer-events: none; }
+.ai-dock .composer { position: static; margin: 0; }
+.ai-tab .msgs { padding-bottom: 8px; }
+.ai-dock .iconbtn.on { color: var(--accent); }
+@media (min-width: 900px) { .ai-dock { bottom: 0; margin: 0; padding: 10px 0 16px; } }
+/* In the app <body> scrolls, and a scroll container's padding also pushes sticky elements up.
+   Move the tab-bar clearance from <body> to the content so the chat dock sits right on the tabs. */
+html.in-app body { padding-bottom: 0; }
+html.in-app #app { padding-bottom: calc(var(--tabs) + 28px + env(safe-area-inset-bottom)); }
+html.in-app #app:has(.ai-dock) { padding-bottom: 0; }
+html.in-app .ai-dock { padding-bottom: calc(12px + var(--tabs) + env(safe-area-inset-bottom)); bottom: 0; }

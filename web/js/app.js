@@ -1099,6 +1099,37 @@ function swipeView() {
   </div>`;
 }
 
+/* Chat list by swipe, like the ChatGPT / Claude apps: drag right anywhere on the chat to pull the
+   drawer out, drag left to put it back. Vertical scrolling and code blocks are left alone. */
+let dz = null;
+document.addEventListener('touchstart', e => {
+  if (S.view !== 'chat' || S.rt || window.innerWidth >= 900 || e.touches.length !== 1) return;
+  const t = e.touches[0], el = e.target;
+  if (el.closest('pre, textarea, input, .live-strip, .sw-stage')) return;
+  const drawer = document.querySelector('.ai-drawer');
+  if (!drawer) return;
+  dz = { x: t.clientX, y: t.clientY, open: !!S.drawer, drawer, w: drawer.offsetWidth, on: false };
+}, { passive: true });
+document.addEventListener('touchmove', e => {
+  if (!dz) return;
+  const t = e.touches[0], dx = t.clientX - dz.x, dy = t.clientY - dz.y;
+  if (!dz.on) {
+    if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { dz = null; return; } // a scroll
+    if (Math.abs(dx) < 12 || (dz.open ? dx > 0 : dx < 0)) return;
+    dz.on = true; dz.drawer.style.transition = 'none';
+  }
+  const x = dz.open ? Math.min(0, dx) : Math.min(0, -dz.w + dx);
+  dz.drawer.style.transform = `translateX(${x}px)`; dz.x2 = dx;
+}, { passive: true });
+document.addEventListener('touchend', () => {
+  if (!dz) return;
+  const d = dz; dz = null;
+  if (!d.on) return;
+  d.drawer.style.transition = ''; d.drawer.style.transform = '';
+  const open = d.open ? d.x2 > -d.w * 0.3 : d.x2 > Math.min(90, d.w * 0.3);
+  if (open !== !!S.drawer) { S.drawer = open; render(); }
+});
+
 const SW_AT = 100; // px past which a release counts
 let sw = null, swRaf = 0;
 function swFlip() {
@@ -1420,13 +1451,13 @@ function chatView() {
         ${S.voiceServer && realtimeSupported ? `<button class="chip" data-act="rtstart" data-mode="talk">${ic('mic')}Talk it through</button>` : ''}</div>`}
     ${live}${S.busy ? '<div class="msg assistant"><span class="dots"><i></i><i></i><i></i></span></div>' : ''}</div>
     ${nudge}
-    ${S.rt ? '' : `<label class="switch small ai-speak"><input type="checkbox" id="speakToggle" ${store.speak() ? 'checked' : ''}>Read replies aloud</label>`}
     ${lowFree && !S.rt ? `<p class="note row between small"><span>${a.msgsLeft} free message${a.msgsLeft === 1 ? '' : 's'} left.</span><button class="link" data-act="plans">See Pro</button></p>` : ''}
-    <form id="chatForm" class="composer">
+    <div class="ai-dock"><form id="chatForm" class="composer">
       <textarea id="chatInput" rows="1" maxlength="2000" placeholder="${S.rt ? 'Or type your reply' : 'Message the AI coach'}" aria-label="Message"></textarea>
+      ${S.rt ? '' : `<button type="button" class="iconbtn plain ${store.speak() ? 'on' : ''}" data-act="speak" aria-pressed="${store.speak()}" aria-label="Read replies aloud" title="Read replies aloud">${ic(store.speak() ? 'sound' : 'soundoff')}</button>`}
       ${S.rt ? '' : `<button type="button" class="iconbtn ${S.listening ? 'on' : 'plain'}" data-act="mic" ${voice.canListen ? '' : 'disabled'} aria-label="${S.listening ? 'Stop dictation' : 'Dictate'}" title="${voice.canListen ? 'Dictate' : 'Dictation is not supported here'}">${ic(S.listening ? 'stop' : 'mic')}</button>`}
       <button class="iconbtn primary" type="submit" ${S.busy ? 'disabled' : ''} aria-label="Send">${ic('send')}</button>
-    </form>
+    </form></div>
   </div></div>`;
 }
 
@@ -2430,6 +2461,7 @@ document.addEventListener('click', async e => {
   else if (a === 'newdeck') startNewDeck();
   else if (a === 'newchat') { store.newChat(); S.chatContext = ''; S.drawer = false; render(); document.getElementById('chatInput')?.focus(); }
   else if (a === 'drawer') { S.drawer = !S.drawer; render(); }
+  else if (a === 'speak') { store.setSpeak(!store.speak()); if (!store.speak()) voice.stopSpeaking(); render(); }
   else if (a === 'openchat') { store.setChatCur(id); S.drawer = false; render(); }
   else if (a === 'delchat') { store.deleteChat(id); render(); }
   else if (a === 'askai') { S.view = 'chat'; render(); sendChat(b.dataset.q || ''); }
