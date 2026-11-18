@@ -1213,3 +1213,11 @@ html.kb-open .ai-tab .msgs { padding-bottom: 90px; }
 #sheet { padding-top: calc(12px + env(safe-area-inset-top)); }
 #sheet > div { max-height: calc(100dvh - 12px - env(safe-area-inset-top)); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 @supports not (height: 100dvh) { #sheet > div { max-height: calc(100vh - 12px - env(safe-area-inset-top)); } }
+
+/* Side panel matches the app's status-bar colour (the native shell paints that strip with --desk),
+   so the panel runs seamlessly to the top of the screen. */
+.nd { background: var(--desk); padding-top: calc(10px + env(safe-area-inset-top)); }
+.nd-head { padding-bottom: 10px; }
+.nd-item.on, .nd-item:active, .nd-chat-item.on, .nd-chat-item:active { background: color-mix(in srgb, var(--ink) 7%, transparent); }
+.nd-round { background: var(--desk); }
+body.drawer-open #shell { background: var(--paper); }
