@@ -492,7 +492,7 @@ function landingView() {
 
     <section class="l-jf" aria-label="Job focus">
       <p class="l-tag">## got a job post? <span class="tag">Pro</span></p>
-      <h2 class="l-h2">Paste the job. Get the five things it will test.</h2>
+      <h2 class="l-h2">Paste the job. Get the top 5 skills, with flashcards.</h2>
       <p class="muted">We read the requirements, pick the top 5 skills it will test, with flashcards for each. A cheat sheet for this one interview, not another course.</p>
       <div class="jfa" aria-hidden="true">
         <div class="jfa-post">
