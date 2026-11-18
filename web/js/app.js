@@ -414,7 +414,7 @@ async function loadDemo(lane) {
   let c = pick(pool);
   for (let k = 0; k < 4 && pool.length > 1 && c.q.q === S.demo?.q?.q; k++) c = pick(pool);
   S.demo = { lane: li, topicName: c.t.name, q: c.q, reveal: false };
-  if (!profile() && !S.onboard) render();
+  if (S.lastView === 'landing') render(); // refresh whenever the landing page is showing, with or without a saved profile
 }
 
 function welcome() {
