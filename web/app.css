@@ -1208,3 +1208,8 @@ body.drawer-open .nd { transform: none; opacity: 1; }
 html.kb-open .ai-dock { position: fixed; left: 0; right: 0; bottom: auto; margin: 0; padding: 6px 12px; z-index: 50; }
 html.kb-open .ai-dock::before { height: 18px; }
 html.kb-open .ai-tab .msgs { padding-bottom: 90px; }
+
+/* Sheets never taller than the screen: they scroll inside, top always reachable below the notch */
+#sheet { padding-top: calc(12px + env(safe-area-inset-top)); }
+#sheet > div { max-height: calc(100dvh - 12px - env(safe-area-inset-top)); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+@supports not (height: 100dvh) { #sheet > div { max-height: calc(100vh - 12px - env(safe-area-inset-top)); } }
