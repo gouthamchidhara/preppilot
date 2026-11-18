@@ -1,0 +1,29 @@
+{
+  "month": "2026-11",
+  "at": "2026-11-18T18:41:27.987Z",
+  "added": 7,
+  "report": [
+    {
+      "topic": "k8s",
+      "qs": [
+        "How can you use the `startupProbe` in a pod specification to improve reliability for applications with slow initialization in Kubernetes 1.18+?",
+        "Describe a troubleshooting approach when a Kubernetes deployment's pods are not registering with a Service, despite matching labels and correct selector configuration. What recent networking features or settings might affect this?"
+      ]
+    },
+    {
+      "topic": "java-core",
+      "qs": [
+        "What happens if you attempt to modify a collection created with `List.of()` and why?",
+        "How do Java records handle `equals()` and `hashCode()` implementations, and what should you be aware of when using them in collections?"
+      ]
+    },
+    {
+      "topic": "llm-apps",
+      "qs": [
+        "How would you ensure that an LLM only references document chunk IDs that were actually retrieved during a RAG session?",
+        "What strategies can you use to make sure an LLM responds in a target language, even when it defaults to English?",
+        "When deploying LLM inference endpoints on serverless infrastructure, what are common causes of request timeouts and how can you address them?"
+      ]
+    }
+  ]
+}

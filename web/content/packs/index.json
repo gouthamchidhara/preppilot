@@ -231,8 +231,8 @@
   {
    "id": "infra",
    "name": "Infrastructure Engineering",
-   "version": "cbb2a36328",
-   "bytes": 178443,
+   "version": "4cbeccac5b",
+   "bytes": 179643,
    "topics": [
     {
      "id": "linux",
@@ -314,8 +314,8 @@
   {
    "id": "java",
    "name": "Java",
-   "version": "0563b611c3",
-   "bytes": 43639,
+   "version": "6de9048124",
+   "bytes": 44508,
    "topics": [
     {
      "id": "java-core",
@@ -346,8 +346,8 @@
   {
    "id": "ml",
    "name": "Machine Learning & AI",
-   "version": "5e025fd1c5",
-   "bytes": 51452,
+   "version": "890a63de52",
+   "bytes": 52946,
    "topics": [
     {
      "id": "statistics",

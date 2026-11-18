@@ -52,6 +52,7 @@ h2 { font: 700 13px var(--sans); letter-spacing: .06em; text-transform: uppercas
 .qa h3 { font: 600 18px/1.4 var(--sans); margin: 0 0 8px; }
 .qa p { margin: 0; color: var(--ink-soft); font: 400 17px/1.6 var(--serif); }
 .qa.locked p a { font: 600 15px var(--sans); }
+.qa.new { border-color: var(--accent); }
 code { font: 14px ui-monospace, Menlo, Consolas, monospace; padding: 1px 5px; border-radius: 5px; background: var(--sunk); }
 .topics { display: grid; gap: 8px; padding: 0; list-style: none; }
 .topics a { display: flex; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); color: var(--ink); text-decoration: none; }
@@ -93,12 +94,15 @@ for (const p of packs) for (const t of p.topics) {
     const open = shown++ < OPEN_ANSWERS;
     return `<section class="qa${open ? '' : ' locked'}"><h3>${rich(x.q)}</h3><p>${open ? rich(x.a) : `<a href="/">See the answer in the app, free</a>`}</p></section>`;
   }).join('\n')).join('\n');
+  const recent = qa.filter(x => x.new && x.new >= new Date(now.getTime() - 62 * 86400000).toISOString().slice(0, 7));
+  const fresh = recent.length ? `<h2>New this month</h2>\n` + recent.map(x => `<section class="qa new"><h3>${rich(x.q)}</h3><p>${rich(x.a)}</p></section>`).join('\n') : '';
   const related = p.topics.filter(o => o.id !== t.id);
   const body = `<nav class="crumbs"><a href="/questions/">Interview questions</a> › ${esc(p.name)}</nav>
 <h1>${esc(t.name)} interview questions</h1>
 <p class="lede">${esc(t.blurb || '')}</p>
 <p class="meta">${qa.length} questions · ${t.tag ? esc(t.tag) + ' · ' : ''}updated ${month}</p>
 <div class="cta"><p><b>Practise these as flashcards.</b> One or two lines each; the ones you miss come back first.</p><a class="btn" href="/">Start free</a></div>
+${fresh}
 ${list}
 ${related.length ? `<h2>More ${esc(p.name)} topics</h2><ul class="topics">${related.map(o => `<li><a href="/questions/${o.id}/"><span>${esc(o.name)}</span><small>${o.qa.length} questions</small></a></li>`).join('')}</ul>` : ''}`;
   const ld = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
