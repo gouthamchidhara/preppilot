@@ -30,7 +30,7 @@ Checked with it on 18 November: subscription Enabled; Static Web App (Free) prod
 - [x] **App Store Connect: `mock_session_60min`** fixed by Claude 18 Nov: $15.99 (was $10.99), shows as "Live AI, 60 minutes", sold in the USA, review screenshot; state Ready to Submit. Unused misspelled product `com.gchid.prepilot.subscribtion` deleted. Was: display name and description "Live AI, 60 minutes". Keep the product id.
 - [ ] **App Store Connect: Paid Apps agreement** Active (Agreements, Tax and Banking).
 - [ ] **New iOS build** to TestFlight (`docs/IOS-RELEASE-RUNBOOK.md`, workflow "iOS release"). The current build predates the purchase fixes, light/dark colours, badge and notifications.
-- [ ] **App Store Connect: App Privacy answers** match `web/privacy.html` (updated 17 November).
+- [x] **App Store Connect: App Privacy answers** published 18 Nov (email, name, audio, other user content, user ID, purchase history, product interaction; all App Functionality, linked, no tracking). Was: match `web/privacy.html` (updated 17 November).
 - [ ] **TestFlight purchase test** with a sandbox account: buy Pro, buy a Live AI session, Restore purchases, and check the AI page shows "Unlimited" and "2 of 2" Live AI sessions.
 
 - [x] **App availability: United States only** (set by Claude 18 Nov; was every country including China mainland, which triggered China security/AIGC notices). Add countries later in Pricing and Availability.
