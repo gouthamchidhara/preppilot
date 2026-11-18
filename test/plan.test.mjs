@@ -136,3 +136,17 @@ test('know it cold (swipe up) skips a box; a miss still resets', async () => {
   assert.equal(normal.box, 1); assert.equal(easy.box, 2); assert.ok(easy.due > normal.due);
   assert.equal(rv(easy, false, NOW0).box, 0);
 });
+
+test('rounds climb from fundamentals to advanced and stick to core interview topics', async () => {
+  const { interviewRound, difficulty } = await import('../web/js/plan.js');
+  const mk = (topic, l, n) => Array.from({ length: n }, (_, i) => ({ id: `${topic}-${l}-${i}`, topic, l, box: 0 }));
+  const cards = [...mk('java', 3, 4), ...mk('java', 1, 4), ...mk('sql', 2, 4), ...mk('sql', 1, 4), ...mk('cloud', 1, 6), { id: 'k', topic: 'java', kind: 'scenario', l: 2, box: 0 }];
+  const weightOf = t => ({ java: 3, sql: 3, cloud: 1 })[t];
+  const steady = interviewRound(cards, { weightOf, limit: 10 });
+  assert.deepEqual(steady.map(difficulty), [...steady.map(difficulty)].sort((a, b) => a - b), 'steady round is easy to hard');
+  const mix = interviewRound(cards, { weightOf, mix: true, limit: 10, rnd: () => 0 });
+  assert.ok(mix.every(c => c.topic !== 'cloud'), 'nice-to-know topics left out while core ones have cards');
+  assert.deepEqual(mix.slice(0, 8).map(difficulty), Array(8).fill(1), 'fundamentals first');
+  assert.notEqual(mix[0].topic, mix[1].topic, 'topics interleaved');
+  assert.equal(mix.findIndex(c => c.kind) === -1 || mix.findIndex(c => c.kind) === mix.length - 1, true, 'scenarios never early');
+});

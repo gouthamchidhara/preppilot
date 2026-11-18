@@ -1,4 +1,4 @@
-import { LEVELS, buildPlan, rankTopics, dueCards, review, readiness, knowledgeMap, profileSummary, migrateProfile, effectiveRoles, daysUntil } from './plan.js';
+import { LEVELS, buildPlan, rankTopics, dueCards, review, readiness, interviewRound, topicWeight, knowledgeMap, profileSummary, migrateProfile, effectiveRoles, daysUntil } from './plan.js';
 import { store } from './store.js';
 import { ai } from './ai.js';
 import { voice } from './voice.js';
@@ -1891,7 +1891,8 @@ const deckMode = () => (lsGet('pp.deckMode', 'steady') === 'swipe' ? 'swipe' : '
 const setDeckMode = m => lsSet('pp.deckMode', m);
 // Spread topics out so a swipe round rarely shows two cards from the same skill in a row.
 function mixTopics(cards) {
-  const by = new Map(); shuffle(cards).forEach(c => { if (!by.has(c.topic)) by.set(c.topic, []); by.get(c.topic).push(c); });
+  // Each topic keeps its own order (cards are written easy to hard); only the topics are interleaved.
+  const by = new Map(); cards.forEach(c => { if (!by.has(c.topic)) by.set(c.topic, []); by.get(c.topic).push(c); });
   const lanes = shuffle([...by.values()]), out = [];
   while (lanes.some(l => l.length)) for (const l of lanes) if (l.length) out.push(l.shift());
   return out;
@@ -1907,9 +1908,12 @@ function startDeck(ids, opts = {}) {
     const allowed = freeCardIds();
     cards = shuffle(cards.filter(c => topicById(c.topic)?.custom || topicById(c.topic)?.private || allowed.has(c.id)));
   }
-  if (mode === 'swipe') cards = mixTopics(cards);
+  // Easy to hard, interview topics first. Swipe mixes the core topics; steady keeps the plan's topic order.
+  const p = profile();
+  const weightOf = id => { const t = topicById(id); return t ? (ids ? 3 : topicWeight(t, p)) : 0; };
+  cards = interviewRound(cards, { weightOf, mix: mode === 'swipe', limit: pro ? 20 : FREE_CARDS });
   S.swStreak = 0;
-  S.deck = { cards: cards.slice(0, pro ? 20 : FREE_CARDS), results: [], free: !pro, total: list.reduce((n, t) => n + t.qa.length, 0), mode, ids };
+  S.deck = { cards, results: [], free: !pro, total: list.reduce((n, t) => n + t.qa.length, 0), mode, ids };
   S.di = 0; S.reveal = false; S.view = 'deck'; render();
 }
 

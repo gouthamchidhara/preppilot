@@ -146,6 +146,42 @@ export function dueCards(topics, profile, progress, now = Date.now(), limit = 20
   return out.slice(0, limit);
 }
 
+// How hard a card is: fundamentals 1, applied 2, advanced 3; field scenarios come last.
+export const difficulty = c => (c.kind ? 4 : c.l || 2);
+
+// Order a round the way an interview builds up: easy to hard, never a senior scenario before the basics.
+//  - steady: keep the plan's topic order, but the round itself climbs from fundamentals to advanced.
+//  - mix (swipe): core interview topics only (role weight >= 2, unless that leaves too few cards),
+//    easiest band first, topics interleaved within each band, core-weight topics leading.
+// Cards keep their order inside a topic; misses and new cards come before reviews.
+export function interviewRound(cards, { weightOf = () => 2, mix = false, limit = 20, rnd = Math.random } = {}) {
+  let pool = cards;
+  if (mix) {
+    const core = cards.filter(c => weightOf(c.topic) >= 2);
+    if (core.length >= Math.min(12, limit)) pool = core;
+    const bands = new Map();
+    for (const c of [...pool].sort((a, b) => (a.box ?? 0) - (b.box ?? 0))) {
+      const key = `${Math.min(a0(c.box), 1)}-${difficulty(c)}`;
+      if (!bands.has(key)) bands.set(key, []);
+      bands.get(key).push(c);
+    }
+    const out = [];
+    for (const key of [...bands.keys()].sort()) {
+      const lanes = new Map();
+      for (const c of bands.get(key)) { if (!lanes.has(c.topic)) lanes.set(c.topic, []); lanes.get(c.topic).push(c); }
+      // Core topics lead, ties shuffled so rounds differ.
+      const order = [...lanes.keys()].map(t => [t, weightOf(t) + rnd() * 0.5]).sort((x, y) => y[1] - x[1]).map(x => lanes.get(x[0]));
+      while (order.some(l => l.length)) for (const l of order) if (l.length) out.push(l.shift());
+      if (out.length >= limit) break;
+    }
+    pool = out;
+  }
+  const round = pool.slice(0, limit);
+  // Whatever was picked, play it easy to hard (stable: topic grouping kept inside a band).
+  return round.map((c, i) => [c, i]).sort((x, y) => difficulty(x[0]) - difficulty(y[0]) || x[1] - y[1]).map(x => x[0]);
+}
+const a0 = b => (b ?? 0) > 0 ? 1 : 0;
+
 export function readiness(topics, profile, progress) {
   const tiers = tiersFor(profile?.level);
   let n = 0, k = 0;
