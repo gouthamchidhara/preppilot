@@ -35,7 +35,7 @@ Checked with it on 18 November: subscription Enabled; Static Web App (Free) prod
 
 ## 2. Email
 
-- [ ] **`support@preppilot.us` receives mail.** DNS (MX, SPF, DKIM) and the routing rule are correct. Check in Cloudflare → Email Routing:
+- [x] **`support@preppilot.us` receives mail** (works; first messages landed in Gmail spam, 18 Nov). DNS (MX, SPF, DKIM) and the routing rule are correct. Check in Cloudflare → Email Routing:
   - the `support@` rule's Status toggle is on;
   - Destination addresses shows `palpriya0825@gmail.com` as **Verified** (resend the verification if Pending);
   - Settings says Email Routing is Enabled with no DNS warning;
@@ -49,7 +49,7 @@ Checked with it on 18 November: subscription Enabled; Static Web App (Free) prod
 - [x] **Support page** `web/support.html` (does not exist yet; `/support.html` currently shows the home page). Contact `support@preppilot.us`, how to cancel Pro, restore purchases, delete the account, what Live AI includes, refunds through Apple. Done 17 November 2026; linked from Profile and Pricing. Setting it as the Support URL in App Store Connect still needs an Apple sign-in (blocked from Muse's browser).
 - [ ] **Costs:** after the first 20 to 30 Live AI sessions, compare Azure Cost Management (Azure OpenAI resource) with `docs/COST-AND-PRICING.md`.
 - [ ] **Budget alert** email reaches you.
-- [ ] **`ADMIN_EMAILS`** contains only your own addresses (they get unlimited access).
+- [x] **`ADMIN_EMAILS`** contains only your own addresses (checked 18 Nov: one address) (they get unlimited access).
 
 ## Done (for reference)
 
