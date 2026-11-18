@@ -703,30 +703,34 @@ function jfSave(d) { try { d ? localStorage.setItem(JF_KEY, JSON.stringify(d)) :
 function jobFocusEntry() {
   return `<section class="jf-entry">
     <span class="jf-ico" aria-hidden="true">${ic('target')}</span>
-    <div><b>Job focus${hasPro() ? '' : ' <span class="tag">Pro</span>'}</b><span class="muted small">Paste the job post. See the 5 skills it will test, three cards each.</span></div>
+    <div><b>Job focus${hasPro() ? '' : ' <span class="tag">Pro</span>'}</b><span class="muted small">Paste the job post. See the 5 skills it will test, with quick cards for each.</span></div>
     <button class="btn" data-act="jobfocus">Open</button></section>`;
 }
 
 function jobFocusView() {
-  const J = S.jf || (S.jf = { result: jfSaved(), sel: 0, busy: false, text: '' });
+  const J = S.jf || (S.jf = { result: jfSaved(), sel: 0, busy: false, text: '', open: new Set() });
   const pro = hasPro();
   const r = J.result || (pro ? null : JF_SAMPLE);
   const head = `<div class="row between"><button class="back" data-act="home">${ic('left')}Plan</button><span class="tag">${ic(pro ? 'target' : 'lock')} Pro</span></div>`;
   if (!r) return `<div class="stack jf">${head}
     <h1>Prep for this exact job</h1>
-    <p class="lede">Paste the job description. We pick the 5 skills it is most likely to test and give you three quick cards for each. Nothing more.</p>
+    <p class="lede">Paste the job description. We pick the 5 skills it is most likely to test and give you quick cards for each, most likely questions first.</p>
     <textarea id="jfText" class="jf-text" rows="9" maxlength="6000" placeholder="Paste the job description or its requirements section…" ${J.busy ? 'disabled' : ''}>${esc(J.text)}</textarea>
-    <div class="row"><button class="btn primary" data-act="jfgo" ${J.busy ? 'disabled' : ''}>${J.busy ? 'Reading the job post…' : 'Show my top 5'}</button><span class="muted small">Uses 5 AI messages.</span></div>
+    <div class="row"><button class="btn primary" data-act="jfgo" ${J.busy ? 'disabled' : ''}>${J.busy ? 'Reading the job post…' : 'Show my top 5'}</button><span class="muted small">5 skills, 8 cards each. Uses 5 AI messages.</span></div>
     ${J.busy ? `<div class="jf-skel" aria-hidden="true">${'<i></i>'.repeat(5)}</div>` : ''}
   </div>`;
   const sel = Math.min(J.sel || 0, r.stack.length - 1);
   const t = r.stack[sel];
+  const open = J.open || (J.open = new Set());
+  const cardsHtml = t.cards ? t.cards.map((c, i) => `<details class="card jf-card" style="--k:${i}" data-k="${sel}-${i}" ${open.has(`${sel}-${i}`) ? 'open' : ''}><summary><span class="jf-n">${i + 1}</span><span class="q">${esc(c.q)}</span></summary><p class="ans">${esc(c.a)}</p></details>`).join('')
+    : t.err ? `<div class="jf-err"><span>${esc(t.err)}</span><button class="btn" data-act="jfretry" data-i="${sel}">Try again</button></div>`
+    : `<p class="muted small jf-writing">Writing the ${esc(t.name)} cards…</p>${'<div class="jf-skel-card" aria-hidden="true"></div>'.repeat(4)}`;
   return `<div class="stack jf">${head}
     ${r.sample ? `<div class="jf-sample"><b>This is an example.</b><span>With Pro, paste your own job post and get cards for it.</span><button class="btn primary" data-act="plans">Unlock with Pro</button></div>` : ''}
     <div><div class="label">Top 5 for</div><h1 class="jf-role">${esc(r.role || 'this job')}</h1></div>
-    <div class="chips jf-chips" role="tablist">${r.stack.map((x, i) => `<button class="chip ${i === sel ? 'on' : ''}" role="tab" aria-selected="${i === sel}" data-act="jfpick" data-i="${i}" style="--k:${i}"><b>${i + 1}</b> ${esc(x.name)}</button>`).join('')}</div>
+    <div class="chips jf-chips" role="tablist">${r.stack.map((x, i) => `<button class="chip ${i === sel ? 'on' : ''}" role="tab" aria-selected="${i === sel}" data-act="jfpick" data-i="${i}" style="--k:${i}"><b>${i + 1}</b> ${esc(x.name)}${x.cards ? ` <span class="jf-count">${x.cards.length}</span>` : x.err ? '' : ' <span class="jf-dot" aria-label="loading"></span>'}</button>`).join('')}</div>
     <p class="jf-why">${esc(t.why)}</p>
-    <div class="jf-cards" key="${sel}">${t.cards.map((c, i) => `<details class="card jf-card" style="--k:${i}"><summary><span class="jf-n">${i + 1}</span><span class="q">${esc(c.q)}</span></summary><p class="ans">${esc(c.a)}</p></details>`).join('')}</div>
+    <div class="jf-cards">${cardsHtml}</div>
     ${r.sample ? '' : `<div class="row"><button class="btn quiet" data-act="jfnew">${ic('refresh')}New job post</button></div>`}
   </div>`;
 }
@@ -737,12 +741,29 @@ async function jobFocusGo() {
   if (J.text.length < 80) return oops('Paste a bit more of the job description: the requirements section works best.');
   J.busy = true; render();
   try {
+    // Step 1 (~1-2 s): the five skills. The screen fills right away.
     const d = await ai.post('/api/jobfocus', { text: J.text });
-    J.result = { role: d.role, stack: d.stack }; J.sel = 0; jfSave(J.result);
+    J.result = { role: d.role, stack: d.stack.map(t => ({ ...t, cards: null })) }; J.ticket = d.ticket; J.sel = 0; J.open = new Set();
   } catch (e) {
     if (e.code === 'pro') S.showPlans = true;
     else oops(e.message || 'Could not read that job post. Try again.');
+    return;
   } finally { J.busy = false; render(); }
+  // Step 2: every skill's cards in parallel; each set appears as soon as it is written.
+  await Promise.all(J.result.stack.map((_, i) => jobFocusCards(i)));
+}
+
+async function jobFocusCards(i) {
+  const J = S.jf, r = J.result, t = r?.stack[i];
+  if (!t) return;
+  t.err = null; t.cards = null; if (S.lastView === 'focus') render();
+  try {
+    const d = await ai.post('/api/jobfocus/cards', { ticket: J.ticket, i });
+    if (J.result !== r) return; // a new job post was started meanwhile
+    t.cards = d.cards;
+  } catch (e) { if (J.result !== r) return; t.err = e.message || 'Could not write these cards.'; }
+  if (r.stack.every(x => x.cards)) jfSave(r);
+  if (S.lastView === 'focus') render();
 }
 
 function lockedTopicView(t) {
@@ -1793,6 +1814,11 @@ app.addEventListener('keydown', e => {
   else if (e.key === 'ArrowLeft' && S.reveal) gradeCard(false);
 });
 
+app.addEventListener('toggle', e => {
+  const k = e.target.dataset?.k;
+  if (!k || !S.jf?.open) return;
+  e.target.open ? S.jf.open.add(k) : S.jf.open.delete(k);
+}, true);
 app.addEventListener('input', e => {
   if (e.target.id === 'chatInput') { e.target.style.height = 'auto'; e.target.style.height = Math.min(140, e.target.scrollHeight) + 'px'; }
   if (e.target.id === 'expSummary') S.expSummary = e.target.value;
@@ -1902,6 +1928,7 @@ document.addEventListener('click', async e => {
   else if (a === 'jobfocus') { S.view = 'focus'; render(); }
   else if (a === 'jfgo') jobFocusGo();
   else if (a === 'jfpick') { S.jf.sel = Number(b.dataset.i) || 0; render(); }
+  else if (a === 'jfretry') jobFocusCards(Number(b.dataset.i) || 0);
   else if (a === 'jfnew') { S.jf.result = null; S.jf.sel = 0; jfSave(null); render(); }
   else if (a === 'pickfree') { S.showPlans = false; render(); }
   else if (a === 'unpaywall') { S.paywall = false; render(); }

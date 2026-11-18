@@ -4,6 +4,7 @@ const LIMITS = {
   generate: { max: Number(process.env.RATE_GENERATE_PER_HOUR || 6), windowMs: 3600000 },
   voice: { max: Number(process.env.RATE_VOICE_PER_HOUR || 15), windowMs: 3600000 },
   liveHint: { max: Number(process.env.RATE_LIVE_HINT_PER_HOUR || 20), windowMs: 3600000 },
+  jobfocusCards: { max: Number(process.env.RATE_JOBFOCUS_CARDS_PER_HOUR || 60), windowMs: 3600000 },
   suggestions: { max: Number(process.env.RATE_SUGGESTIONS_PER_HOUR || 5), windowMs: 3600000 },
   telemetry: { max: 5, windowMs: 3600000 },
 };

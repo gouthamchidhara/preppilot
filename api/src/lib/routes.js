@@ -18,6 +18,7 @@ export const ROUTES = {
   'POST fresh': h.handleFresh,
   'POST profile/suggest': h.handleProfileSuggest,
   'POST jobfocus': h.handleJobFocus,
+  'POST jobfocus/cards': h.handleJobFocusCards,
   'POST billing/refresh': h.handleBillingRefresh,
   'POST telemetry/role': h.handleRoleTelemetry,
 };

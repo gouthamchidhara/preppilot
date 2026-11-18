@@ -46,7 +46,7 @@ export function voiceInstructions(v) {
     ? `LIVE COACH MODE: run a structured practice test, not a real interview. Ask one question at a time, wait for the answer, give brief honest feedback (strong / ok / weak + one improvement), then move to the next question.${v.live?.style === 'tough'
       ? ' Be demanding: short follow-ups that probe gaps, no softening.'
       : v.live?.style === 'direct' ? ' Be direct and businesslike: no small talk, straight to the next question.'
-      : ' Be encouraging but honest: warm tone, clear about what is missing.'}${v.live?.topic ? ` Focus the questions on: ${v.live.topic}.` : ' Cover the candidate\'s core topics progressively from fundamentals to scenarios.'}${v.live?.difficulty ? ` Pitch the questions at ${v.live.difficulty} level.` : ''} Keep feedback concise (2-3 sentences). After ~8-10 questions, give an overall assessment.`
+      : ' Be encouraging but honest: warm tone, clear about what is missing.'}${v.live?.topic ? ` Focus the questions on: ${v.live.topic}.` : ' Cover the candidate\'s core topics progressively from fundamentals to scenarios.'}${v.live?.difficulty ? ` Pitch the questions at ${v.live.difficulty} level.` : ''} Keep feedback concise (2-3 sentences). Every turn after feedback MUST end with the next question; never stop at the improvement tip. Grade strictly: strong = accurate, complete and specific; ok = right but shallow or missing key points; weak = wrong, vague, "I don't know", or not an answer to the question you asked. Begin every feedback with the grade as its own word: "Strong.", "Ok." or "Weak.". The style changes only your tone, never the grade.${v.live?.style === 'tough' ? ' Rarely say strong; probe one gap before moving on.' : ''}${v.live?.difficulty === 'senior' ? ' Senior level: ask about trade-offs, scale and failure modes, not definitions.' : ''} Keep a tally of the grades; after ~8-10 questions, give an overall assessment that matches the actual grades.`
     : v.mode === 'listen'
     ? 'LISTENING MODE: the user is practicing an interview answer out loud. Do not interrupt. When asked to respond, grade the answer (strong / ok / weak), say the two most important missing points, and give one follow-up question an interviewer would ask.'
     : 'TALKING MODE: natural spoken conversation. Start answering immediately. Keep answers to 2-4 sentences unless asked for more; offer to go deeper.';
@@ -74,10 +74,9 @@ export function sessionConfigs(v) {
             // How long a pause counts as "finished speaking". Measured Nov 2026 with real speech and
             // thinking pauses: at 350 ms the coach cut in at every pause; at 800 ms it still talked over
             // a 0.9 s pause; at 1200 ms it never did, replying ~1.5 s after the answer ended.
-            // Practice answers get the longest wait; conversation a little less. Listening never
+            // 1000 ms still talked over a 1.3 s pause in conversation, so every spoken mode waits 1200 ms. Listening never
             // auto-answers (the app sends response.create); interview mode only shows silent text.
-            silence_duration_ms: v.mode === 'listen' ? 900 : v.live?.use === 'interview' ? 600
-              : v.mode === 'live' && v.live?.use === 'practice' ? 1200 : 1000,
+            silence_duration_ms: v.mode === 'listen' ? 900 : v.live?.use === 'interview' ? 600 : 1200,
             create_response: v.mode !== 'listen',
             interrupt_response: v.live?.use !== 'interview',
           },

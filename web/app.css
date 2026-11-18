@@ -737,3 +737,10 @@ body:has(.landing) #topRight { margin-left: auto; }
 @keyframes jfa-mark { 0%, 4% { transform: scaleX(0); } 9%, 92% { transform: scaleX(1); } 100% { transform: scaleX(0); } }
 @keyframes jfa-chip { 0%, 26% { opacity: 0; transform: translate3d(0, -14px, 0) scale(.8); } 31% { opacity: 1; transform: translate3d(0, 2px, 0) scale(1.04); } 34%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; transform: none; } }
 @keyframes jfa-card { 0%, 38% { opacity: 0; transform: translate3d(0, 14px, 0) rotate(-1.5deg); } 44%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; transform: none; } }
+.jf-count { margin-left: 2px; padding: 0 6px; border-radius: 99px; background: var(--sunk); font: 600 11px var(--sans); color: var(--muted); }
+.chip.on .jf-count { background: rgba(255,255,255,.18); color: inherit; }
+.jf-dot { display: inline-block; width: 6px; height: 6px; margin-left: 4px; border-radius: 50%; background: var(--accent); animation: jf-pulse 1s ease-in-out infinite; }
+.jf-skel-card { height: 54px; border-radius: 14px; background: var(--sunk); animation: jf-pulse 1.2s ease-in-out infinite; }
+.jf-skel-card:nth-child(odd) { animation-delay: .15s; }
+.jf-err { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 14px; border: 1px solid var(--line-strong); border-radius: 12px; }
+.jf-err span { flex: 1 1 200px; color: var(--ink-soft); }

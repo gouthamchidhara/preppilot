@@ -331,7 +331,7 @@ test('listening mode never auto-replies; talking waits out thinking pauses and a
   assert.deepEqual(listen.output_modalities, ['text']);
   assert.equal(talk.audio.input.turn_detection.create_response, true);
   // Short enough to feel responsive, long enough not to cut in when someone pauses to think.
-  assert.equal(talk.audio.input.turn_detection.silence_duration_ms, 1000);
+  assert.equal(talk.audio.input.turn_detection.silence_duration_ms, 1200);
   const practice = sessionConfigs(validateRealtime({ sdp: 'v=0', mode: 'live', live: { use: 'practice' } }))[0].session;
   assert.equal(practice.audio.input.turn_detection.silence_duration_ms, 1200);
   assert.equal(talk.audio.input.turn_detection.interrupt_response, true);
@@ -502,8 +502,8 @@ test('purchase refresh works with RevenueCat API v2', async () => {
   }
 });
 
-test('Job focus: Pro only, validates input, keeps output to 5 skills x 3 short cards', async () => {
-  const { sanitizeJobFocus } = await import('../api/src/lib/handlers.js');
+test('Job focus: Pro only, skills first, then cards per skill with a signed ticket', async () => {
+  const { sanitizeJobSkills, sanitizeJobCards, jfTicket, jfReadTicket } = await import('../api/src/lib/handlers.js');
   const jd = 'We need a backend engineer with Java 17, Spring Boot, Kafka, PostgreSQL and AWS. You will design microservices and own on-call.';
   assert.equal((await call('POST jobfocus', { text: jd })).status, 401);
   const free = await signIn('jdfree@gmail.com', 'jdfree');
@@ -512,10 +512,20 @@ test('Job focus: Pro only, validates input, keeps output to 5 skills x 3 short c
   assert.equal(r.status, 402); assert.equal(r.body.code, 'pro');
   const boss = await signIn('boss@gmail.com', 'boss-jd');
   assert.notEqual((await call('POST jobfocus', { text: jd }, boss)).status, 402);
+  // skills: capped at 5, need at least 2
+  const sk = sanitizeJobSkills(JSON.stringify({ role: 'Backend', level: 'senior', stack: Array.from({ length: 8 }, (_, i) => ({ name: `T${i}`, why: 'w', focus: 'f' })) }));
+  assert.equal(sk.stack.length, 5); assert.equal(sk.level, 'senior');
+  assert.equal(sanitizeJobSkills('not json'), null);
+  // cards: comprehensive (up to 10), at least 3
   const card = { q: 'Q?', a: 'A.' };
-  const many = { role: 'Backend', stack: Array.from({ length: 8 }, (_, i) => ({ name: `T${i}`, why: 'w', cards: [card, card, card, card] })) };
-  const p = sanitizeJobFocus(JSON.stringify(many));
-  assert.equal(p.stack.length, 5); assert.ok(p.stack.every(t => t.cards.length === 3));
-  assert.equal(sanitizeJobFocus('not json'), null);
-  assert.equal(sanitizeJobFocus(JSON.stringify({ stack: [{ name: 'x', cards: [] }] })), null);
+  assert.equal(sanitizeJobCards(JSON.stringify({ cards: Array(14).fill(card) })).length, 10);
+  assert.equal(sanitizeJobCards(JSON.stringify({ cards: [card] })), null);
+  // ticket: bound to the user, tamper-proof, expires
+  const t = jfTicket({ k: 'google:boss-jd', role: 'Backend', level: 'mid', stack: [['Java', 'collections']] }, 1000);
+  assert.ok(jfReadTicket(t, 'google:boss-jd', 2000));
+  assert.equal(jfReadTicket(t, 'google:someone-else', 2000), null);
+  assert.equal(jfReadTicket(t, 'google:boss-jd', 1000 + 31 * 60000), null);
+  assert.equal(jfReadTicket(t.replace(/^./, c => c === 'a' ? 'b' : 'a'), 'google:boss-jd', 2000), null);
+  assert.equal((await call('POST jobfocus/cards', { ticket: 'junk', i: 0 }, boss)).status, 400);
+  assert.equal((await call('POST jobfocus/cards', { ticket: t, i: 0 })).status, 401);
 });

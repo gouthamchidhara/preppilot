@@ -17,12 +17,15 @@ export async function complete(messages, { json = false, maxTokens = 700, temper
     ? { messages, max_completion_tokens: maxTokens * 4 }
     : { messages, max_tokens: maxTokens, temperature };
   if (json) body.response_format = { type: 'json_object' };
-  const res = await fetch(url, {
+  const send = () => fetch(url, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'api-key': process.env.AZURE_OPENAI_API_KEY },
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(45000),
   });
+  let res = await send();
+  // One quick retry hides brief capacity spikes before telling the user to wait.
+  if (res.status === 429) { await new Promise(r => setTimeout(r, 1000)); res = await send(); }
   if (res.status === 429) throw Object.assign(new Error('AI is busy, try again in a minute.'), { status: 429 });
   if (!res.ok) {
     const detail = (await res.text()).slice(0, 300);
@@ -31,7 +34,10 @@ export async function complete(messages, { json = false, maxTokens = 700, temper
   const data = await res.json();
   const choice = data.choices?.[0];
   if (choice?.finish_reason === 'content_filter') return 'That request was blocked by the content filter. Try rephrasing.';
-  return choice?.message?.content ?? '';
+  const text = choice?.message?.content ?? '';
+  // Never hand back a half sentence silently.
+  if (!json && choice?.finish_reason === 'length') return `${text.trimEnd()}…\n\n(Answer trimmed. Ask me to continue.)`;
+  return text;
 }
 
 function mock(messages, json) {
