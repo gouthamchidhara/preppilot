@@ -353,7 +353,13 @@ function paintStory() {
   el.classList.toggle('thinking', p >= 0.4 && p < 0.55);
   el.classList.toggle('done', p >= 0.92);
 }
-window.addEventListener('scroll', () => { if (!storyRaf) storyRaf = requestAnimationFrame(paintStory); }, { passive: true });
+// Inside the app the page scrolls in <body> (see html.in-app in app.css): WebKit then uses Safari's own
+// momentum, whatever the native shell's scroll settings are. These helpers work for both cases.
+const inApp = () => document.documentElement.classList.contains('in-app');
+const scrollToY = y => (inApp() ? document.body.scrollTo({ top: y }) : window.scrollTo({ top: y }));
+const scrollYNow = () => (inApp() ? document.body.scrollTop : window.scrollY);
+// Capture phase: hears both window and <body> scrolling.
+document.addEventListener('scroll', () => { if (!storyRaf) storyRaf = requestAnimationFrame(paintStory); }, { passive: true, capture: true });
 window.addEventListener('resize', () => { storyLast = -1; paintStory(); });
 
 function loginView() {
@@ -1774,7 +1780,7 @@ function topRight() {
   return '<button class="link quiet small" data-act="plans">Pricing</button>';
 }
 
-function scrollEnd() { window.scrollTo(0, document.documentElement.scrollHeight); }
+function scrollEnd() { scrollToY(inApp() ? document.body.scrollHeight : document.documentElement.scrollHeight); }
 
 // The plans-screen diagram plays itself: it steps through the stages on its
 // own so the "draws themselves, step by step" claim is visibly true, then
@@ -1859,8 +1865,8 @@ function render() {
   if (keep) { const i = document.getElementById('chatInput'); if (i) { i.value = keep.value; if (keep.focus) i.focus(); } }
   mountGoogleButton();
   filterRoles();
-  if (key === 'chat') { paintVoice(); if (!changed || store.chat().length) scrollEnd(); else window.scrollTo({ top: 0 }); }
-  else if (changed || key === 'learn' || key === 'deck') window.scrollTo({ top: 0 });
+  if (key === 'chat') { paintVoice(); if (!changed || store.chat().length) scrollEnd(); else scrollToY(0); }
+  else if (changed || key === 'learn' || key === 'deck') scrollToY(0);
   // Ask once, after a Google sign-in, what extra guides the user wants. Waits until
   // the plans screen is closed and no voice call is live, so it never covers either.
   if (S.suggestPending && !S.showPlans && !S.live && profile()) {
@@ -2275,7 +2281,7 @@ document.addEventListener('click', async e => {
     // even mid-onboarding or while trying the plan as a guest. "Get started" leads back in.
     if (b.classList.contains('brand') && !signedIn()) {
       S.login = false; S.onboard = false; S.guest = false; S.showPlans = false; S.view = 'home';
-      render(); return window.scrollTo({ top: 0 });
+      render(); return scrollToY(0);
     }
     S.view = b.dataset.nav; return render();
   }
@@ -2292,9 +2298,9 @@ document.addEventListener('click', async e => {
   if (a === 'pickrole') {
     captureDraft();
     S.draft.roleIds = S.draft.roleIds.includes(id) ? S.draft.roleIds.filter(r => r !== id) : [...S.draft.roleIds, id];
-    const scroll = window.scrollY;
+    const scroll = scrollYNow();
     render();
-    window.scrollTo({ top: scroll });
+    scrollToY(scroll);
     return;
   }
   if (a === 'closesheet') closeSheet();
@@ -2311,7 +2317,7 @@ document.addEventListener('click', async e => {
   else if (a === 'suggestroles') suggestRoles();
   else if (a === 'reloadsug') { S.adminSug = null; render(); }
   else if (a === 'fielddeck') startFieldDeck(b.dataset.k, b.dataset.id || null);
-  else if (a === 'toggletopics') { S.allTopics = !S.allTopics; const y = window.scrollY; render(); window.scrollTo({ top: y }); }
+  else if (a === 'toggletopics') { S.allTopics = !S.allTopics; const y = scrollYNow(); render(); scrollToY(y); }
   else if (a === 'home') { S.view = 'home'; render(); }
   else if (a === 'learn') openTopic(id);
   else if (a === 'buildrole') buildRoleGuide();
@@ -2374,7 +2380,7 @@ document.addEventListener('click', async e => {
   else if (a === 'rtsound') { S.soundOff = !S.soundOff; S.rt?.setSoundOff(S.soundOff); render(); }
   else if (a === 'rtstop') S.rt?.stop();
   else if (a === 'nsignin') nativeSignIn(b.dataset.p);
-  else if (a === 'signout') { S.rt?.stop(); store.setAccessCode(''); signOut(); S.paywall = false; S.guest = false; S.onboard = false; S.view = 'home'; S.adminSug = null; render(); window.scrollTo({ top: 0 }); }
+  else if (a === 'signout') { S.rt?.stop(); store.setAccessCode(''); signOut(); S.paywall = false; S.guest = false; S.onboard = false; S.view = 'home'; S.adminSug = null; render(); scrollToY(0); }
   else if (a === 'delacct') {
     sheet(`<h2>Delete your account?</h2>
       <p class="muted">This removes your email, plan and AI usage from our servers right away. It does not cancel a Pro subscription: do that in your ${window.PP_PLATFORM === 'android' ? 'Google Play' : 'Apple ID'} subscription settings.</p>

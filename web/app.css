@@ -56,7 +56,10 @@
    no text-selection callouts on controls, no rubber-band bounce of the whole page. */
 html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 button, a, .chip, .rowi, .tabs, .sw-card, .lf-tab { touch-action: manipulation; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
-html.in-app, html.in-app body { overscroll-behavior-y: none; }
+/* Inside the app, <body> is the scroller: WebKit gives it Safari's own momentum and bounce, and the
+   native shell's outer scroll view never moves (so no pull-to-refresh and no 'one line per flick'). */
+html.in-app { height: 100%; overflow: hidden; }
+html.in-app body { height: 100%; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0; background: var(--desk); color: var(--ink);
