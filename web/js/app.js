@@ -384,11 +384,11 @@ const FEATURES = [
       <div class="fdl-hint"><span class="fd-tag">How to answer</span><ul><li style="--k:0">Key by customer ID</li><li style="--k:1">Same key → same partition</li><li style="--k:2">Order holds per partition</li></ul></div>
       <div class="fdl-you"><span class="fd-tag">You</span>“We key each message by customer ID, so…”</div>
       <span class="fdl-grade">Strong.</span></div>` },
-  { k: 'job', name: 'Job focus', line: 'Paste the job post. Get the 5 skills it will test.', pts: ['Top 5 skills, picked from the posting', '8 quick cards for each', 'Ready in seconds, saved for later'], pro: true,
+  { k: 'job', name: 'Job focus', line: 'Paste the job post. Get the 5 skills it will test.', pts: ['Top 5 skills, picked from the posting', 'Flashcards for each skill', 'Ready in seconds, saved for later'], pro: true,
     demo: () => `<div class="fd fd-job">
       <div class="fdj-post"><i></i><i style="width:88%"></i><i style="width:64%"></i></div>
-      <div class="fdj-chips">${['TypeScript', 'React 18', 'Node.js', 'PostgreSQL', 'GraphQL'].map((n, i) => `<span style="--k:${i}"><b>${i + 1}</b>${n}<em>8</em></span>`).join('')}</div>
-      <div class="fdj-card"><span class="fd-tag">React 18 · card 1 of 8</span><b>What does startTransition do?</b></div></div>` },
+      <div class="fdj-chips">${['TypeScript', 'React 18', 'Node.js', 'PostgreSQL', 'GraphQL'].map((n, i) => `<span style="--k:${i}"><b>${i + 1}</b>${n}</span>`).join('')}</div>
+      <div class="fdj-card"><span class="fd-tag">React 18 · flashcard</span><b>What does startTransition do?</b></div></div>` },
   { k: 'coach', name: 'AI coach', line: 'Ask anything about your prep, get a straight answer.', pts: ['Grades your answers honestly', 'Explains with your stack’s examples', 'Stays on interview prep'],
     demo: () => `<div class="fd fd-coach">
       <div class="fdm fdm-you">Grade my answer: “indexes always make queries faster.”</div>
@@ -437,7 +437,7 @@ function planCompare() {
     <h2 class="l-h2">Start free. Go Pro for the interview week.</h2>
     <div class="lp-grid">
       <div class="lp-col"><b>Free</b><span class="lp-price">$0</span>${ticks(['Your plan and core topics', 'Flashcards that bring misses back', `${o.freeMsgs} AI coach messages to try`, 'Readiness map'])}</div>
-      <div class="lp-col pro"><b>Pro</b><span class="lp-price">${esc(o.proPrice)}</span>${ticks(['Every topic and diagram', 'Unlimited AI coach', 'Job focus: top 5 skills × 8 cards', `${o.proLiveN} × ${o.proLive}-min live mock interviews a month`])}</div>
+      <div class="lp-col pro"><b>Pro</b><span class="lp-price">${esc(o.proPrice)}</span>${ticks(['Every topic and diagram', 'Unlimited AI coach', 'Job focus: top 5 skills with flashcards', `${o.proLiveN} × ${o.proLive}-min live mock interviews a month`])}</div>
     </div>
     <div class="row" style="justify-content:center"><button class="btn primary lg" data-act="startonboard">Get started, it’s free</button></div>
   </section>`;
@@ -493,14 +493,14 @@ function landingView() {
     <section class="l-jf" aria-label="Job focus">
       <p class="l-tag">## got a job post? <span class="tag">Pro</span></p>
       <h2 class="l-h2">Paste the job. Get the five things it will test.</h2>
-      <p class="muted">We read the requirements, pick the top 5 skills and give you three quick cards for each. A cheat sheet for this one interview, not another course.</p>
+      <p class="muted">We read the requirements, pick the top 5 skills it will test, with flashcards for each. A cheat sheet for this one interview, not another course.</p>
       <div class="jfa" aria-hidden="true">
         <div class="jfa-post">
           <p class="jfa-h">Senior Backend Engineer</p>
           <p>You will build services in <mark style="--k:0">Java 17</mark> on <mark style="--k:1">Spring Boot</mark>, stream events through <mark style="--k:2">Kafka</mark>, model data in <mark style="--k:3">PostgreSQL</mark> and deploy on <mark style="--k:4">AWS</mark>. Experience with on-call and code review.</p>
         </div>
         <div class="jfa-chips">${['Java 17', 'Spring Boot', 'Kafka', 'PostgreSQL', 'AWS'].map((n, i) => `<span class="jfa-chip" style="--k:${i}"><b>${i + 1}</b>${n}</span>`).join('')}</div>
-        <div class="jfa-card"><span class="jfa-t">Kafka · card 1 of 3</span><b>How do you keep order for one customer?</b><span>Key messages by customer ID: same key, same partition, order kept.</span></div>
+        <div class="jfa-card"><span class="jfa-t">Kafka · flashcard</span><b>How do you keep order for one customer?</b><span>Key messages by customer ID: same key, same partition, order kept.</span></div>
       </div>
     </section>
 
@@ -784,7 +784,7 @@ function jfSave(d) { try { d ? localStorage.setItem(JF_KEY, JSON.stringify(d)) :
 function jobFocusEntry() {
   return `<section class="jf-entry">
     <span class="jf-ico" aria-hidden="true">${ic('target')}</span>
-    <div><b>Job focus${hasPro() ? '' : ' <span class="tag">Pro</span>'}</b><span class="muted small">Paste the job post. See the 5 skills it will test, with quick cards for each.</span></div>
+    <div><b>Job focus${hasPro() ? '' : ' <span class="tag">Pro</span>'}</b><span class="muted small">Paste the job post. Get the top 5 skills it will test, with flashcards.</span></div>
     <button class="btn" data-act="jobfocus">Open</button></section>`;
 }
 
@@ -795,9 +795,9 @@ function jobFocusView() {
   const head = `<div class="row between"><button class="back" data-act="home">${ic('left')}Plan</button><span class="tag">${ic(pro ? 'target' : 'lock')} Pro</span></div>`;
   if (!r) return `<div class="stack jf">${head}
     <h1>Prep for this exact job</h1>
-    <p class="lede">Paste the job description. We pick the 5 skills it is most likely to test and give you quick cards for each, most likely questions first.</p>
+    <p class="lede">Paste the job description. We pick the top 5 skills it is most likely to test, with flashcards for each, most likely questions first.</p>
     <textarea id="jfText" class="jf-text" rows="9" maxlength="6000" placeholder="Paste the job description or its requirements section…" ${J.busy ? 'disabled' : ''}>${esc(J.text)}</textarea>
-    <div class="row"><button class="btn primary" data-act="jfgo" ${J.busy ? 'disabled' : ''}>${J.busy ? 'Reading the job post…' : 'Show my top 5'}</button><span class="muted small">5 skills, 8 cards each. Uses 5 AI messages.</span></div>
+    <div class="row"><button class="btn primary" data-act="jfgo" ${J.busy ? 'disabled' : ''}>${J.busy ? 'Reading the job post…' : 'Show my top 5'}</button><span class="muted small">Uses 5 AI messages.</span></div>
     ${J.busy ? `<div class="jf-skel" aria-hidden="true">${'<i></i>'.repeat(5)}</div>` : ''}
   </div>`;
   const sel = Math.min(J.sel || 0, r.stack.length - 1);
