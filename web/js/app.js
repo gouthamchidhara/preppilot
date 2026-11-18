@@ -291,32 +291,35 @@ function storyHtml() {
       <div class="l-stage-in">
         <p class="l-tag">## the moment that matters</p>
         <p class="l-who">Interviewer</p>
-        <p class="l-q" aria-label="${esc(STORY.q)}">${words.map((w, i) => `<span class="w" data-i="${i}">${esc(w)}</span>`).join(' ')}</p>
+        <p class="l-q" aria-label="${esc(STORY.q)}" style="--n:${words.length}">${words.map((w, i) => `<span class="w" style="--i:${i}">${esc(w)}</span>`).join(' ')}<span class="l-caret" aria-hidden="true"></span></p>
         <p class="l-blank" aria-hidden="true"><span class="l-dot"></span><span class="l-blank-t">you, a second later</span></p>
-        <ol class="l-ans">${STORY.a.map(([k, v], i) => `<li data-i="${i}"><code>${esc(k)}</code><span>${esc(v)}</span></li>`).join('')}</ol>
+        <ol class="l-ans" style="--n:${STORY.a.length}">${STORY.a.map(([k, v], i) => `<li style="--i:${i}"><code>${esc(k)}</code><span>${esc(v)}</span></li>`).join('')}</ol>
         <p class="l-done">That’s a card you went through last Tuesday. <b>It came back.</b></p>
       </div>
     </div>
   </section>`;
 }
-let storyRaf = 0;
+// Scroll-linked, but cheap: each frame writes two CSS variables (story progress and how far the hero
+// has scrolled away); words, the caret, answer lines and the giant word are styled from those in CSS
+// with opacity and transform only, so the browser never re-lays out the page while scrolling.
+let storyRaf = 0, storyLast = -1;
 function paintStory() {
   storyRaf = 0;
   const el = document.getElementById('lStory');
   if (!el) return;
+  const vh = window.innerHeight;
   const r = el.getBoundingClientRect();
-  const span = Math.max(1, r.height - window.innerHeight);
-  const p = Math.min(1, Math.max(0, -r.top / span));
-  const words = el.querySelectorAll('.l-q .w'), lines = el.querySelectorAll('.l-ans li');
-  const nw = Math.round(Math.min(1, p / 0.4) * words.length);
-  words.forEach((w, i) => { w.classList.toggle('on', i < nw); w.classList.toggle('cur', i === nw - 1 && p < 0.55); });
+  const p = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - vh)));
+  const hero = document.querySelector('.l-hero');
+  if (hero) { const h = hero.getBoundingClientRect(); hero.style.setProperty('--hp', Math.min(1, Math.max(0, -h.top / Math.max(1, h.height))).toFixed(3)); }
+  if (Math.abs(p - storyLast) < 0.001) return;
+  storyLast = p;
+  el.style.setProperty('--p', p.toFixed(4));
   el.classList.toggle('thinking', p >= 0.4 && p < 0.55);
-  const nl = p < 0.55 ? 0 : Math.ceil(Math.min(1, (p - 0.55) / 0.33) * lines.length);
-  lines.forEach((l, i) => l.classList.toggle('on', i < nl));
   el.classList.toggle('done', p >= 0.92);
 }
 window.addEventListener('scroll', () => { if (!storyRaf) storyRaf = requestAnimationFrame(paintStory); }, { passive: true });
-window.addEventListener('resize', () => paintStory());
+window.addEventListener('resize', () => { storyLast = -1; paintStory(); });
 
 function loginView() {
   return `<div class="stack" style="max-width:420px;margin:0 auto;padding-top:24px">
@@ -349,8 +352,8 @@ function landingView() {
         <p class="l-tag">## interview prep, the short way</p>
         <h1 class="l-title">Your interview is coming up. Let’s make sure it all comes back to you.</h1>
         <p class="l-sub">Quick flashcards for the tech you already work with, Java, React, Python, SQL, cloud and AI, one or two lines each, in the order you actually work.</p>
-        <div class="row l-cta"><button class="btn primary lg" data-act="startonboard">Get started, it’s free</button></div>
-        <p class="muted small">No card needed. Takes about a minute. Already have an account? <button class="link" data-act="login">Log in</button></p>
+        <div class="row l-cta"><button class="btn primary lg" data-act="startonboard">Get started, it’s free</button><button class="btn lg" data-act="login">I have an account</button></div>
+        <p class="muted small">No card needed. Takes about a minute.</p>
       </div>
       ${heroAnim()}
       <p class="l-giant" aria-hidden="true">recall<span class="l-giant-dot"></span></p>
@@ -1378,7 +1381,7 @@ function render() {
   if (native() && key === 'home' && profile()) syncNativeHome();
   if (key === 'home' && profile()) loadFresh();
   if (key === 'landing' && !S.demo) loadDemo();
-  if (key === 'landing') requestAnimationFrame(paintStory);
+  if (key === 'landing') { storyLast = -1; requestAnimationFrame(paintStory); }
   // The plans-screen diagram plays itself when the screen opens; anywhere
   // else the player stops so timers never outlive their screen.
   if (key === 'plans' && changed) startDgAutoplay();
