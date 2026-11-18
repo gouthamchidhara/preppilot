@@ -41,7 +41,7 @@ Checked with it on 18 November: subscription Enabled; Static Web App (Free) prod
   - Settings says Email Routing is Enabled with no DNS warning;
   - Activity log after a test from a different mailbox: nothing listed (sender side; retry after 30 minutes from a personal mailbox), Forwarded (check Gmail Spam and All Mail), or Rejected/Dropped (read the reason).
 - [ ] Optional: DMARC record, TXT `_dmarc` = `v=DMARC1; p=none; rua=mailto:palpriya0825@gmail.com`.
-- [ ] **App suggestion emails:** create Azure Communication Services + Email Communication Services, add `preppilot.us` (records go in Cloudflare, DNS only) or use the Azure-managed domain, then set `ACS_EMAIL_ENDPOINT`, `ACS_EMAIL_KEY`, `ACS_EMAIL_SENDER`, `SUGGESTIONS_EMAIL`. Until then suggestions are stored but not emailed.
+- [x] **App suggestion emails: owner chose not to email (18 Nov).** Suggestions are stored and listed for admins in Profile → "Suggestions from users". Old plan, for reference: create Azure Communication Services + Email Communication Services, add `preppilot.us` (records go in Cloudflare, DNS only) or use the Azure-managed domain, then set `ACS_EMAIL_ENDPOINT`, `ACS_EMAIL_KEY`, `ACS_EMAIL_SENDER`, `SUGGESTIONS_EMAIL`. Until then suggestions are stored but not emailed.
 
 ## 3. Owner focus items
 

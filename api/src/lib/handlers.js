@@ -232,6 +232,17 @@ export async function handleSuggestion(req, log) {
   return json(200, { stored: true, emailed });
 }
 
+// Admin only: the latest guide suggestions, newest first.
+export async function handleListSuggestions(req) {
+  const w = who(req);
+  if (w.error) return w.error;
+  const user = await loadUser(w.ident);
+  if (!user || planOf(user) !== 'admin') return json(403, { error: 'Admins only.' });
+  const rows = await (await getDb()).list('suggestions');
+  rows.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  return json(200, { suggestions: rows.slice(0, 200).map(r => ({ text: r.text, topic: r.topic || '', userEmail: r.userEmail || '', createdAt: r.createdAt })) });
+}
+
 export async function handleDeleteAccount(req) {
   const w = who(req);
   if (w.error) return w.error;

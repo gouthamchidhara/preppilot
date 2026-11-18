@@ -13,6 +13,7 @@ export const ROUTES = {
   'POST realtime/end': h.handleRealtimeEnd,
   'POST live/hint': h.handleLiveHint,
   'POST suggestions': h.handleSuggestion,
+  'POST admin/suggestions': h.handleListSuggestions,
   'POST billing/revenuecat': h.handleRevenueCatWebhook,
   'POST fresh': h.handleFresh,
   'POST profile/suggest': h.handleProfileSuggest,
