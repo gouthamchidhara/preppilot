@@ -1,5 +1,5 @@
 // App-shell cache for offline study. AI calls (/api) always go to the network.
-const VERSION = 'pp-v11';
+const VERSION = 'pp-v12';
 // Packs are fetched on demand (content/packs/<id>.json?v=...) and cached by the fetch handler below.
 const SHELL = ['./', 'index.html', 'app.css', 'manifest.webmanifest', 'js/app.js', 'js/plan.js', 'js/content.js', 'js/store.js', 'js/ai.js', 'js/auth.js', 'js/voice.js', 'js/realtime.js', 'js/config.js', 'js/diagrams.js', 'js/diagram-data.js', 'js/animate.js', 'content/roles.json', 'content/packs/index.json', 'fonts/newsreader.woff2', 'fonts/instrument-sans.woff2', 'icons/icon.svg', 'icons/icon-192.png'];
 
@@ -17,7 +17,9 @@ self.addEventListener('fetch', e => {
   // Network first so content updates show up; cache as offline fallback.
   e.respondWith(
     fetch(e.request)
-      .then(res => { const copy = res.clone(); caches.open(VERSION).then(c => c.put(e.request, copy)); return res; })
+      // Only keep good answers: during an outage the server returns 404 pages, and caching those
+      // would keep showing 'not found' after the site is back.
+      .then(res => { if (res.ok) { const copy = res.clone(); caches.open(VERSION).then(c => c.put(e.request, copy)); } return res; })
       .catch(() => caches.match(e.request).then(r => r || caches.match('index.html'))),
   );
 });
