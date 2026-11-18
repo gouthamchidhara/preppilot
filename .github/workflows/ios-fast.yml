@@ -47,9 +47,13 @@ jobs:
       - name: Tests
         working-directory: .
         run: npm test
-      - name: Pick newest Xcode
+      - name: Pick Xcode 26.0-26.2 (what Expo SDK 58 builds with)
+        # Xcode 26.3's Swift compiler rejects expo-modules-jsi ("sending 'slot' risks causing
+        # data races"), so the newest Xcode on the runner is not safe. Use the newest 26.0-26.2.
         run: |
-          X=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          ls -d /Applications/Xcode_*.app
+          X=$(ls -d /Applications/Xcode_26.[0-2]*.app 2>/dev/null | sort -V | tail -1)
+          [ -n "$X" ] || { echo "No Xcode 26.0-26.2 on this runner"; exit 1; }
           echo "Using $X"; sudo xcode-select -s "$X/Contents/Developer"; xcodebuild -version
       - name: Make sure fastlane and CocoaPods are installed
         run: |
