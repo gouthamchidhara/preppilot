@@ -113,8 +113,9 @@ export function buildPlan(topics, profile, now = Date.now()) {
 // Leitner boxes: box 0 = new/missed (due now), each correct answer moves up one box.
 export const INTERVAL_DAYS = [0, 1, 2, 4, 8, 16];
 
-export function review(state, ok, now = Date.now()) {
-  const box = ok ? Math.min((state?.box ?? 0) + 1, INTERVAL_DAYS.length - 1) : 0;
+// easy = "know it cold" (swipe up): skips a box, so the card stays away much longer.
+export function review(state, ok, now = Date.now(), easy = false) {
+  const box = ok ? Math.min((state?.box ?? 0) + (easy ? 2 : 1), INTERVAL_DAYS.length - 1) : 0;
   return { box, due: now + INTERVAL_DAYS[box] * DAY, seen: (state?.seen ?? 0) + 1 };
 }
 

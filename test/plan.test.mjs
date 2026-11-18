@@ -128,3 +128,11 @@ test('knowledge map: 2 of 3 known is ok, and only in-level cards count', () => {
   const junior = knowledgeMap(TOPICS, { role: 'infra', level: 'junior' }, progress);
   assert.equal(junior.topics.find(t => t.id === 'linux').state, 'strong');
 });
+
+test('know it cold (swipe up) skips a box; a miss still resets', async () => {
+  const { review: rv } = await import('../web/js/plan.js');
+  const NOW0 = Date.UTC(2026, 0, 1);
+  const normal = rv(undefined, true, NOW0), easy = rv(undefined, true, NOW0, true);
+  assert.equal(normal.box, 1); assert.equal(easy.box, 2); assert.ok(easy.due > normal.due);
+  assert.equal(rv(easy, false, NOW0).box, 0);
+});

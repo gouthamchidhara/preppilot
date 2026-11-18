@@ -44,6 +44,7 @@ const ICONS = {
   sound: '<path d="M4 9h3l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/>',
   soundoff: '<path d="M4 9h3l5-4v14l-5-4H4z"/><path d="M16 9l5 6M21 9l-5 6"/>',
   list: '<path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>',
+  star: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
 };
 const ic = n => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
@@ -370,7 +371,7 @@ function loginView() {
 /* ---------- Landing v2 preview (?v2): feature showcase + Free vs Pro ---------- */
 const LANDING_V2 = (() => { try { return new URLSearchParams(location.search).has('v2'); } catch { return false; } })();
 const FEATURES = [
-  { k: 'cards', name: 'Flashcards', line: 'One or two lines each, for the tech you already use.', pts: ['30+ roles, Java to cloud to AI', 'Misses come back first', 'Animated diagrams for the tricky parts'],
+  { k: 'cards', name: 'Flashcards', line: 'Swipe right on what you know. Like Tinder, but for your next job.', pts: ['30+ roles, Java to cloud to AI', 'Swipe mode mixes all your skills', 'Misses come back first'],
     demo: () => `<div class="fd fd-cards">
       <div class="fdc fdc-3"></div><div class="fdc fdc-2"></div>
       <div class="fdc fdc-1"><div class="fdc-in">
@@ -725,7 +726,7 @@ function homeView() {
     </section>` : ''}
     ${lsGet('pp.swipeTried', '') ? '' : `<section class="sw-promo">
       <div class="sw-promo-cards" aria-hidden="true"><i></i><i></i><i></i></div>
-      <div><span class="tag">New</span><b>Swipe through your stack</b><span class="muted small">Cards from all your skills, mixed. Swipe right if you know it, left if you don’t.</span>
+      <div><span class="tag">New</span><b>Swipe right on what you know</b><span class="muted small">Like Tinder, but for your next job. Cards from all your skills, mixed.</span>
       <div class="row"><button class="btn primary" data-act="swipedeck">Try swipe mode</button><button class="link quiet small" data-act="swipenah">Keep steady</button></div></div></section>`}
     ${jobFocusEntry()}
     ${quickCard(relevant)}
@@ -916,7 +917,7 @@ function deckView() {
   const d = S.deck;
   if (!d.cards.length) return `<div class="stack" style="padding-top:30px"><h1>You have seen every card here for now.</h1><p class="lede">They come back when they are worth another look. Start a new topic${hasPro() ? '' : ', or unlock every topic and its cards with Pro'}.</p><div class="row">${hasPro() ? '' : '<button class="btn primary" data-act="plans">Unlock more topics</button>'}<button class="btn" data-act="home">Back to plan</button></div></div>`;
   if (S.di >= d.cards.length) {
-    S.swStreak = 0;
+    S.swStreak = 0; S.swMatch = false;
     const got = d.results.filter(Boolean).length;
     const pct = Math.round((got * 100) / d.cards.length);
     // The topic with the most missed cards gets its diagram right here, so the
@@ -926,7 +927,7 @@ function deckView() {
     const worst = Object.entries(missed).sort((a, b) => b[1] - a[1])[0]?.[0];
     return `<div class="stack" style="padding-top:30px">
       <div class="score-ring"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="52"/><circle class="ring-prog" cx="60" cy="60" r="52" pathLength="100" style="stroke-dashoffset:${ringOffset(pct)}"/></svg><div class="score-num"><span class="n" data-countup="${got}">${got}</span><span class="muted small">of ${d.cards.length} · ${pct}%</span></div></div>
-      <h2>${pct >= 80 ? 'A strong round.' : pct >= 50 ? 'Getting there.' : 'Better to find out now.'}</h2>
+      ${d.mode?.startsWith('swipe') ? `<h2>${got} match${got === 1 ? '' : 'es'}${d.cards.length - got ? `, ${d.cards.length - got} to work on` : '. Clean sweep.'}</h2>${d.matches?.length ? `<p class="note">New topic match${d.matches.length > 1 ? 'es' : ''}: <b>${d.matches.map(id => esc(topicName(id))).join(', ')}</b>. Every card known.</p>` : ''}` : `<h2>${pct >= 80 ? 'A strong round.' : pct >= 50 ? 'Getting there.' : 'Better to find out now.'}</h2>`}
       <p class="lede">${pct >= 80 ? 'These cards come back later, spaced further apart each time.' : 'The cards you missed come back first next time. Rereading the lessons for those topics will help.'}</p>
       ${worst && diagramFor(worst) ? `<section class="stack tight"><h3>The one to reread: ${esc(topicName(worst))}</h3>${diagramTeaser(worst, diagramHtml(worst))}<div class="row"><button class="btn" data-act="learn" data-id="${worst}">Reread the ${esc(topicName(worst))} lesson</button></div></section>` : ''}
       ${d.free ? `<section class="card live-hero stack"><h2>That was your free round.</h2><p>Free gives you ${FREE_CARDS} cards for each technology you picked, shuffled. Pro opens all ${d.total}, in the order you work, plus troubleshooting and real scenarios from the field.</p><div class="row"><button class="btn invert" data-act="plans">Unlock every card</button></div></section>` : ''}
@@ -970,12 +971,12 @@ const cardFace = (q, back) => {
   const name = esc(t?.name || q.topicName || q.topic);
   const lvl = ['', 'Fundamentals', 'Applied', 'Advanced'][q.l] || (q.jf ? 'Job focus' : '');
   return back
-    ? `<div class="sw-face back"><div class="sw-head"><span>${name}</span><span>Answer</span></div><p class="sw-q-small">${fmt(q.q)}</p><div class="sw-a">${fmt(q.a)}</div><p class="sw-tip">Knew it? Swipe right. Not quite? Swipe left.</p></div>`
+    ? `<div class="sw-face back"><div class="sw-head"><span>${name}</span><span>Answer</span></div><p class="sw-q-small">${fmt(q.q)}</p><div class="sw-a">${fmt(q.a)}</div><p class="sw-tip">Right: knew it · Left: not quite · Up: know it cold</p></div>`
     : `<div class="sw-face front"><div class="sw-head"><span>${name}</span><span>${lvl}</span></div><p class="sw-q">${fmt(q.q)}</p><p class="sw-tip">${ic('refresh')}Tap to flip</p></div>`;
 };
 const swCardHtml = (q, top) => `<article class="sw-card ${top ? 'is-top' : 'is-next'}" ${top ? 'id="swTop"' : 'aria-hidden="true"'}>
   <div class="sw-inner">${cardFace(q, false)}${top ? cardFace(q, true) : ''}</div>
-  ${top ? `<span class="sw-stamp got" aria-hidden="true">${ic('check')}Got it</span><span class="sw-stamp miss" aria-hidden="true">${ic('x')}Nope</span>` : ''}</article>`;
+  ${top ? `<span class="sw-stamp got" aria-hidden="true">${ic('check')}Got it</span><span class="sw-stamp miss" aria-hidden="true">${ic('x')}Nope</span><span class="sw-stamp star" aria-hidden="true">${ic('star')}Know it cold</span>` : ''}</article>`;
 function swStageHtml() {
   const d = S.deck, q = d.cards[S.di], n = d.cards[S.di + 1], n2 = d.cards[S.di + 2];
   return `${n2 ? '<div class="sw-card is-ghost" aria-hidden="true"></div>' : ''}${n ? swCardHtml(n, false) : ''}${swCardHtml(q, true)}`;
@@ -987,10 +988,10 @@ function swipeView() {
   return `<div class="stack swipe-screen">
     <div class="deck-top"><button class="back" data-act="${d.jf ? 'jobfocus' : 'home'}">${ic('left')}${d.jf ? 'Job focus' : 'Stop'}</button><span class="deck-count" id="swCount">${S.di + 1}<i>/</i>${d.cards.length}</span>${d.jf ? '<span></span>' : modeToggle(true)}</div>
     <div class="sw-dots" aria-hidden="true">${d.cards.map((_, i) => `<i class="${i < S.di ? (d.results[i] ? 'ok' : 'no') : i === S.di ? 'now' : ''}"></i>`).join('')}</div>
-    <div class="sw-stage" id="swStage">${swStageHtml()}${intro ? `<div class="sw-intro"><div class="sw-hand" aria-hidden="true"><i></i></div><b>Swipe mode</b><span>Tap a card to flip it. Swipe <b>right</b> if you knew it, <b>left</b> if you didn’t. Cards come from all your skills, mixed.</span><button class="btn primary" data-act="swipeintro">Let’s play</button></div>` : ''}
+    <div class="sw-stage" id="swStage">${swStageHtml()}${intro ? `<div class="sw-intro"><div class="sw-hand" aria-hidden="true"><i></i></div><b>Swipe right on what you know</b><span>Tap to flip. <b>Right</b> if you know it, <b>left</b> if you don’t, <b>up</b> if you know it cold. No ghosting.</span><button class="btn primary" data-act="swipeintro">Let’s play</button></div>` : ''}
       <div class="sw-streak ${streak >= 3 ? 'show' : ''}" id="swStreak">${streak} in a row</div><div class="sw-burst" id="swBurst" aria-hidden="true"></div></div>
-    <div class="sw-btns"><button class="sw-btn miss" data-act="swgo" data-ok="0" aria-label="Didn't know it">${ic('x')}</button><button class="sw-btn flip" data-act="swflip" aria-label="Flip the card">${ic('refresh')}</button><button class="sw-btn got" data-act="swgo" data-ok="1" aria-label="Knew it">${ic('check')}</button></div>
-    ${d.jf ? '' : '<div class="row between small"><button class="link quiet" data-act="askq">Go deeper with AI</button><span class="muted">← → keys work too</span></div>'}
+    <div class="sw-btns"><button class="sw-btn miss" data-act="swgo" data-ok="0" aria-label="Didn't know it">${ic('x')}</button><button class="sw-btn flip" data-act="swflip" aria-label="Flip the card">${ic('refresh')}</button><button class="sw-btn star" data-act="swgo" data-ok="2" aria-label="Know it cold">${ic('star')}</button><button class="sw-btn got" data-act="swgo" data-ok="1" aria-label="Knew it">${ic('check')}</button></div>
+    ${d.jf ? '' : '<div class="row between small"><button class="link quiet" data-act="askq">Go deeper with AI</button><span class="muted">← → ↑ keys work too</span></div>'}
   </div>`;
 }
 
@@ -1005,20 +1006,29 @@ function swApply() {
   swRaf = 0;
   if (!sw) return;
   const { card, dx, dy, sign } = sw;
-  const k = Math.max(-1, Math.min(1, dx / SW_AT));
-  card.style.transform = `translate3d(${dx}px, ${dy * 0.35}px, 0) rotate(${(dx / 14) * sign}deg)`;
+  const up = dy < 0 && -dy > Math.abs(dx);
+  const k = up ? 0 : Math.max(-1, Math.min(1, dx / SW_AT));
+  card.style.transform = `translate3d(${dx}px, ${up ? dy : dy * 0.35}px, 0) rotate(${(dx / 14) * sign}deg)`;
   card.style.setProperty('--got', Math.max(0, k)); card.style.setProperty('--miss', Math.max(0, -k));
+  card.style.setProperty('--star', up ? Math.min(1, -dy / SW_AT) : 0);
   const next = document.querySelector('.sw-card.is-next');
   if (next) next.style.setProperty('--lift', Math.min(1, Math.abs(dx) / SW_AT));
 }
 // Decide a card: fly it off along its own direction, then let the next card take its place.
-function swDecide(ok, vx = 0) {
+function swDecide(ok, vx = 0, easy = false) {
   const card = document.getElementById('swTop');
   const d = S.deck;
-  if (!card || S.grading || !d || S.di >= d.cards.length) return;
+  if (!card || S.grading || S.swMatch || !d || S.di >= d.cards.length) return;
   S.grading = true; sw = null;
   const q = d.cards[S.di];
-  if (!q.jf) { const prog = store.progress(); prog[q.id] = review(prog[q.id], ok); store.setProgress(prog); }
+  let matched = null;
+  if (!q.jf) {
+    const prog = store.progress(), t = topicById(q.topic), p = profile();
+    const before = t ? readiness([t], p, prog).pct : 0;
+    prog[q.id] = review(prog[q.id], ok, Date.now(), easy); store.setProgress(prog);
+    // Every card in a topic known: that's a match.
+    if (ok && t && before < 100 && readiness([t], p, prog).pct >= 100) matched = t;
+  }
   store.setActivity(recordActivity(store.activity(), todayKey(), ok));
   if (navigator.vibrate) try { navigator.vibrate(ok ? 12 : [8, 40, 8]); } catch { /* not allowed */ }
   const dist = Math.max(window.innerWidth, 600) * 1.2;
@@ -1026,8 +1036,9 @@ function swDecide(ok, vx = 0) {
   const ms = Math.round(360 / speed);
   card.classList.remove('dragging');
   card.style.transition = `transform ${ms}ms cubic-bezier(.2, .6, .35, 1), opacity ${ms}ms ease-in`;
-  card.style.setProperty(ok ? '--got' : '--miss', 1);
-  card.style.transform = `translate3d(${ok ? dist : -dist}px, ${(sw?.dy || 0) * 0.35 + 60}px, 0) rotate(${ok ? 32 : -32}deg)`;
+  card.style.setProperty(easy ? '--star' : ok ? '--got' : '--miss', 1);
+  card.style.transform = easy ? `translate3d(0, ${-Math.max(window.innerHeight, 700) * 1.2}px, 0) rotate(-6deg)`
+    : `translate3d(${ok ? dist : -dist}px, 60px, 0) rotate(${ok ? 32 : -32}deg)`;
   card.style.opacity = '0';
   const next = document.querySelector('.sw-card.is-next');
   if (next) next.classList.add('rise');
@@ -1046,12 +1057,29 @@ function swDecide(ok, vx = 0) {
     S.grading = false;
     if (S.di >= d.cards.length) {
       if (native() && !store.notifAsked()) { store.setNotifAsked(true); promptNotifications(); }
-      d.mode = 'swipe-done'; return render(); // the round summary uses the regular end screen
+      d.mode = 'swipe-done';
+      if (matched) { S.swEndAfterMatch = true; return swMatch(matched); } // celebrate first, summary after
+      return render(); // the round summary uses the regular end screen
     }
     // Only the stage is redrawn: the risen card is replaced by an identical one, so nothing jumps.
     const stage = document.getElementById('swStage');
     if (stage) { stage.querySelectorAll('.sw-card').forEach(e => e.remove()); stage.insertAdjacentHTML('afterbegin', swStageHtml()); }
+    if (matched) swMatch(matched);
   }, Math.min(ms, 260));
+}
+// "It's a match": a topic fully known. Pauses the round until dismissed.
+function swMatch(t) {
+  const stage = document.getElementById('swStage');
+  if (!stage) return;
+  S.swMatch = true;
+  (S.deck.matches = S.deck.matches || []).push(t.id);
+  const initials = t.name.replace(/[^A-Za-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  stage.insertAdjacentHTML('beforeend', `<div class="sw-match" role="dialog" aria-label="It's a match">
+    <p class="sw-match-t">It’s a match!</p>
+    <div class="sw-match-pair"><span class="sw-av you">You</span><span class="sw-heart">${ic('check')}</span><span class="sw-av topic">${esc(initials)}</span></div>
+    <p class="sw-match-s">You and <b>${esc(t.name)}</b>: every card known.</p>
+    <button class="btn primary" data-act="swmatchok">${S.swEndAfterMatch ? 'See my round' : 'Keep swiping'}</button></div>`);
+  swBurst();
 }
 function swBurst() {
   const b = document.getElementById('swBurst');
@@ -1084,12 +1112,13 @@ function swEnd(e) {
   if (!s0.drag) { sw = null; if (e?.type === 'pointerup') swFlip(); return; }
   const [t0, x0] = s0.hist[0], [t1, x1] = s0.hist[s0.hist.length - 1];
   const vx = (x1 - x0) / Math.max(1, t1 - t0); // px per ms
+  if (-s0.dy > SW_AT && -s0.dy > Math.abs(s0.dx)) return swDecide(true, 1.6, true); // up: know it cold
   if (Math.abs(s0.dx) > SW_AT || (Math.abs(vx) > 0.55 && Math.abs(s0.dx) > 30)) return swDecide(s0.dx > 0, vx);
   sw = null;
   const card = s0.card;
   card.classList.remove('dragging');
   card.style.transition = 'transform .45s cubic-bezier(.18, 1.35, .4, 1)';
-  card.style.transform = ''; card.style.setProperty('--got', 0); card.style.setProperty('--miss', 0);
+  card.style.transform = ''; card.style.setProperty('--got', 0); card.style.setProperty('--miss', 0); card.style.setProperty('--star', 0);
   document.querySelector('.sw-card.is-next')?.style.setProperty('--lift', 0);
   setTimeout(() => { card.style.transition = ''; }, 460);
 }
@@ -2092,6 +2121,7 @@ app.addEventListener('keydown', e => {
     if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); swFlip(); }
     else if (e.key === 'ArrowRight') swDecide(true, 1.4);
     else if (e.key === 'ArrowLeft') swDecide(false, -1.4);
+    else if (e.key === 'ArrowUp') { e.preventDefault(); swDecide(true, 1.6, true); }
     return;
   }
   if (e.key === ' ' || e.key === 'Enter') {
@@ -2203,7 +2233,8 @@ document.addEventListener('click', async e => {
   }
   else if (a === 'swipedeck') { setDeckMode('swipe'); lsSet('pp.swipeTried', '1'); startDeck(null, { mode: 'swipe' }); }
   else if (a === 'swipeintro') { lsSet('pp.swipeIntro', '1'); document.querySelector('.sw-intro')?.remove(); }
-  else if (a === 'swgo') swDecide(b.dataset.ok === '1', b.dataset.ok === '1' ? 1.4 : -1.4);
+  else if (a === 'swgo') swDecide(b.dataset.ok !== '0', b.dataset.ok === '0' ? -1.4 : 1.4, b.dataset.ok === '2');
+  else if (a === 'swmatchok') { S.swMatch = false; document.querySelector('.sw-match')?.remove(); if (S.swEndAfterMatch) { S.swEndAfterMatch = false; render(); } }
   else if (a === 'swflip') swFlip();
   else if (a === 'swipenah') { lsSet('pp.swipeTried', '1'); render(); }
   else if (a === 'jfswipe') startJobDeck();
