@@ -299,6 +299,11 @@ function storyHtml() {
     </div>
   </section>`;
 }
+function storyCta() {
+  return `<section class="l-after"><h2 class="l-h2">Make sure yours comes back too.</h2>
+    <div class="row l-cta"><button class="btn primary lg" data-act="startonboard">Get started, it’s free</button><button class="btn lg" data-act="login">I have an account</button></div>
+    <p class="muted small">No card needed. Takes about a minute.</p></section>`;
+}
 // Scroll-linked, but cheap: each frame writes two CSS variables (story progress and how far the hero
 // has scrolled away); words, the caret, answer lines and the giant word are styled from those in CSS
 // with opacity and transform only, so the browser never re-lays out the page while scrolling.
@@ -352,13 +357,13 @@ function landingView() {
         <p class="l-tag">## interview prep, the short way</p>
         <h1 class="l-title">Your interview is coming up. Let’s make sure it all comes back to you.</h1>
         <p class="l-sub">Quick flashcards for the tech you already work with, Java, React, Python, SQL, cloud and AI, one or two lines each, in the order you actually work.</p>
-        <div class="row l-cta"><button class="btn primary lg" data-act="startonboard">Get started, it’s free</button><button class="btn lg" data-act="login">I have an account</button></div>
-        <p class="muted small">No card needed. Takes about a minute.</p>
+
       </div>
       ${heroAnim()}
       <p class="l-giant" aria-hidden="true">recall<span class="l-giant-dot"></span></p>
     </section>
     ${storyHtml()}
+    ${storyCta()}
 
     <section class="l-try">
       <p class="l-tag">## try one yourself</p>
@@ -1276,7 +1281,7 @@ function plansView() {
 function topRight() {
   const a = store.account();
   if (S.login && !signedIn()) return '';
-  if (!signedIn() && !S.login) return '<button class="btn sm" data-act="login">Log in</button>';
+  if (!signedIn() && !S.login) return `<div class="row" style="gap:8px"><button class="btn sm quiet" data-act="login">Log in</button>${profile() && S.guest ? '' : '<button class="btn sm primary" data-act="startonboard">Get started</button>'}</div>`;
   if (!profile() || S.showPlans) return '';
   if (a?.unlimited) return '<span class="tag">Admin</span>';
   if (a?.plan === 'pro') return '<button class="tag pro" style="border:0;cursor:pointer" data-act="plans">Pro</button>';

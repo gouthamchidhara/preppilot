@@ -643,3 +643,12 @@ pre code { background: none; border: 0; padding: 0; }
   .l-caret { display: none; }
   .l-giant, .l-giant-dot { transform: none !important; }
 }
+
+/* landing: sticky header carries Log in / Get started, so nothing crowds 'recall.' */
+body:has(.landing) .top { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--desk) 88%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); justify-content: space-between; }
+body:has(.landing) #topRight { margin-left: auto; }
+.l-hero .l-sub { margin-bottom: 8px; }
+.landing .l-giant { margin-top: 28px; }
+@media (min-width: 760px) { .landing .l-giant { margin-top: 10px; } }
+.l-after { text-align: center; padding: 8px 0 12px; }
+.l-after .l-cta { justify-content: center; margin: 18px 0 8px; }
