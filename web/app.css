@@ -1171,10 +1171,12 @@ body.drawer-open #shell { transform: translateX(min(82vw, 320px)); border-radius
 body.drawer-open .nd { transform: none; opacity: 1; }
 /* Narrow screens: when the panel is open the page slides away with its
    header, stranding the menu button at the far right over the panel edge.
-   Hide the page header while open; the panel's own header (PrepPilot +
-   search) is the top row instead. Tapping the slid-away page still
-   closes the panel. */
-@media (max-width: 899px) { body.drawer-open .top { display: none; } }
+   Hide the page header while open, but keep its layout space
+   (visibility, not display): collapsing it would pull the page content
+   up into the top row, so the home heading would sit cut-off beside the
+   panel's own header (PrepPilot + search). Tapping the slid-away page
+   still closes the panel. */
+@media (max-width: 899px) { body.drawer-open .top { visibility: hidden; } }
 .nd-head { display: flex; align-items: center; justify-content: space-between; padding: 0 6px 14px 12px; }
 .nd-head b { font-size: 1.5rem; letter-spacing: -.02em; }
 .nd-round { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line-strong); background: var(--paper); color: var(--ink); cursor: pointer; }
