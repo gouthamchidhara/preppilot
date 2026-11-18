@@ -13,7 +13,7 @@ const DAY = 86400000;
 const app = document.getElementById('app');
 const S = { view: 'home', topic: null, ci: 0, deck: null, di: 0, reveal: false, busy: false, listening: false, chatContext: '',
   rt: null, rtMode: null, rtStatus: '', rtStarting: false, voiceServer: false, live: null, pendingUser: false, muted: false,
-  googleClientId: '', plans: null, paywall: false, draft: null, roleSearch: '', showPlans: false, fullPlan: false, allTopics: false, buying: null, buyBusy: false, healthLoaded: false, lastView: '', liveHint: null, suggestPending: false, dgStages: {}, prevMap: null, sheetDg: null };
+  googleClientId: '', plans: null, paywall: false, draft: null, roleSearch: '', showPlans: false, fullPlan: false, allTopics: false, buying: null, buyBusy: false, healthLoaded: false, liveInterviewIos: false, lastView: '', liveHint: null, suggestPending: false, dgStages: {}, prevMap: null, sheetDg: null };
 
 /* ---------- helpers ---------- */
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -489,17 +489,18 @@ function livePromo() {
   const { credits, left } = liveState();
   const o = offer();
   const isProUser = store.account()?.plan === 'pro' && !credits && left < 20;
+  const iv = S.liveInterviewIos; // "During your interview" mode, server-gated (default off).
   const [head, title, text, cta] = left >= 20
     ? ['Session in progress', 'Your practice test is still open', `${Math.ceil(left / 60)} minutes left. Rejoin and pick up where you stopped.`, '<button class="btn invert lg" data-act="livesetup">Rejoin the session</button>']
     : credits
-      ? [`${credits} session${credits > 1 ? 's' : ''} ready`, 'Live AI is ready when you are', 'Use it for a spoken practice test, or keep it listening during your real interview for talking points on screen.', '<button class="btn invert lg" data-act="livesetup">Start the practice test</button>']
-      : (store.account()?.plan === 'pro') ? [`${store.account()?.proLiveLeft ?? o.proLiveN} of ${o.proLiveN} left this month`, `Live AI, ${o.proLive} minutes`, 'A spoken practice test, an open conversation, or talking points during your interview, without a break. For a full hour, add a one-time session.', '<button class="btn invert lg" data-act="livesetup">Start Live AI</button>']
-      : [`${o.liveMin} minutes, one-time`, 'Live AI for 60 minutes', 'Run a spoken practice test the day before. Then, in the interview itself, leave it listening: a few talking points appear on screen as each question is asked.', '<button class="btn invert lg" data-act="plans">See pricing</button>'];
+      ? [`${credits} session${credits > 1 ? 's' : ''} ready`, 'Live AI is ready when you are', iv ? 'Use it for a spoken practice test, or keep it listening during your real interview for talking points on screen.' : 'Use it for a spoken practice test, or an open conversation with AI.', '<button class="btn invert lg" data-act="livesetup">Start the practice test</button>']
+      : (store.account()?.plan === 'pro') ? [`${store.account()?.proLiveLeft ?? o.proLiveN} of ${o.proLiveN} left this month`, `Live AI, ${o.proLive} minutes`, iv ? 'A spoken practice test, an open conversation, or talking points during your interview, without a break. For a full hour, add a one-time session.' : 'A spoken practice test or an open conversation, without a break. For a full hour, add a one-time session.', '<button class="btn invert lg" data-act="livesetup">Start Live AI</button>']
+      : [`${o.liveMin} minutes, one-time`, 'Live AI for 60 minutes', iv ? 'Run a spoken practice test the day before. Then, in the interview itself, leave it listening: a few talking points appear on screen as each question is asked.' : 'Run a spoken practice test the day before, or an open conversation to warm up.', '<button class="btn invert lg" data-act="plans">See pricing</button>'];
   return `<section class="card stacked live-hero" aria-label="Live AI">
     <div class="card-head"><span>${isProUser ? `Live AI, ${o.proLive} minutes` : `Live AI, ${o.liveMin} minutes`}</span><span>${esc(head)}</span></div>
     <h2>${esc(title)}</h2>
     <p style="margin-top:8px">${esc(text)}</p>
-    <ul class="live-points"><li>Practice test with a verdict</li><li>Talking points during your interview</li><li>${isProUser ? `No break for ${o.proLive} minutes` : 'Continuous for the full hour'}</li></ul>
+    <ul class="live-points"><li>Practice test with a verdict</li>${iv ? '<li>Talking points during your interview</li>' : ''}<li>${isProUser ? `No break for ${o.proLive} minutes` : 'Continuous for the full hour'}</li></ul>
     <div class="row" style="margin-top:18px">${cta}</div>
   </section>`;
 }
@@ -774,6 +775,7 @@ function accountCard() {
       <button class="link quiet" data-act="plans">Pricing</button>
       ${native() && !a.unlimited ? '<button class="link quiet" data-act="restore">Restore purchases</button>' : ''}
       <a class="link quiet" href="privacy.html" target="_blank" rel="noopener">Privacy</a>
+      <a class="link quiet" href="support.html" target="_blank" rel="noopener">Support</a>
       <button class="link quiet" data-act="signout">Sign out</button>
       ${a.key === 'code:admin' ? '' : '<button class="link quiet" data-act="delacct">Delete account</button>'}
     </div>
@@ -855,6 +857,10 @@ function liveSettings() {
 
 function liveSetupSheet() {
   const s = liveSettings();
+  // "During your interview" is server-gated (default off). A saved 'interview'
+  // choice from before the flag existed falls back to the practice test, so
+  // the sheet never renders with no option selected.
+  const use = S.liveInterviewIos ? s.use : (s.use === 'interview' ? 'practice' : s.use);
   const p = profile();
   const relevant = rankTopics(topics(), p);
   const { credits, left } = liveState();
@@ -862,23 +868,23 @@ function liveSetupSheet() {
   const proLeft = store.account()?.proLiveLeft ?? 0, proWin = store.account()?.proLiveSecLeft || 0;
   const fromPlan = left < 20 && !credits && pro && (proLeft > 0 || proWin >= 20);
   const state = left >= 20 ? `Your session is still open with ${Math.ceil(left / 60)} minutes left.` : credits ? `You have ${credits} session${credits > 1 ? 's' : ''} ready.` : fromPlan ? (proWin >= 20 ? `Your Pro session is still open with ${Math.ceil(proWin / 60)} minutes left.` : `Included in Pro: ${proLeft} of ${offer().proLiveN} sessions of ${offer().proLive} minutes left this month. For a full hour, buy a one-time session.`) : 'You need a Live AI session to start. See pricing for the options.';
-  const opt = (v, t, d) => `<label class="use-opt"><input type="radio" name="use" value="${v}" ${s.use === v ? 'checked' : ''}><span><b>${t}</b><span class="muted small">${d}</span></span></label>`;
+  const opt = (v, t, d) => `<label class="use-opt"><input type="radio" name="use" value="${v}" ${use === v ? 'checked' : ''}><span><b>${t}</b><span class="muted small">${d}</span></span></label>`;
   sheet(`<form id="liveSetupForm" class="stack">
     <h2>Live AI, 60 minutes</h2>
     <p class="muted">${esc(state)}</p>
     <fieldset class="stack tight"><legend class="small" style="font:600 14px var(--sans);margin-bottom:6px">How will you use it?</legend>
       ${opt('practice', 'Practice test', 'AI asks the questions out loud. Hints as each question lands, feedback after every answer.')}
       ${opt('talk', 'Open conversation', 'Talk with AI for the whole session. It listens and answers back and forth, with no time-outs.')}
-      ${opt('interview', 'During your interview', 'It listens to your interviewer and shows talking points on your screen within seconds. Silent: it never speaks.')}
+      ${S.liveInterviewIos ? opt('interview', 'During your interview', 'It listens to your interviewer and shows talking points on your screen within seconds. Silent: it never speaks.') : ''}
     </fieldset>
     <label>Session length<select name="lengthMin">${(fromPlan ? [20, 30] : [20, 30, 45, 60]).map(n => `<option value="${n}" ${s.lengthMin === n || (fromPlan && n === 30 && s.lengthMin > 30) ? 'selected' : ''}>${n} minutes</option>`).join('')}</select></label>
     <label>Topic focus<select name="topic"><option value="">All my topics</option>${relevant.map(t => `<option value="${esc(t.name)}" ${s.topic === t.name ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
-    <div class="practice-only stack" ${s.use === 'interview' ? 'hidden' : ''}>
+    <div class="practice-only stack" ${use === 'interview' ? 'hidden' : ''}>
       <label>AI style<select name="style">${[['friendly', 'Friendly and encouraging'], ['direct', 'Direct, no small talk'], ['tough', 'Tough, probes every gap']].map(([v, n]) => `<option value="${v}" ${s.style === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
       <label>Difficulty<select name="difficulty">${LEVELS.map(l => `<option value="${l.id}" ${s.difficulty === l.id ? 'selected' : ''}>${esc(l.name)}</option>`).join('')}</select></label>
       <label class="switch"><input type="checkbox" name="voice" ${s.voice ? 'checked' : ''}>AI speaks out loud</label>
     </div>
-    <p class="note small interview-only" ${s.use === 'interview' ? '' : 'hidden'}>Put this device where its microphone can hear your interviewer. Check that transcribing the call is allowed by the company and where you live; some places require everyone on a call to agree.</p>
+    <p class="note small interview-only" ${use === 'interview' ? '' : 'hidden'}>Put this device where its microphone can hear your interviewer. Check that transcribing the call is allowed by the company and where you live; some places require everyone on a call to agree.</p>
     <button class="btn primary block lg" type="submit">${left >= 20 ? 'Rejoin the session' : credits || fromPlan ? 'Start' : 'See pricing'}</button>
     <button class="btn block" type="button" data-act="closesheet">Not now</button>
   </form>`);
@@ -1162,7 +1168,7 @@ function plansView() {
     ['Voice practice', `${o.freeVoice} min to try`, `In your Live AI sessions`, `${o.liveMin} min, continuous`],
     ['Uninterrupted Live AI', no, `${o.proLiveN} × ${o.proLive} min a month`, `${o.liveMin} min, once`],
     ['Spoken practice test with a verdict', no, yes, yes],
-    ['Talking points during your real interview', no, yes, yes],
+    ...(S.liveInterviewIos ? [['Talking points during your real interview', no, yes, yes]] : []),
     ['Custom subjects', no, 'Up to 5', '–'],
   ];
   const liveBtn = left >= 20 ? '<button class="btn invert block lg" data-act="livesetup">Rejoin your session</button>'
@@ -1191,7 +1197,7 @@ function plansView() {
       <section class="tier card live-hero">
         <div class="tier-name">Live AI <span class="tier-flag">One-time</span></div>
         <div class="price">${esc(o.livePrice)}<span>/ session</span></div>
-        <p class="small">${o.liveMin} minutes in one go: a spoken practice test, or talking points on screen during your real interview.</p>
+        <p class="small">${o.liveMin} minutes in one go: a spoken practice test${S.liveInterviewIos ? ', or talking points on screen during your real interview' : ', or an open conversation'}.</p>
         ${liveBtn}
       </section>
     </div>
@@ -1205,11 +1211,11 @@ function plansView() {
       <p class="muted small" style="margin-top:10px">A Live AI session is billed separately and works on Free or Pro. It does not use Pro's monthly minutes.</p>
     </section>
 
-    <section class="stack">
+    ${S.liveInterviewIos ? `<section class="stack">
       <div class="sec-head"><h3>Live AI in your interview</h3></div>
       <p>Open a session before the call and leave this device where it can hear your interviewer. When a question is asked, three to five talking points appear on screen within seconds, built from your role and background. It never speaks, and nothing is stored.</p>
       <p class="muted small">Check that transcribing the call is allowed by the company and where you live; some places require everyone on a call to agree.</p>
-    </section>
+    </section>` : ''}
 
     <div class="faq">
       <details><summary>What counts as a message?</summary><p>Each question you send AI is one message. Writing a custom card set uses five. Voice is counted in minutes, only while a session is open.</p></details>
@@ -1220,7 +1226,7 @@ function plansView() {
       <details><summary>What happens to my progress on Free?</summary><p>Nothing changes. Your plan, cards and progress stay on this device and stay yours.</p></details>
     </div>
     <p class="legal">Pro costs ${esc(o.proPrice)} and renews automatically until you cancel in your ${manage} subscription settings, at least 24 hours before the renewal date. A Live AI session is a one-time purchase of ${esc(o.livePrice)}. Payment is charged to your ${storeName()} account when you confirm the purchase.
-      <a class="link quiet" href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener">Terms of Use</a>, <a class="link quiet" href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>${native() ? ', <button class="link quiet" data-act="restore">Restore purchases</button>' : ''}</p>
+      <a class="link quiet" href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener">Terms of Use</a>, <a class="link quiet" href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>, <a class="link quiet" href="support.html" target="_blank" rel="noopener">Support</a>${native() ? ', <button class="link quiet" data-act="restore">Restore purchases</button>' : ''}</p>
   </div>`;
 }
 
@@ -1793,7 +1799,7 @@ document.addEventListener('click', async e => {
   refreshAccount().catch(() => {});
   // Pre-warm the API (avoids a cold start when the user first talks) and learn what's enabled.
   ai.health().then(h => {
-    S.voiceServer = !!h.voice; S.googleClientId = h.googleClientId || ''; S.plans = h.plans || null; S.healthLoaded = true;
+    S.voiceServer = !!h.voice; S.googleClientId = h.googleClientId || ''; S.plans = h.plans || null; S.liveInterviewIos = !!h.liveInterviewIos; S.healthLoaded = true;
     render();
   }).catch(() => { S.healthLoaded = true; });
   if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !window.Capacitor) {
