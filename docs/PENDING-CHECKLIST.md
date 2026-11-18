@@ -54,6 +54,15 @@ Checked with it on 18 November: subscription Enabled; Static Web App (Free) prod
 - [x] **Budget alert**: $20/month, emails at 80% and 100% (checked 18 Nov).
 - [x] **`ADMIN_EMAILS`** contains only your own addresses (checked 18 Nov: one address) (they get unlimited access).
 
+## 4. Next up, after the current iOS build (owner asked: not now)
+
+- [ ] **Pay in the browser.** Web visitors can't buy anything today; the plans screen sends them to the app.
+  - Plan: RevenueCat Web Billing (Stripe underneath), so Pro bought on the web and Pro bought in the app are the same `pro` entitlement on the same account. No second billing system to keep in sync.
+  - Owner steps: create a Stripe account, connect it in RevenueCat → Web, create web products matching `pro_monthly` and `mock_session_60min`.
+  - Code: plans screen on the web opens the web checkout; account refresh already reads the entitlement from RevenueCat.
+  - Pricing: web avoids the 15% App Store fee (Stripe is about 3%). Keep the same price at first.
+  - Inside the iOS app keep Apple's in-app purchase for now; linking out to web checkout from the app is a separate App Store decision.
+
 ## Done (for reference)
 
 Custom domain and HTTPS on `preppilot.us` and `www`; Google sign-in fixed (referrer policy); privacy policy updated; native icon and splash; beta access code removed; sign-in, AI, storage and price settings checked; sweeper running; content spot-check; field cards, lesson flow and analogies for all 72 topics.
