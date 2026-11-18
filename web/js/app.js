@@ -1150,15 +1150,25 @@ document.addEventListener('touchend', endDrawerDrag);
 document.addEventListener('touchcancel', endDrawerDrag);
 
 /* Keyboard open on a phone: pin the chat input right on top of the keyboard (iOS shrinks only the
-   visual viewport, so a bottom-docked box would otherwise float with a gap or hide under the keys). */
+   visual viewport, so a bottom-docked box would otherwise float with a gap or hide under the keys).
+   In the app's WebView the layout viewport shrinks with the keyboard instead, so compare the visual
+   viewport against the tallest layout height seen while the keyboard was closed — the old
+   innerHeight-minus-visualViewport check stays ~0 there and never fired. */
+let fullW = window.innerWidth, fullH = window.innerHeight;
 function placeDock() {
   const vv = window.visualViewport, dock = document.querySelector('.ai-dock');
-  const kb = !!(vv && dock && window.innerHeight - vv.height > 120 && document.activeElement?.id === 'chatInput');
+  const kb = !!(vv && dock && document.activeElement?.id === 'chatInput' &&
+    (window.innerHeight - vv.height > 120 || fullH - vv.height > 120));
   document.documentElement.classList.toggle('kb-open', kb);
   if (!dock) return;
   if (kb) dock.style.top = `${vv.offsetTop + vv.height - dock.offsetHeight}px`;
   else dock.style.top = '';
 }
+function trackFullSize() {
+  if (window.innerWidth !== fullW) { fullW = window.innerWidth; if (document.activeElement?.id !== 'chatInput') fullH = window.innerHeight; }
+  else if (document.activeElement?.id !== 'chatInput') fullH = Math.max(fullH, window.innerHeight);
+}
+window.addEventListener('resize', () => { trackFullSize(); placeDock(); });
 if (window.visualViewport) {
   visualViewport.addEventListener('resize', placeDock);
   visualViewport.addEventListener('scroll', placeDock);
@@ -1822,6 +1832,7 @@ function customView() {
     return `<div class="rowi static"><span class="main"><span class="t">${esc(t.name)}</span><span class="d">${t.concepts.length} lessons · ${t.qa.length} questions${tr.total ? ` · ${tr.pct}% known` : ''}</span></span>
       <span class="row"><button class="link quiet small" data-act="learn" data-id="${t.id}">Open</button><button class="link quiet small" data-act="deck" data-id="${t.id}">Practice</button><button class="link quiet small" data-act="delcustom" data-id="${t.id}">Delete</button></span></div>`;
   }).join('');
+  const pending = S.busy && S.busyTopic ? `<div class="rowi static pending"><span class="main"><span class="t">${esc(S.busyTopic)}</span><span class="d">Writing your guide <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></span></span></div>` : '';
   return `<div class="stack loose">
     <div class="head"><h1>Your subjects</h1>
       <p class="lede">Anything your interview covers that the 72 built-in topics don't — Ansible, Puppet, a tool only your team uses. AI writes the full guide: lessons told like a story, plus flashcards.</p></div>
@@ -1833,7 +1844,7 @@ function customView() {
           ? `<p class="muted">Sign in to write a custom subject.</p>`
           : `<form id="customForm" class="row"><input id="customTopic" maxlength="120" placeholder="e.g. Ansible" required aria-label="Subject"><button class="btn primary" ${S.busy || atCap ? 'disabled' : ''}>${S.busy ? 'Writing your guide…' : 'Generate my guide'}</button></form>
           <p class="muted small">Uses 5 AI messages. ${atCap ? `You have all ${CUSTOM_LIMIT} subjects — delete one to make room.` : `You can keep up to ${CUSTOM_LIMIT} subjects.`}</p>`}
-      ${custom.length ? `<div class="rows" style="margin-top:14px">${rows}</div>` : `<p class="muted" style="margin-top:14px">No custom subjects yet.</p>`}
+      ${custom.length || pending ? `<div class="rows" style="margin-top:14px">${pending}${rows}</div>` : `<p class="muted" style="margin-top:14px">No custom subjects yet.</p>`}
     </section>
     <p class="muted small">Custom subjects sit alongside the built-in topics everywhere — your plan, your stats, and the story diagram AI draws for them.</p>
   </div>`;
@@ -2296,7 +2307,7 @@ async function buildRoleGuide() {
   // The role guide is written during onboarding, so it is not Pro-gated —
   // but it still takes one of the 5 custom-subject slots.
   if (store.customTopics().length >= CUSTOM_LIMIT) return toast(`You already have ${CUSTOM_LIMIT} custom subjects. Delete one to make room.`);
-  S.busy = true; render();
+  S.busy = true; S.busyTopic = p.otherRole + ' essentials'; render();
   try {
     const r = await ai.generate(`${p.otherRole}: interview essentials`, summary(), 12);
     const id = 'c-role-' + Date.now().toString(36);
@@ -2305,7 +2316,7 @@ async function buildRoleGuide() {
     saveCustomTopic(topic);
     toast('Your role guide is in your topics.');
   } catch (err) { aiFailed(err); }
-  S.busy = false; render();
+  S.busy = false; S.busyTopic = null; render();
 }
 
 // ---------- custom subjects (Pro) ----------
@@ -2333,7 +2344,7 @@ async function buildCustomSubject(name) {
   if (reason === 'signin') { S.view = 'chat'; render(); return; }
   if (reason === 'pro') { S.view = 'custom'; render(); return toast('Custom subjects are a Pro feature.'); }
   if (reason === 'cap') return toast(`You already have ${CUSTOM_LIMIT} custom subjects. Delete one to make room.`);
-  S.busy = true; render();
+  S.busy = true; S.busyTopic = name; render();
   try {
     const r = await ai.generate(name, summary(), 8);
     const id = 'c-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40) + '-' + Date.now().toString(36);
@@ -2341,9 +2352,9 @@ async function buildCustomSubject(name) {
     if (r.diagram) topic.diagram = r.diagram;
     saveCustomTopic(topic);
     toast(`"${name}" is ready — starting the first lesson.`);
-    S.busy = false;
+    S.busy = false; S.busyTopic = null;
     openTopic(id);
-  } catch (err) { S.busy = false; aiFailed(err); render(); }
+  } catch (err) { S.busy = false; S.busyTopic = null; aiFailed(err); render(); }
 }
 
 async function sendChat(text, { fromVoice = false } = {}) {
