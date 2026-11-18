@@ -48,6 +48,7 @@ const ICONS = {
   search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m14 6 4 4"/>',
+  menu: '<path d="M4 7h16M4 12h16M4 17h10"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
 };
 const ic = n => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
@@ -1330,12 +1331,24 @@ function allowanceCard(a) {
 }
 
 // The Live AI offer, one slim row that is always on the AI tab: the paid product, never buried.
-function chatHistorySheet() {
+// Chat list grouped by day, ChatGPT / Claude style. Lives in a left drawer (phone) or sidebar (wide).
+function dayLabel(t) {
+  const d0 = new Date(); d0.setHours(0, 0, 0, 0);
+  const days = Math.floor((d0 - new Date(new Date(t).setHours(0, 0, 0, 0))) / 864e5);
+  if (days <= 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return new Date(t).toLocaleDateString(undefined, { weekday: 'long' });
+  return new Date(t).toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+}
+function chatDrawerHtml() {
   const list = store.chats(), cur = store.chatCur();
-  const when = t => { const d = Math.floor((Date.now() - t) / 864e5); return d <= 0 ? 'Today' : d === 1 ? 'Yesterday' : d < 7 ? `${d} days ago` : new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); };
-  sheet(`<div class="stack"><div class="row between"><h2 style="margin:0">Chats</h2><button class="btn small" data-act="newchat">${ic('edit')}New chat</button></div>
-    <div class="rows">${list.map(c => `<div class="rowi ${c.id === cur ? 'on' : ''}"><button class="main link-row" data-act="openchat" data-id="${c.id}"><span class="t">${esc(c.title)}</span><span class="d">${when(c.at)} · ${c.msgs.filter(m => m.role === 'user').length} message${c.msgs.filter(m => m.role === 'user').length === 1 ? '' : 's'}</span></button><button class="link quiet small" data-act="delchat" data-id="${c.id}" aria-label="Delete chat">${ic('x')}</button></div>`).join('') || '<p class="muted">No chats yet.</p>'}</div>
-    <p class="muted small">Saved on this device. The coach reads only the last few messages of a chat, so long chats stay fast.</p></div>`);
+  const groups = [];
+  for (const c of list) { const g = dayLabel(c.at); const last = groups[groups.length - 1]; if (last?.label === g) last.items.push(c); else groups.push({ label: g, items: [c] }); }
+  return `<aside class="ai-drawer ${S.drawer ? 'open' : ''}" aria-label="Chats">
+    <div class="ai-drawer-top"><button class="btn block ai-newchat" data-act="newchat">${ic('edit')}New chat</button></div>
+    <nav class="ai-days">${groups.map(g => `<div class="ai-day"><span class="ai-day-l">${esc(g.label)}</span>${g.items.map(c => `<div class="ai-chat ${c.id === cur ? 'on' : ''}"><button data-act="openchat" data-id="${c.id}" title="${esc(c.title)}">${esc(c.title)}</button><button class="ai-del" data-act="delchat" data-id="${c.id}" aria-label="Delete chat">${ic('x')}</button></div>`).join('')}</div>`).join('') || '<p class="muted small" style="padding:0 14px">Your chats will appear here, grouped by day.</p>'}</nav>
+    <p class="ai-privacy">${ic('lock')}<span>Chats are saved only on this device. PrepPilot doesn’t store them or keep a memory of you; the coach only sees the chat you’re in.</span></p>
+  </aside>${S.drawer ? '<button class="ai-scrim" data-act="drawer" aria-label="Close chats"></button>' : ''}`;
 }
 
 function liveStrip() {
@@ -1370,13 +1383,15 @@ function chatView() {
   ];
   // After a few messages, one gentle nudge towards saying it out loud.
   const nudge = !S.rt && msgs.filter(m => m.role === 'assistant').length >= 3 && !isAdmin() ? `<button class="live-nudge" data-act="${liveState().credits || store.account()?.plan === 'pro' ? 'livesetup' : 'plans'}">${ic('mic')}<span>Ready to say it out loud? <b>Run a Live AI mock interview</b></span>${ic('right')}</button>` : '';
-  return `<div class="stack chat ai-tab">
-    <div class="ai-head"><h1>AI coach</h1>
-      <div class="row" style="gap:6px">${S.rt ? '' : `${store.chats().length ? `<button class="iconbtn plain" data-act="chathistory" aria-label="Chat history" title="Chat history">${ic('clock')}</button>` : ''}${msgs.length ? `<button class="iconbtn plain" data-act="newchat" aria-label="New chat" title="New chat">${ic('edit')}</button>` : ''}`}</div></div>
+  const cur = store.chats().find(c => c.id === store.chatCur());
+  return `<div class="ai-layout">${chatDrawerHtml()}<div class="stack chat ai-tab">
+    <div class="ai-head"><button class="iconbtn plain ai-menu" data-act="drawer" aria-label="Chats" aria-expanded="${!!S.drawer}">${ic('menu')}</button>
+      <h1 class="ai-title">${esc(cur?.title || 'AI coach')}</h1>
+      ${S.rt ? '<span></span>' : `<button class="iconbtn plain" data-act="newchat" aria-label="New chat" title="New chat">${ic('edit')}</button>`}</div>
     ${S.rt ? voicePanel() : S.paywall ? paywallCard() : liveStrip()}
     ${S.rtMode === 'live' && S.liveHint ? liveHintCard() : ''}
     ${S.chatContext ? `<p class="note row between"><span>Talking about <b>${esc(S.chatContext.split('\n')[0])}</b></span><button class="link quiet" data-act="dropctx">Remove</button></p>` : ''}
-    <div class="msgs" id="msgs">${started ? msgs.map(bubble).join('') : `<div class="msg assistant">Hi! Ask me anything about your prep, or pick one to start.</div>
+    <div class="msgs" id="msgs">${started ? msgs.map(bubble).join('') : `<div class="ai-hello"><h2>How can I help you prepare?</h2><p class="muted small">Ask anything, or pick one to start.</p></div>
       <div class="ai-prompts">${prompts.map(([l, q]) => `<button class="chip" data-act="quick" data-q="${esc(q)}">${esc(l)}</button>`).join('')}
         ${f?.title ? `<button class="chip fresh-chip" data-act="quick" data-q="${esc(`Interview me on this real scenario. ${f.situation} ${f.question} Ask one question at a time.`)}">${ic('spark')}Today’s scenario: ${esc(f.title)}</button>` : ''}
         ${S.voiceServer && realtimeSupported ? `<button class="chip" data-act="rtstart" data-mode="talk">${ic('mic')}Talk it through</button>` : ''}</div>`}
@@ -1389,7 +1404,7 @@ function chatView() {
       ${S.rt ? '' : `<button type="button" class="iconbtn ${S.listening ? 'on' : 'plain'}" data-act="mic" ${voice.canListen ? '' : 'disabled'} aria-label="${S.listening ? 'Stop dictation' : 'Dictate'}" title="${voice.canListen ? 'Dictate' : 'Dictation is not supported here'}">${ic(S.listening ? 'stop' : 'mic')}</button>`}
       <button class="iconbtn primary" type="submit" ${S.busy ? 'disabled' : ''} aria-label="Send">${ic('send')}</button>
     </form>
-  </div>`;
+  </div></div>`;
 }
 
 /* ---------- Live AI ---------- */
@@ -2390,10 +2405,10 @@ document.addEventListener('click', async e => {
   else if (a === 'textsize') { setTextSize(b.dataset.v); render(); }
   else if (a === 'prefmode') { setDeckMode(b.dataset.v); render(); }
   else if (a === 'newdeck') startNewDeck();
-  else if (a === 'newchat') { store.newChat(); S.chatContext = ''; closeSheet(); render(); }
-  else if (a === 'chathistory') chatHistorySheet();
-  else if (a === 'openchat') { store.setChatCur(id); closeSheet(); render(); }
-  else if (a === 'delchat') { store.deleteChat(id); store.chats().length ? chatHistorySheet() : closeSheet(); render(); }
+  else if (a === 'newchat') { store.newChat(); S.chatContext = ''; S.drawer = false; render(); document.getElementById('chatInput')?.focus(); }
+  else if (a === 'drawer') { S.drawer = !S.drawer; render(); }
+  else if (a === 'openchat') { store.setChatCur(id); S.drawer = false; render(); }
+  else if (a === 'delchat') { store.deleteChat(id); render(); }
   else if (a === 'askai') { S.view = 'chat'; render(); sendChat(b.dataset.q || ''); }
   else if (a === 'deck') { S.lsLabel = d0label(id); startDeck(id ? id.split(',') : null); }
   else if (a === 'lsgo') { const t = getManifest().packs.flatMap(pk => pk.topics).find(x => x.id === id); lsStart([id], t?.name); }
