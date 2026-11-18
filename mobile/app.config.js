@@ -40,6 +40,9 @@ module.exports = {
     },
     plugins: [
       'expo-apple-authentication',
+      // Listed before expo-notifications on purpose: Expo runs these mods in reverse order, so this
+      // one runs after expo-notifications has added aps-environment, and removes it.
+      './plugins/no-remote-push',
       'expo-notifications',
       ...(iosUrlScheme ? [['@react-native-google-signin/google-signin', { iosUrlScheme }]] : []),
     ],
