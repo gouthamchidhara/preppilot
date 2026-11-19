@@ -59,6 +59,11 @@ export class VoiceSession {
     const capMs = (data.allowedSec || 600) * 1000;
     this.endsAt = Date.now() + capMs;
     this.timers.push(setTimeout(() => this.stop('Voice time for this session is used up.'), capMs));
+    // Gentle heads-up before time runs out, so nothing is cut off mid-sentence.
+    if (mode === 'live') {
+      if (capMs > 6 * 60000) this.timers.push(setTimeout(() => this.note('About 5 minutes are left in this session. At the next natural break, tell the candidate in one short casual line and start wrapping up the current question.'), capMs - 5 * 60000));
+      if (capMs > 2 * 60000) this.timers.push(setTimeout(() => this.note('About 1 minute is left. Finish the current point briefly, then say a warm goodbye.'), capMs - 60000));
+    }
   }
 
   bump() {
@@ -93,6 +98,9 @@ export class VoiceSession {
     this.send({ type: 'response.create' });
     this.on.status('thinking');
   }
+
+  // A quiet instruction the AI follows on its next turn (not shown as a user message).
+  note(text) { this.send({ type: 'conversation.item.create', item: { type: 'message', role: 'system', content: [{ type: 'input_text', text }] } }); }
 
   // Listening mode: "your turn" -> commit whatever was said and ask for feedback now.
   respond() {

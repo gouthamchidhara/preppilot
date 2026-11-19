@@ -1360,3 +1360,10 @@ html { background: var(--desk); color-scheme: light dark; }
 .cb-btn.go .cb-ic { background: var(--accent); color: #fff; }
 .cb-l { color: var(--muted); }
 .ai-dock:has(.callbar) .composer textarea { font-size: 15px; }
+.lv-custom { border: 1px solid var(--line-strong); border-radius: 14px; background: var(--paper); }
+.lv-custom summary { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px; font-weight: 600; cursor: pointer; }
+.lv-custom summary::-webkit-details-marker { display: none; }
+.lv-custom summary::after { content: '›'; color: var(--muted); font-size: 20px; transform: rotate(90deg); transition: transform .2s; }
+.lv-custom[open] summary::after { transform: rotate(-90deg); }
+.lv-custom summary .muted { margin-left: auto; text-transform: capitalize; }
+.lv-custom > .stack { padding: 0 16px 16px; }

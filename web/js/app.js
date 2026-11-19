@@ -1690,7 +1690,7 @@ function liveSettings() {
   const p = profile();
   const saved = store.liveSettings() || {};
   return {
-    lengthMin: [20, 30, 45, 60, 240].includes(saved.lengthMin) ? saved.lengthMin : 60,
+    lengthMin: 240,
     voice: saved.voice !== false,
     style: ['friendly', 'direct', 'tough'].includes(saved.style) ? saved.style : 'friendly',
     speaker: LIVE_VOICES.some(v => v[0] === saved.speaker) ? saved.speaker : 'marin',
@@ -1724,14 +1724,14 @@ function liveSetupSheet() {
       : admin || left >= 20 ? '' : `<p class="muted small" style="margin:0">${esc(state)}</p>`}
     <input type="hidden" name="use" value="${use === 'interview' ? 'interview' : 'talk'}">
     ${S.liveBrief?.jd ? `<p class="lv-brief-on">${ic('target')}Mock interview for <b>${esc(S.jf?.result?.role || 'your role')}</b>, using your résumé. <button type="button" class="link quiet small" data-act="jfbriefoff">Turn off</button></p>` : ''}
-    <label>Session length<select name="lengthMin">${(admin ? [240, 20, 30, 45, 60] : fromPlan ? [20, 30] : [20, 30, 45, 60]).map(n => `<option value="${n}" ${s.lengthMin === n || (fromPlan && n === 30 && s.lengthMin > 30) ? 'selected' : ''}>${n === 240 ? 'No limit' : n + ' minutes'}</option>`).join('')}</select></label>
     <label>Topic focus<select name="topic"><option value="">All my topics</option>${relevant.map(t => `<option value="${esc(t.name)}" ${s.topic === t.name ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
-    <div class="practice-only stack" ${use === 'interview' ? 'hidden' : ''}>
+    <details class="lv-custom practice-only" ${use === 'interview' ? 'hidden' : ''}><summary><span>Customize</span><span class="muted small">${esc((LIVE_VOICES.find(v => v[0] === s.speaker)?.[1] || '').split(':')[0])} · ${s.style} · ${esc((LEVELS.find(l => l.id === s.difficulty)?.name || s.difficulty).split(' ')[0])}</span></summary><div class="stack">
       <label>Voice<select name="speaker">${LIVE_VOICES.map(([v, n]) => `<option value="${v}" ${s.speaker === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
       <label>AI style<select name="style">${[['friendly', 'Friendly and encouraging'], ['direct', 'Direct, no small talk'], ['tough', 'Tough, probes every gap']].map(([v, n]) => `<option value="${v}" ${s.style === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
       <label>Difficulty<select name="difficulty">${LEVELS.map(l => `<option value="${l.id}" ${s.difficulty === l.id ? 'selected' : ''}>${esc(l.name)}</option>`).join('')}</select></label>
       <label class="switch"><input type="checkbox" name="voice" ${s.voice ? 'checked' : ''}>AI speaks out loud</label>
-    </div>
+    </div></details>
+    <p class="muted small" style="margin:0">Runs until you end or pause it. We'll give you a heads-up 5 minutes before your time runs out.</p>
     <p class="note small interview-only" ${use === 'interview' ? '' : 'hidden'}>Put this device where its microphone can hear your interviewer. Check that transcribing the call is allowed by the company and where you live; some places require everyone on a call to agree.</p>
     <button class="btn primary block lg" type="submit">${left >= 20 ? 'Rejoin the session' : credits || fromPlan || admin ? 'Start' : 'See pricing'}</button>
     <button class="btn block" type="button" data-act="closesheet">Not now</button>
@@ -1804,7 +1804,7 @@ function paintVoice() {
   if (tm && S.rt) {
     const left = S.rt.endsAt ? Math.max(0, (S.rt.endsAt - Date.now()) / 1000) : null;
     tm.textContent = `${MODE_NAME[S.rtMode] || ''}${left === null ? '' : `, ${clock(left)} left`}`;
-    tm.classList.toggle('low', left !== null && left < 60);
+    tm.classList.toggle('low', left !== null && left < 300);
   }
 }
 setInterval(() => { if (S.rt) paintVoice(); }, 1000);
@@ -2563,7 +2563,7 @@ document.addEventListener('submit', async e => {
   if (e.target.id === 'liveSetupForm') {
     const fd = new FormData(e.target);
     const settings = {
-      lengthMin: Number(fd.get('lengthMin')) || 60,
+      lengthMin: 240, // no length to pick: the session runs until it is ended, paused or out of minutes
       voice: fd.get('voice') === 'on',
       style: String(fd.get('style') || 'friendly'),
       speaker: String(fd.get('speaker') || 'marin'),
