@@ -249,7 +249,6 @@ function reminderWeek() {
   const due = dueCards(topics(), p, prog, Date.now(), 999).length;
   const topic = nt ? nt.name : 'your next topic';
   const list = NUDGES?.nudges?.length ? NUDGES.nudges : [FALLBACK_NUDGE];
-  const days = daysUntil(p.interviewDate || p.date);
   const streak = streakDays(store.activity(), todayKey());
   const acc = store.account();
   const liveMin = acc?.plan === 'pro' ? acc.proLiveLeft || 0 : 0;
@@ -257,13 +256,11 @@ function reminderWeek() {
   const out = [];
   const start = store.nudgeIndex() || 0;
   for (let i = 1; i <= 7; i++) {
-    const at = new Date(); at.setDate(at.getDate() + i); at.setHours(9, 0, 0, 0);
-    const left = days === null ? null : days - i;
+    // A random moment each day between 10:00 and 20:30, so reminders never feel like an alarm.
+    const at = new Date(); at.setDate(at.getDate() + i); at.setHours(10, 0, 0, 0);
+    at.setMinutes(Math.floor(Math.random() * 630));
     let n;
-    if (left === 0) n = { title: 'Interview day. You’ve got this.', body: 'Skip the cramming. Skim three cards, breathe, and go be great.' };
-    else if (left === 1) n = { title: 'Interview tomorrow', body: `One light round of ${topic} today. Then sleep. Sleep is also prep.` };
-    else if (left !== null && left > 1 && left <= 7 && i % 2 === 1) n = { title: `${left} days to go`, body: `The countdown is real. ${topic} is the move today.` };
-    else if (liveMin >= 10 && i === 3) n = { title: `${liveMin} Live AI minutes, just sitting there`, body: 'Say your answers out loud to an interviewer that never sighs. Even five minutes counts.' };
+    if (liveMin >= 10 && i === 3) n = { title: `${liveMin} Live AI minutes, just sitting there`, body: 'Say your answers out loud to an interviewer that never sighs. Even five minutes counts.' };
     else if (i === 6 && streak === 0) n = { title: 'We saved your seat', body: `No guilt, no streak drama. Just ${topic}, whenever you're ready.` };
     else { const pick = list[(start + i) % list.length]; n = { title: fill(pick.title), body: fill(pick.body) }; }
     out.push({ at: at.getTime(), title: n.title.slice(0, 80), body: n.body.slice(0, 200) });
@@ -271,7 +268,7 @@ function reminderWeek() {
   // Tonight: protect a live streak if nothing was practised today.
   const today = store.activity()?.[todayKey()];
   if (streak > 0 && !today) {
-    const ev = new Date(); ev.setHours(19, 30, 0, 0);
+    const ev = new Date(); ev.setHours(18, 0, 0, 0); ev.setMinutes(Math.floor(Math.random() * 150));
     if (ev.getTime() > Date.now() + 600000) out.unshift({ at: ev.getTime(), title: `Your ${streak}-day streak is nervous`, body: `One ${topic} card keeps it alive. That's the whole ask.` });
   }
   return out;
@@ -283,7 +280,7 @@ function syncNativeHome() {
   if (d.due !== lastBadge) { lastBadge = d.due; notifyBadge(d.due); }
   const key = `${d.title}|${d.body}`;
   if (key !== lastDailyKey) { lastDailyKey = key; notifyDaily(d.title, d.body); }
-  const week = reminderWeek(), wk = week.map(x => x.title).join('|') + new Date().toDateString();
+  const week = reminderWeek(), wk = new Date().toDateString() + (store.activity()?.[todayKey()] ? 'p' : '');
   if (week.length && wk !== lastWeekKey) { lastWeekKey = wk; notifyWeek(week); } // newer app builds; older ones ignore it
 }
 
@@ -1802,7 +1799,6 @@ function prepSummary() {
     <dl class="pf-facts">
       <div><dt>Role</dt><dd>${esc(roles || '—')}</dd></div>
       <div><dt>Level</dt><dd>${esc((LEVELS.find(l => l.id === p.level) || {}).name || p.level || '—')}</dd></div>
-      <div><dt>Interview</dt><dd>${days === null ? 'No date set' : days === 0 ? 'Today' : `In ${days} day${days === 1 ? '' : 's'}`}</dd></div>
     </dl>
     <div class="pf-nums"><span><b>${r.pct}%</b>ready</span><span><b>${r.known}</b>cards known</span><span><b>${streak}</b>day streak</span></div>
   </section>`;
