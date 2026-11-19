@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View, useColorScheme } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View, useColorScheme, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Constants from 'expo-constants';
@@ -153,6 +153,17 @@ export default function App() {
           ref={web}
           source={{ uri: extra.webUrl }}
           onMessage={onMessage}
+          // Links to other sites open in the phone's own browser; PrepPilot stays where it was.
+          onShouldStartLoadWithRequest={(req: { url: string; isTopFrame?: boolean }) => {
+            const own = new URL(extra.webUrl).host;
+            let host = '';
+            try { host = new URL(req.url).host; } catch { return true; }
+            if (!/^https?:/.test(req.url) || host === own || host === 'preppilot.us' || req.isTopFrame === false) return true;
+            if (/(^|\.)(google\.com|googleusercontent\.com|apple\.com|gstatic\.com)$/.test(host)) return true; // sign-in pages
+            Linking.openURL(req.url).catch(() => {});
+            return false;
+          }}
+          onOpenWindow={(e: { nativeEvent: { targetUrl: string } }) => { Linking.openURL(e.nativeEvent.targetUrl).catch(() => {}); }}
           injectedJavaScriptBeforeContentLoaded={`window.PP_PLATFORM=${JSON.stringify(Platform.OS)};true;`}
           originWhitelist={['https://*']}
           javaScriptEnabled
@@ -175,7 +186,7 @@ export default function App() {
           startInLoadingState
           renderLoading={() => <View style={[styles.center, { backgroundColor: bg }]}><ActivityIndicator color={fg} /></View>}
           onError={() => setFailed(true)}
-          setSupportMultipleWindows={false}
+          setSupportMultipleWindows
           // Edge to edge: the page draws under the Dynamic Island and handles the inset itself.
           contentInsetAdjustmentBehavior="never"
           automaticallyAdjustContentInsets={false}
