@@ -1404,7 +1404,7 @@ function voicePanel() {
       <div class="cb-row">
         ${cb('rtmute', S.muted ? 'micoff' : 'mic', S.muted ? 'Unmute' : 'Mute', S.muted ? 'on' : '')}
         ${S.rtSpeaks ? cb('rtsound', S.soundOff ? 'soundoff' : 'sound', S.soundOff ? 'Sound off' : 'Sound', S.soundOff ? 'on' : '') : ''}
-        ${S.rtMode === 'listen' ? cb('rtrespond', 'check', 'Feedback') : cb('rtinterrupt', 'stop', 'Interrupt')}
+        ${S.rtMode === 'listen' ? cb('rtrespond', 'check', 'Feedback') : ''}
         ${S.rtMode === 'live' ? cb('livepause', 'pause', 'Pause') : ''}
         ${cb('rtstop', 'x', 'End', 'end')}
       </div>
