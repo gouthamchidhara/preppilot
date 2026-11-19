@@ -544,3 +544,9 @@ test('small talk is answered for free; real questions still count', async () => 
   assert.equal(r.status, 200); assert.equal(r.body.free, true);
   assert.equal((await call('GET me', null, h)).body.msgsLeft, before);
 });
+
+test('Live AI conversation: opens on the chosen topic and stays in scope', () => {
+  const v = validateRealtime({ sdp: 'v=0', mode: 'live', live: { use: 'talk', topic: 'Kafka' } });
+  const t = voiceInstructions(v);
+  assert.match(t, /TOPIC FOCUS: Kafka/); assert.match(t, /Open the session on this topic/); assert.match(t, /STAY IN SCOPE/);
+});
