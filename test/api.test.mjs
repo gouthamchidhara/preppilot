@@ -197,14 +197,14 @@ test('live coach mode runs a structured practice test with the chosen settings',
   process.env.AZURE_OPENAI_REALTIME_DEPLOYMENT = 'rt';
   const v = validateRealtime({ sdp: 'v=0', mode: 'live', speak: true, live: { lengthMin: 30, style: 'tough', topic: 'Kubernetes', difficulty: 'senior' } });
   assert.equal(v.mode, 'live');
-  assert.deepEqual(v.live, { lengthMin: 30, style: 'tough', topic: 'Kubernetes', difficulty: 'senior', use: 'practice' });
+  assert.deepEqual(v.live, { lengthMin: 30, style: 'tough', topic: 'Kubernetes', difficulty: 'senior', use: 'practice', brief: { jd: '', resume: '' } });
   const cfg = sessionConfigs(v)[0].session;
   assert.equal(cfg.audio.input.turn_detection.create_response, true);
   assert.match(voiceInstructions(v), /LIVE COACH MODE/);
   assert.match(voiceInstructions(v), /Kubernetes/);
   assert.match(voiceInstructions(v), /senior level/);
   // Bad settings fall back to the defaults instead of failing.
-  assert.deepEqual(validateRealtime({ sdp: 'v=0', mode: 'live', live: { lengthMin: 99, style: 'mean' } }).live, { lengthMin: 60, style: 'friendly', topic: '', difficulty: '', use: 'practice' });
+  assert.deepEqual(validateRealtime({ sdp: 'v=0', mode: 'live', live: { lengthMin: 99, style: 'mean' } }).live, { lengthMin: 60, style: 'friendly', topic: '', difficulty: '', use: 'practice', brief: { jd: '', resume: '' } });
   delete process.env.AZURE_OPENAI_REALTIME_DEPLOYMENT;
 });
 
@@ -549,4 +549,14 @@ test('Live AI conversation: opens on the chosen topic and stays in scope', () =>
   const v = validateRealtime({ sdp: 'v=0', mode: 'live', live: { use: 'talk', topic: 'Kafka' } });
   const t = voiceInstructions(v);
   assert.match(t, /TOPIC FOCUS: Kafka/); assert.match(t, /Open the session on this topic/); assert.match(t, /STAY IN SCOPE/);
+});
+
+test('role brief: Pro only, needs a job post and a résumé; Live AI uses the brief', async () => {
+  const jd = 'Senior backend engineer: Java 17, Spring Boot, Kafka, PostgreSQL, AWS. Own services end to end and mentor others.';
+  const cv = 'Five years building Java and Spring Boot payment services on AWS; led a Kafka migration; mentored two juniors.';
+  const free = await signIn('brieffree@gmail.com', 'brieffree');
+  assert.equal((await call('POST jobfocus/brief', { jd, resume: cv }, free)).status, 402);
+  assert.equal((await call('POST jobfocus/brief', { jd: 'short', resume: cv }, free)).status, 400);
+  const v = validateRealtime({ sdp: 'v=0', mode: 'live', live: { use: 'talk', brief: { jd, resume: cv } } });
+  assert.match(voiceInstructions(v), /PRACTICE BRIEF/); assert.match(voiceInstructions(v), /Kafka migration/);
 });

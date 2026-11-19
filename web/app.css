@@ -1282,3 +1282,15 @@ html { background: var(--desk); color-scheme: light dark; }
 .tf-scope button { padding: 7px 16px; border: 0; border-radius: 99px; background: none; color: var(--muted); font: 600 14px var(--sans); cursor: pointer; }
 .tf-scope button.on { background: var(--paper); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
 .tf-snap { height: calc(100dvh - 130px - env(safe-area-inset-top)); }
+
+/* Role brief inside Job focus */
+.brief-start, .brief { display: grid; gap: 12px; padding: 18px; border: 1px solid var(--line-strong); border-radius: 16px; background: var(--paper); }
+.brief-start h3, .brief h3 { margin: 0; }
+.brief-start textarea { width: 100%; padding: 12px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--desk); color: var(--ink); font: 15px/1.5 var(--sans); resize: vertical; }
+.brief-block { display: grid; gap: 8px; }
+.brief-l { font: 700 12px var(--sans); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.brief-block p { margin: 0; line-height: 1.6; color: var(--ink-soft); }
+.brief-block ul { margin: 0; padding-left: 1.2em; color: var(--ink-soft); }
+.brief .tf-q summary::before { content: none; }
+.lv-brief-on { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--accent-soft); font-size: 14px; }
+.lv-brief-on .ic { width: 16px; height: 16px; color: var(--accent); }

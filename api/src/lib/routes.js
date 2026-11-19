@@ -19,6 +19,7 @@ export const ROUTES = {
   'POST profile/suggest': h.handleProfileSuggest,
   'POST jobfocus': h.handleJobFocus,
   'POST jobfocus/cards': h.handleJobFocusCards,
+  'POST jobfocus/brief': h.handleJobBrief,
   'POST billing/refresh': h.handleBillingRefresh,
   'POST telemetry/role': h.handleRoleTelemetry,
 };

@@ -959,14 +959,55 @@ function jobFocusView() {
     <div class="chips jf-chips" role="tablist">${r.stack.map((x, i) => `<button class="chip ${i === sel ? 'on' : ''}" role="tab" aria-selected="${i === sel}" data-act="jfpick" data-i="${i}" style="--k:${i}"><b>${i + 1}</b> ${esc(x.name)}${x.cards ? ` <span class="jf-count">${x.cards.length}</span>` : x.err ? '' : ' <span class="jf-dot" aria-label="loading"></span>'}</button>`).join('')}</div>
     <p class="jf-why">${esc(t.why)}</p>
     <div class="jf-cards">${cardsHtml}</div>
+    ${r.sample ? '' : briefSectionHtml(r)}
     ${r.sample ? '' : `<div class="row"><button class="btn primary" data-act="jfswipe" ${r.stack.some(x => x.cards) ? '' : 'disabled'}>${ic('cards')}Swipe through all</button><button class="btn quiet" data-act="jfnew">${ic('refresh')}New job post</button></div>`}
   </div>`;
+}
+
+/* Role brief: job post + résumé -> practice answers from the candidate's own work, then a mock interview. */
+function briefSectionHtml(r) {
+  const b = r.brief;
+  if (!b) return `<section class="brief-start">
+    <h3>Make it personal</h3>
+    <p class="muted small">Add your résumé and get a practice brief for this role: likely questions answered with your own projects, your 60-second intro, and stories to tell.</p>
+    <textarea id="jfResume" rows="5" maxlength="6000" placeholder="Paste your résumé, or a few lines about your recent work">${esc(lsGet('pp.resume', ''))}</textarea>
+    <div class="row"><button class="btn primary" data-act="jfbrief" ${S.briefBusy ? 'disabled' : ''}>${S.briefBusy ? 'Building your brief…' : 'Build my brief'}</button><span class="muted small">Saved on this device only.</span></div>
+  </section>`;
+  return `<section class="brief">
+    <h3>Your practice brief</h3>
+    <div class="brief-block"><span class="brief-l">Tell me about yourself</span><p>${esc(b.about)}</p></div>
+    <div class="brief-block"><span class="brief-l">Likely questions</span>${b.qa.map(x => `<details class="tf-q"><summary>${esc(x.q)}</summary><p>${esc(x.a)}</p></details>`).join('')}</div>
+    ${b.stories?.length ? `<div class="brief-block"><span class="brief-l">Stories to tell</span>${b.stories.map(x => `<details class="tf-q"><summary>${esc(x.prompt)}</summary><p>${esc(x.story)}</p></details>`).join('')}</div>` : ''}
+    ${b.ask?.length ? `<div class="brief-block"><span class="brief-l">Questions to ask them</span><ul>${b.ask.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}
+    <div class="row"><button class="btn primary" data-act="jfmock">${ic('mic')}Mock interview for this role</button><button class="btn" data-act="jfbriefswipe">${ic('cards')}Swipe the questions</button></div>
+    <button class="link quiet small" data-act="jfbriefnew">Rebuild with a different résumé</button>
+  </section>`;
+}
+async function buildBrief() {
+  const J = S.jf, resume = (document.getElementById('jfResume')?.value || '').trim();
+  if (resume.length < 80) return toast('Paste a bit more of your résumé: your recent roles and projects.');
+  lsSet('pp.resume', resume);
+  S.briefBusy = true; render();
+  try {
+    const d = await ai.post('/api/jobfocus/brief', { jd: J.text, resume });
+    J.result.brief = { role: d.role, about: d.about, qa: d.qa, stories: d.stories, ask: d.ask };
+    jfSave(J.result);
+  } catch (e) { if (e.code === 'pro') S.showPlans = true; else aiFailed(e); }
+  finally { S.briefBusy = false; render(); }
+}
+function startBriefDeck() {
+  const b = S.jf?.result?.brief;
+  if (!b) return;
+  const cards = [...b.qa.map((x, i) => ({ id: `br-${i}`, topic: 'Your brief', topicName: 'Your brief', q: x.q, a: x.a, l: 0, jf: true })),
+    ...(b.stories || []).map((x, i) => ({ id: `brs-${i}`, topic: 'Your stories', topicName: 'Your stories', q: `Tell me about ${x.prompt}`, a: x.story, l: 0, jf: true }))];
+  S.deck = { cards, results: [], free: false, total: cards.length, mode: 'swipe', jf: true };
+  S.di = 0; S.reveal = false; S.view = 'deck'; render();
 }
 
 async function jobFocusGo() {
   const J = S.jf; const ta = document.getElementById('jfText');
   J.text = (ta?.value || '').trim();
-  if (J.text.length < 80) return oops('Paste a bit more of the job description: the requirements section works best.');
+  if (J.text.length < 80) return toast('Paste a bit more of the job description: the requirements section works best.');
   J.busy = true; render();
   try {
     // Step 1 (~1-2 s): the five skills. The screen fills right away.
@@ -1645,6 +1686,7 @@ function liveSetupSheet() {
       : credits && left < 20 ? '<p class="muted small" style="margin:0">One fixed 60-minute session. The clock starts when you begin.</p>'
       : admin || left >= 20 ? '' : `<p class="muted small" style="margin:0">${esc(state)}</p>`}
     <input type="hidden" name="use" value="${use === 'interview' ? 'interview' : 'talk'}">
+    ${S.liveBrief?.jd ? `<p class="lv-brief-on">${ic('target')}Mock interview for <b>${esc(S.jf?.result?.role || 'your role')}</b>, using your résumé. <button type="button" class="link quiet small" data-act="jfbriefoff">Turn off</button></p>` : ''}
     <label>Session length<select name="lengthMin">${(admin ? [240, 20, 30, 45, 60] : fromPlan ? [20, 30] : [20, 30, 45, 60]).map(n => `<option value="${n}" ${s.lengthMin === n || (fromPlan && n === 30 && s.lengthMin > 30) ? 'selected' : ''}>${n === 240 ? 'No limit' : n + ' minutes'}</option>`).join('')}</select></label>
     <label>Topic focus<select name="topic"><option value="">All my topics</option>${relevant.map(t => `<option value="${esc(t.name)}" ${s.topic === t.name ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
     <div class="practice-only stack" ${use === 'interview' ? 'hidden' : ''}>
@@ -1801,6 +1843,7 @@ async function startVoice(mode) {
     // Rehearse mode stays silent unless "read replies aloud" is on; talk mode is always spoken.
     // Live AI uses its own settings: voice on/off, length, style, topic focus, difficulty.
     const live = mode === 'live' ? liveSettings() : null;
+    if (live && S.liveBrief) live.brief = S.liveBrief;
     S.liveUse = live?.use || null;
     const speak = mode === 'live' ? live.voice && live.use !== 'interview' : mode !== 'listen' || store.speak();
     S.rtSpeaks = speak; S.soundOff = false; S.heard = '';
@@ -2609,6 +2652,11 @@ document.addEventListener('click', async e => {
   else if (a === 'textsize') { setTextSize(b.dataset.v); render(); }
   else if (a === 'prefmode') { setDeckMode(b.dataset.v); render(); }
   else if (a === 'newdeck') startNewDeck();
+  else if (a === 'jfbrief') buildBrief();
+  else if (a === 'jfbriefoff') { S.liveBrief = null; liveSetupSheet(); }
+  else if (a === 'jfbriefswipe') startBriefDeck();
+  else if (a === 'jfmock') { S.liveBrief = { jd: S.jf?.text || '', resume: lsGet('pp.resume', '') }; liveSetupSheet(); }
+  else if (a === 'jfbriefnew') { if (S.jf?.result) { delete S.jf.result.brief; jfSave(S.jf.result); } render(); }
   else if (a === 'tfscope') { S.tfScope = b.dataset.v; render(); document.getElementById('tfSnap')?.scrollTo({ top: 0 }); }
   else if (a === 'newchat') { store.newChat(); S.chatContext = ''; S.drawer = false; render(); document.getElementById('chatInput')?.focus(); }
   else if (a === 'drawer') { setDrawer(!S.drawer); }
