@@ -348,6 +348,7 @@ export async function handleFresh(req, log) {
 export const JF_CARDS = 8;
 export const JF_SKILLS = 8;
 const clip = (x, n) => (typeof x === 'string' ? x.replace(/\s+/g, ' ').trim().slice(0, n) : '');
+const clipKeep = (x, n) => (typeof x === 'string' ? x.trim().slice(0, n) : ''); // keeps line breaks in code
 const jfSecret = () => process.env.SESSION_SECRET || 'dev-only-secret';
 const jfSign = body => createHmac('sha256', jfSecret()).update(body).digest('base64url');
 export function jfTicket(payload, now = Date.now()) {
@@ -374,7 +375,7 @@ export function sanitizeJobSkills(raw) {
 export function sanitizeJobCards(raw) {
   let d; try { d = JSON.parse(raw); } catch { return null; }
   const cards = (Array.isArray(d?.cards) ? d.cards : []).slice(0, JF_CARDS + 2)
-    .map(c => ({ q: clip(c?.q, 220), a: clip(c?.a, 500) })).filter(c => c.q && c.a);
+    .map(c => ({ q: clip(c?.q, 220), a: clip(c?.a, 500), why: clip(c?.why, 420), ex: clipKeep(c?.ex, 320), trap: clip(c?.trap, 220) })).filter(c => c.q && c.a);
   return cards.length >= 3 ? cards : null;
 }
 
@@ -465,8 +466,9 @@ Follow how a real interviewer runs this part of the interview, one level at a ti
 - Cards 5-6, going deeper: how it behaves under the hood, common mistakes, troubleshooting something that broke.
 - Cards 7-8, real scenario: a realistic situation from this job's responsibilities ("Our deploys started failing after...", "Design ... for ..."), the kind of question that decides the hire.
 Rules: only questions interviewers really ask for this role; no trivia, no "list all the types of", no terminology quizzes, nothing obscure. Each card covers something different. "q" = the question worded as an interviewer would say it out loud. "a" = what a strong candidate would say, 2 to 3 sentences, first person where natural, concrete (name the exact tool, setting, number or trade-off). No markdown.
-Return {"cards": [{"q": "...", "a": "..."}]}.` },
-    ], { json: true, maxTokens: 1800, temperature: 0.3 });
+Also, to teach it: "why" = one or two plain sentences (under 45 words) on what happens underneath or an everyday analogy, never restating the answer; "ex" = a tiny concrete example (1-3 line command, code or config in backticks, or a real case with numbers); "trap" = the one mistake an interviewer listens for, one sentence.
+Return {"cards": [{"q": "...", "a": "...", "why": "...", "ex": "...", "trap": "..."}]}.` },
+    ], { json: true, maxTokens: 3200, temperature: 0.3 });
     const cards = sanitizeJobCards(raw);
     return cards ? json(200, { i, cards }) : json(502, { error: 'Could not write cards for this one. Tap to try again.' });
   } catch (e) {

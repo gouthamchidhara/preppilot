@@ -17,6 +17,9 @@ const S = { view: 'home', topic: null, ci: 0, deck: null, di: 0, reveal: false, 
 
 /* ---------- helpers ---------- */
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// Why / Example / Trap lines under an answer (cards that have them).
+const learnBody = q => `<div class="learn-row"><b>Why</b><p>${fmt(q.why)}</p></div>${q.ex ? `<div class="learn-row"><b>Example</b><div class="learn-ex">${fmt(q.ex)}</div></div>` : ''}${q.trap ? `<div class="learn-row trap"><b>Trap</b><p>${fmt(q.trap)}</p></div>` : ''}`;
+const learnHtml = q => (q?.why ? `<details class="learn"><summary>${ic('bulb')}Why · Example · Trap</summary>${learnBody(q)}</details>` : '');
 const fmt = s => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
 // Chat answers: real paragraphs, headings, bullet and numbered lists, code blocks (ChatGPT-style).
 const inl = s => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/(^|[\s(])\*([^*\s][^*]*)\*(?=[\s).,!?:;]|$)/g, '$1<em>$2</em>');
@@ -46,6 +49,7 @@ function md(s) {
   return parts.map((p, i) => (i % 2 ? `<pre><code>${esc(p.replace(/\n$/, ''))}</code></pre>` : fmt(p).replace(/(^|<br>)[-*] /g, '$1• '))).join('');
 }
 const ICONS = {
+  bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
   mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
   micoff: '<path d="M9 9v2a3 3 0 0 0 5 2.2M15 9.5V6a3 3 0 0 0-5.7-1.3M5 11a7 7 0 0 0 11.5 5.4M19 11a7 7 0 0 1-.4 2.3M12 18v3M3 3l18 18"/>',
   ear: '<path d="M6 9a6 6 0 1 1 12 0c0 3-2.5 4-3.5 5.5S14 18 12 19.5 7.5 19 7.5 17"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-1.5 2-2 3"/>',
@@ -746,7 +750,7 @@ function quickCard(relevant) {
   return `<section class="card stacked flash" style="min-height:0">
     <div class="card-head"><span>Quick card: ${esc(t.name)}</span><button class="link quiet small" data-act="qcnext">Another</button></div>
     <p class="q">${fmt(q.q)}</p>
-    ${S.qc.reveal ? `<div class="ans">${fmt(q.a)}</div>` : ''}
+    ${S.qc.reveal ? `<div class="ans">${fmt(q.a)}</div>${learnHtml(q)}` : ''}
     <div class="foot">${S.qc.reveal ? '<div class="row"><button class="btn" data-act="qcnext">Another card</button></div>' : '<button class="btn block" data-act="qcreveal">Show the answer</button>'}</div>
   </section>`;
 }
@@ -1147,7 +1151,7 @@ function deckView() {
       <div class="card-head"><span>${esc(t?.name || q.topicName || q.topic)}</span><span class="level">${q.kind ? FIELD_KINDS[q.kind] : ['', 'Fundamentals', 'Applied', 'Advanced'][q.l] || (q.jf ? 'Job focus' : '')}</span></div>
       ${intro ? `<div class="sw-intro" aria-live="polite"><div class="sw-hand" aria-hidden="true"><i></i></div><b>Swipe mode</b><span>Tap to flip. Then swipe <b>right</b> if you knew it, <b>left</b> if you didn’t. Cards come from all your skills, mixed.</span><button class="btn primary" data-act="swipeintro">Let’s go</button></div>` : ''}
       <p class="q">${fmt(q.q)}</p>
-      ${S.reveal ? `<div class="ans">${fmt(q.a)}</div>` : ''}
+      ${S.reveal ? `<div class="ans">${fmt(q.a)}</div>${learnHtml(q)}` : ''}
       <div class="foot">${S.reveal ? (swipe ? `
         <div class="sw-btns"><button class="sw-btn miss" data-act="grade" data-ok="0" aria-label="Missed it">${ic('x')}</button><button class="sw-btn got" data-act="grade" data-ok="1" aria-label="Got it">${ic('check')}</button></div>` : `
         <div class="row"><button class="btn miss lg" data-act="grade" data-ok="0">Missed it</button><button class="btn got lg" data-act="grade" data-ok="1">Got it</button></div>`) : ''}${S.reveal ? `
@@ -1170,7 +1174,7 @@ const cardFace = (q, back) => {
   const name = esc(t?.name || q.topicName || q.topic);
   const lvl = ['', 'Fundamentals', 'Applied', 'Advanced'][q.l] || (q.jf ? 'Job focus' : '');
   return back
-    ? `<div class="sw-face back"><div class="sw-head"><span>${name}</span><span>Answer</span></div><p class="sw-q-small">${fmt(q.q)}</p><div class="sw-a">${fmt(q.a)}</div><p class="sw-tip">Right: knew it · Left: not quite · Up: know it cold</p></div>`
+    ? `<div class="sw-face back"><div class="sw-head"><span>${name}</span><span>Answer</span></div><p class="sw-q-small">${fmt(q.q)}</p><div class="sw-a${q.a.length > 200 ? ' long' : ''}">${fmt(q.a)}</div>${q.why ? `<div class="sw-more">${learnBody(q)}</div><button class="sw-more-btn" data-act="swmore">${ic('bulb')}<span>Why · Example · Trap</span></button>` : ''}<p class="sw-tip">Right: knew it · Left: not quite · Up: know it cold</p></div>`
     : `<div class="sw-face front"><div class="sw-head"><span>${name}</span><span>${lvl}</span></div><p class="sw-q">${fmt(q.q)}</p><p class="sw-tip">${ic('refresh')}Tap to flip</p></div>`;
 };
 const swCardHtml = (q, top) => `<article class="sw-card ${top ? 'is-top' : 'is-next'}" ${top ? 'id="swTop"' : 'aria-hidden="true"'}>
@@ -1347,6 +1351,8 @@ function swBurst() {
 app.addEventListener('pointerdown', e => {
   const card = e.target.closest('#swTop');
   if (!card || S.grading || e.button > 0 || e.target.closest('button, a')) return;
+  const sc = e.target.closest('.sw-a, .sw-more'); // long text scrolls inside the card instead of dragging it
+  if (sc && sc.scrollHeight > sc.clientHeight + 2) return;
   const r = card.getBoundingClientRect();
   // Grabbed low on the card, it tilts the other way, like a real card.
   sw = { card, x: e.clientX, y: e.clientY, dx: 0, dy: 0, id: e.pointerId, drag: false, sign: e.clientY > r.top + r.height * 0.6 ? -1 : 1, hist: [[performance.now(), e.clientX]] };
@@ -2350,14 +2356,14 @@ function startDeck(ids, opts = {}) {
 function startSkillDeck(i) {
   const t = S.jf?.result?.stack[i];
   if (!t?.cards) return;
-  const cards = t.cards.map((c, k) => ({ id: `jf-${i}-${k}`, topic: t.name, topicName: t.name, q: c.q, a: c.a, l: 0, jf: true }));
+  const cards = t.cards.map((c, k) => ({ id: `jf-${i}-${k}`, topic: t.name, topicName: t.name, q: c.q, a: c.a, why: c.why, ex: c.ex, trap: c.trap, l: 0, jf: true }));
   S.deck = { cards, results: [], free: false, total: cards.length, mode: 'swipe', jf: true };
   S.di = 0; S.reveal = false; S.view = 'deck'; render();
 }
 function startJobDeck() {
   const r = S.jf?.result;
   if (!r) return;
-  const cards = r.stack.flatMap((t, i) => (t.cards || []).map((c, k) => ({ id: `jf-${i}-${k}`, topic: t.name, topicName: t.name, q: c.q, a: c.a, l: 0, jf: true })));
+  const cards = r.stack.flatMap((t, i) => (t.cards || []).map((c, k) => ({ id: `jf-${i}-${k}`, topic: t.name, topicName: t.name, q: c.q, a: c.a, why: c.why, ex: c.ex, trap: c.trap, l: 0, jf: true })));
   if (!cards.length) return oops('The cards are still being written. Give it a few seconds.');
   S.deck = { cards: mixTopics(cards), results: [], free: false, total: cards.length, mode: 'swipe', jf: true };
   S.di = 0; S.reveal = false; S.view = 'deck'; render();
@@ -2716,6 +2722,7 @@ document.addEventListener('click', async e => {
   else if (a === 'swgo') swDecide(b.dataset.ok !== '0', b.dataset.ok === '0' ? -1.4 : 1.4, b.dataset.ok === '2');
   else if (a === 'swmatchok') { S.swMatch = false; document.querySelector('.sw-match')?.remove(); if (S.swEndAfterMatch) { S.swEndAfterMatch = false; render(); } }
   else if (a === 'swflip') swFlip();
+  else if (a === 'swmore') { const c = document.getElementById('swTop'); c?.classList.toggle('more'); b.querySelector('span').textContent = c?.classList.contains('more') ? 'Back to the answer' : 'Why · Example · Trap'; }
   else if (a === 'swipenah') { lsSet('pp.swipeTried', '1'); render(); }
   else if (a === 'jfswipe') startJobDeck();
   else if (a === 'roledeck') startRoleDeck(id);
