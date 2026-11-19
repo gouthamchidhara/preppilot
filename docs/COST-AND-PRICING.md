@@ -163,3 +163,10 @@ Recommendation: raise Live AI to $14.99 (we keep about $9 to $11) and Pro to $9.
 
 ### Pro without separate voice minutes (owner decision)
 Pro's 45 voice minutes are removed; Pro voice is the two 30-minute Live AI sessions a month. Worst-case Pro cost drops to about $4 to $6 (messages at the ceiling plus both sessions), typical $1 to $3. Talk and Rehearse remain on Free's 2-minute trial; Pro uses Live AI's open-conversation and practice modes for the same thing.
+
+## Update, 19 Nov 2026: Pro at $6.99 with 30 Live AI minutes
+
+Pro is now $6.99/month (about $5.94 after Apple's 15%) with 30 Live AI minutes a month (talk time only).
+At $0.02–0.07 per voice minute, 30 minutes cost about $1–2, so a heavy user still leaves roughly $4–5.
+The one-time Live AI session stays a full 60 minutes. Change the price in App Store Connect; the app text
+comes from `PRO_PRICE_LABEL` (default `$6.99/month`) and the minutes from `PRO_LIVE_BANK_SEC` (default 1800).

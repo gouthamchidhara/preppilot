@@ -249,7 +249,7 @@ test('quota messages quote the configured price and limits', async () => {
   for (let i = 0; i < 15; i++) await ask(h);
   const r = await ask(h);
   assert.equal(r.status, 402);
-  assert.match(r.body.error, /\$10\.99\/month/);
+  assert.match(r.body.error, /\$6\.99\/month/);
 });
 
 test('voice is refused once free minutes are gone', async () => {
@@ -411,17 +411,17 @@ test('Pro Live AI is a monthly minutes bank: only connected time is counted', as
   const key = 'google:prolive';
   await call('POST billing/revenuecat', { event: { type: 'INITIAL_PURCHASE', app_user_id: key, entitlement_ids: ['pro'], expiration_at_ms: Date.now() + 30 * 86400000 } }, { authorization: 'Bearer hook-secret' });
   const t0 = Date.now();
-  assert.equal((await st({ key }, t0)).proLiveLeft, 60);
+  assert.equal((await st({ key }, t0)).proLiveLeft, 30);
   const m = await startProLive(key, t0);
-  assert.deepEqual(m, { ok: true, allowedSec: 3600, resumed: false });
+  assert.deepEqual(m, { ok: true, allowedSec: 1800, resumed: false });
   // talk for 1 minute, hang up: only 60 s are charged
   await rec({ id: 'pl1', key, start: t0, allowedSec: m.allowedSec, plan: 'prolive', day: '2026-11-18' });
   await end('pl1', { key, now: t0 + 60000 });
-  assert.equal((await st({ key }, t0)).proLiveLeft, 59);
+  assert.equal((await st({ key }, t0)).proLiveLeft, 29);
   // next call may use the rest
-  assert.equal((await startProLive(key, t0 + 120000)).allowedSec, 3540);
+  assert.equal((await startProLive(key, t0 + 120000)).allowedSec, 1740);
   const h = (await call('GET health')).body.plans.pro;
-  assert.equal(h.liveMin, 60); assert.equal(h.liveBank, true);
+  assert.equal(h.liveMin, 30); assert.equal(h.liveBank, true);
 });
 
 test('AI stays on interview prep: off-scope asks get a fixed reply and cost nothing', async () => {

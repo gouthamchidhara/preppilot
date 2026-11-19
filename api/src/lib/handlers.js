@@ -138,7 +138,7 @@ export async function handleRealtime(req, log) {
     }
     let m = w.ident.viaCode ? { ok: true, allowedSec: L.liveCallSec, resumed: true } : await startLiveSession(w.ident.key, now);
     if (!m.ok) {
-      // No paid hour: Pro includes two 30-minute Live AI sessions a month.
+      // No paid hour: Pro includes a monthly bank of Live AI minutes (30 by default).
       const s0 = await status(w.ident, now);
       if (s0?.plan === 'admin') {
         const allowedSec = (v.live?.lengthMin || L.adminCallSec / 60) * 60;

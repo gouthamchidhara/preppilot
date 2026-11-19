@@ -3,7 +3,7 @@
 //   voice (gpt-realtime-mini)     ~ $0.02-0.04 per conversation minute (+ ~$0.003/min transcription)
 // Free:  15 messages + 2 voice minutes, lifetime            -> worst case ~ $0.10 per free user
 //        global free pool per day: 200 msgs + 10 voice min  -> worst case ~ $0.65/day across ALL free users
-// Pro:   $10.99/month (≈ $9.34 after Apple's 15%), unlimited msgs (fair use) + two 30-min Live AI sessions; no separate voice minutes -> worst case ~ $6/month
+// Pro:   $6.99/month (≈ $5.94 after Apple's 15%), unlimited msgs (fair use) + 30 Live AI minutes a month (talk time only); no separate voice minutes -> worst case ~ $6/month
 const num = (k, d) => (process.env[k] !== undefined && process.env[k] !== '' ? Number(process.env[k]) : d);
 
 export function limits() {
@@ -18,13 +18,13 @@ export function limits() {
     // Pro can run Live AI from its monthly voice minutes, up to this long in one go.
     proLiveSec: num('PRO_LIVE_SEC', 30 * 60),
     proLiveSessions: num('PRO_LIVE_SESSIONS', 2), // legacy; Pro now has a minutes bank
-    proLiveBankSec: num('PRO_LIVE_BANK_SEC', 60 * 60), // Live AI minutes in each Pro month; only connected time counts
+    proLiveBankSec: num('PRO_LIVE_BANK_SEC', 30 * 60), // Live AI minutes in each Pro month; only connected time counts
     minCallSec: 20,
   };
 }
 
 export const COST = { chat: 1, generate: 5 };
-export const proPriceLabel = () => process.env.PRO_PRICE_LABEL || '$10.99/month';
+export const proPriceLabel = () => process.env.PRO_PRICE_LABEL || '$6.99/month';
 export const livePriceLabel = () => process.env.LIVE_PRICE_LABEL || '$15.99';
 const MONTH = 30 * 86400000;
 

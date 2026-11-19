@@ -187,11 +187,11 @@ function freshCard() {
 /* ---------- pricing facts (server-provided, with offline fallbacks) ---------- */
 function offer() {
   const P = S.plans;
-  const [amount, per = 'month'] = (P?.pro.price || '$10.99/month').split('/');
+  const [amount, per = 'month'] = (P?.pro.price || '$6.99/month').split('/');
   const n = parseFloat(amount.replace(/[^\d.]/g, ''));
   return {
     freeMsgs: P?.free.msgs ?? 15, freeVoice: P?.free.voiceMin ?? 2,
-    proMsgs: P?.pro.msgs ?? 500, proVoice: P?.pro.voiceMin ?? 0, proLive: P?.pro.liveMin ?? 60, proLiveN: P?.pro.liveSessions ?? 0, proPrice: `${amount}/${per}`, proAmount: amount, proPer: per,
+    proMsgs: P?.pro.msgs ?? 500, proVoice: P?.pro.voiceMin ?? 0, proLive: P?.pro.liveMin ?? 30, proLiveN: P?.pro.liveSessions ?? 0, proPrice: `${amount}/${per}`, proAmount: amount, proPer: per,
     perDay: amount.trim().startsWith('$') && n > 0 && per === 'month' ? `About ${Math.round((n / 30) * 100)}¢ a day` : '',
     livePrice: P?.live?.price || '$15.99', liveMin: P?.live?.minutes ?? 60,
   };
@@ -1529,7 +1529,7 @@ function paywallCard() {
       ${usageMeters(a)}<div class="row"><button class="btn primary" data-act="plans">See Live AI</button><button class="btn" data-act="unpaywall">Close</button></div></section>`;
   }
   return `<section class="panel stack"><h3>Your free trial is used up</h3>
-    <p class="muted">Pro gives you unlimited AI messages and two 30-minute Live AI sessions every month. Your plan and flashcards stay free either way.</p>
+    <p class="muted">Pro gives you unlimited AI messages and 30 Live AI minutes every month (only talk time counts). Your plan and flashcards stay free either way.</p>
     <div class="row"><button class="btn primary" data-act="plans">See pricing</button><button class="btn quiet" data-act="unpaywall">Not now</button></div></section>`;
 }
 
