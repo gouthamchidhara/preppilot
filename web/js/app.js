@@ -1613,7 +1613,7 @@ function liveSettings() {
     style: ['friendly', 'direct', 'tough'].includes(saved.style) ? saved.style : 'friendly',
     topic: typeof saved.topic === 'string' ? saved.topic : '',
     difficulty: ['junior', 'mid', 'senior'].includes(saved.difficulty) ? saved.difficulty : (p?.level || 'mid'),
-    use: ['interview', 'talk'].includes(saved.use) ? saved.use : 'practice',
+    use: saved.use === 'interview' ? 'interview' : 'talk',
   };
 }
 
@@ -1633,13 +1633,10 @@ function liveSetupSheet() {
   const state = admin ? 'Admin account: no limits.' : left >= 20 ? `Your session is still open with ${Math.ceil(left / 60)} minutes left.` : credits ? `You have ${credits} one-time session${credits > 1 ? 's' : ''} ready. Heads up: starting one begins a fixed 60-minute clock. It keeps running if you leave, and unused minutes are not given back.` : fromPlan ? `Included in Pro: ${proLeft} of ${offer().proLive} minutes left this month. Only the time you are connected is counted, so you can stop and come back any time.` : 'You need a Live AI session to start. See pricing for the options.';
   const opt = (v, t, d) => `<label class="use-opt"><input type="radio" name="use" value="${v}" ${use === v ? 'checked' : ''}><span><b>${t}</b><span class="muted small">${d}</span></span></label>`;
   sheet(`<form id="liveSetupForm" class="stack">
-    <h2>Live AI, 60 minutes</h2>
+    <h2>Live AI</h2>
     <p class="muted">${esc(state)}</p>
-    <fieldset class="stack tight"><legend class="small" style="font:600 14px var(--sans);margin-bottom:6px">How will you use it?</legend>
-      ${opt('practice', 'Practice test', 'AI asks the questions out loud. Hints as each question lands, feedback after every answer.')}
-      ${opt('talk', 'Open conversation', 'Talk with AI for the whole session. It listens and answers back and forth, with no time-outs.')}
-      ${S.liveInterviewIos ? opt('interview', 'During your interview', 'It listens to your interviewer and shows talking points on your screen within seconds. Silent: it never speaks.') : ''}
-    </fieldset>
+    <input type="hidden" name="use" value="${use === 'interview' ? 'interview' : 'talk'}">
+    <p class="note small">A natural voice conversation with the AI coach. Use it however helps: ask it to interview you, quiz you on a topic, explain something, or rehearse your stories. Just say what you want.</p>
     <label>Session length<select name="lengthMin">${(admin ? [240, 20, 30, 45, 60] : fromPlan ? [20, 30] : [20, 30, 45, 60]).map(n => `<option value="${n}" ${s.lengthMin === n || (fromPlan && n === 30 && s.lengthMin > 30) ? 'selected' : ''}>${n === 240 ? 'No limit' : n + ' minutes'}</option>`).join('')}</select></label>
     <label>Topic focus<select name="topic"><option value="">All my topics</option>${relevant.map(t => `<option value="${esc(t.name)}" ${s.topic === t.name ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
     <div class="practice-only stack" ${use === 'interview' ? 'hidden' : ''}>
@@ -1753,7 +1750,7 @@ function rtHandlers() {
       if (!S.live || S.live.id !== id) { S.live = { id, text: '' }; S.pendingUser = false; render(); }
       S.live.text += text;
       // Practice test: the moment the coach's question is out, start the answer points, while it is still speaking.
-      if (S.rtMode === 'live' && S.liveUse === 'practice' && S.hintFor !== id && S.live.text.includes('?')) {
+      if (S.rtMode === 'live' && S.liveUse !== 'interview' && S.hintFor !== id && S.live.text.includes('?')) {
         S.hintFor = id; fetchLiveHint(S.live.text.slice(0, S.live.text.lastIndexOf('?') + 1).trim().slice(-400));
       }
       const el = document.getElementById('liveMsg');
@@ -1765,7 +1762,7 @@ function rtHandlers() {
       const skip = S.liveUse === 'interview' && /^[.…\s]*$/.test(final);
       if (final.trim() && !skip) store.setChat([...store.chat(), { role: 'assistant', content: final }]);
       // In a practice test, a finished question gets an instant hint.
-      if (S.rtMode === 'live' && S.liveUse === 'practice' && S.hintFor !== id && /\?\s*$/.test(final.trim())) { S.hintFor = id; fetchLiveHint(final.trim()); }
+      if (S.rtMode === 'live' && S.liveUse !== 'interview' && S.hintFor !== id && /\?\s*$/.test(final.trim())) { S.hintFor = id; fetchLiveHint(final.trim()); }
       render();
     },
     end(reason) {
@@ -2451,7 +2448,7 @@ document.addEventListener('submit', async e => {
       style: String(fd.get('style') || 'friendly'),
       topic: String(fd.get('topic') || ''),
       difficulty: String(fd.get('difficulty') || 'mid'),
-      use: ['interview', 'talk'].includes(fd.get('use')) ? fd.get('use') : 'practice',
+      use: fd.get('use') === 'interview' ? 'interview' : 'talk',
     };
     store.setLiveSettings(settings);
     closeSheet();
