@@ -44,7 +44,7 @@ export class VoiceSession {
     const res = await fetch(apiBase() + '/api/realtime', {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ sdp: offer.sdp, mode, speak, profileSummary, context, ...(live ? { live } : {}) }),
+      body: JSON.stringify({ sdp: offer.sdp, mode, speak, profileSummary, context, ...(live ? { live, voice: live.speaker } : {}) }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { this.stop(); throw new ApiError(data.error || `Voice failed (${res.status})`, res.status, data.code); }

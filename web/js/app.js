@@ -1683,6 +1683,8 @@ function chatView() {
 }
 
 /* ---------- Live AI ---------- */
+// Voices the AI can speak in (all natural-sounding; Marin and Cedar are the newest).
+const LIVE_VOICES = [['marin', 'Marin: warm, relaxed'], ['cedar', 'Cedar: calm, deep'], ['coral', 'Coral: bright, upbeat'], ['ash', 'Ash: easy-going'], ['sage', 'Sage: gentle, thoughtful'], ['verse', 'Verse: expressive']];
 function liveSettings() {
   const p = profile();
   const saved = store.liveSettings() || {};
@@ -1690,6 +1692,7 @@ function liveSettings() {
     lengthMin: [20, 30, 45, 60, 240].includes(saved.lengthMin) ? saved.lengthMin : 60,
     voice: saved.voice !== false,
     style: ['friendly', 'direct', 'tough'].includes(saved.style) ? saved.style : 'friendly',
+    speaker: LIVE_VOICES.some(v => v[0] === saved.speaker) ? saved.speaker : 'marin',
     topic: typeof saved.topic === 'string' ? saved.topic : '',
     difficulty: ['junior', 'mid', 'senior'].includes(saved.difficulty) ? saved.difficulty : (p?.level || 'mid'),
     use: saved.use === 'interview' ? 'interview' : 'talk',
@@ -1723,6 +1726,7 @@ function liveSetupSheet() {
     <label>Session length<select name="lengthMin">${(admin ? [240, 20, 30, 45, 60] : fromPlan ? [20, 30] : [20, 30, 45, 60]).map(n => `<option value="${n}" ${s.lengthMin === n || (fromPlan && n === 30 && s.lengthMin > 30) ? 'selected' : ''}>${n === 240 ? 'No limit' : n + ' minutes'}</option>`).join('')}</select></label>
     <label>Topic focus<select name="topic"><option value="">All my topics</option>${relevant.map(t => `<option value="${esc(t.name)}" ${s.topic === t.name ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
     <div class="practice-only stack" ${use === 'interview' ? 'hidden' : ''}>
+      <label>Voice<select name="speaker">${LIVE_VOICES.map(([v, n]) => `<option value="${v}" ${s.speaker === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
       <label>AI style<select name="style">${[['friendly', 'Friendly and encouraging'], ['direct', 'Direct, no small talk'], ['tough', 'Tough, probes every gap']].map(([v, n]) => `<option value="${v}" ${s.style === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
       <label>Difficulty<select name="difficulty">${LEVELS.map(l => `<option value="${l.id}" ${s.difficulty === l.id ? 'selected' : ''}>${esc(l.name)}</option>`).join('')}</select></label>
       <label class="switch"><input type="checkbox" name="voice" ${s.voice ? 'checked' : ''}>AI speaks out loud</label>
@@ -2561,6 +2565,7 @@ document.addEventListener('submit', async e => {
       lengthMin: Number(fd.get('lengthMin')) || 60,
       voice: fd.get('voice') === 'on',
       style: String(fd.get('style') || 'friendly'),
+      speaker: String(fd.get('speaker') || 'marin'),
       topic: String(fd.get('topic') || ''),
       difficulty: String(fd.get('difficulty') || 'mid'),
       use: fd.get('use') === 'interview' ? 'interview' : 'talk',
