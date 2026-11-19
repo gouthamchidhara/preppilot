@@ -2004,7 +2004,7 @@ function plansView() {
         <div class="tier-name">Pro</div>
         <div class="price">${esc(o.proAmount)}<span>/ ${esc(o.proPer)}</span></div>
         <p class="muted small">Every topic, every card and diagram, and ${o.proLive} Live AI minutes a month, counted only while you talk.${o.perDay ? ` ${esc(o.perDay)}.` : ''}</p>
-        ${isPro ? '<button class="btn block" disabled>Your plan</button>' : `<button class="btn primary block" data-act="buysub" ${dis}>${S.buyBusy === 'pro' ? `Opening the ${storeName()}…` : 'Start Pro'}</button>`}
+        ${isPro ? '<button class="btn block" disabled>Your plan</button>' : `<button class="btn primary block" data-act="buysub" ${dis}>${S.buyBusy === 'pro' ? `Opening the ${storeName()}…` : 'Try Pro free for 3 days'}</button><p class="muted small trial-terms">3 days free, then ${esc(offer().proPrice)}. Cancel anytime in your ${window.PP_PLATFORM === 'android' ? 'Google Play' : 'Apple ID'} subscriptions at least 24 hours before the trial ends and you won't be charged. Free trial for new subscribers only.</p>`}
       </section>
       <section class="tier card live-hero">
         <div class="tier-name">Live AI <span class="tier-flag">One-time</span></div>
