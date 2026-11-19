@@ -18,7 +18,7 @@ if (existsSync(envFile)) for (const line of readFileSync(envFile, 'utf8').split(
 }
 const ENDPOINT = (process.env.AZURE_OPENAI_ENDPOINT || '').replace(/\/+$/, '');
 const KEY = process.env.AZURE_OPENAI_API_KEY;
-const DEPLOYMENT = process.env.DRAFT_DEPLOYMENT || 'gpt-4.1';
+const DEPLOYMENT = process.env.TRENDING_DEPLOYMENT || 'gpt-4.1-mini'; // cheapest model: about $2 a month at ~50 stories a day
 const args = process.argv.slice(2);
 // Runs every 6 hours: about 13 new stories each time, ~50 a day.
 const MAX = Number(args.includes('--max') ? args[args.indexOf('--max') + 1] : 14);
