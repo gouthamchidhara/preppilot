@@ -35,11 +35,6 @@ jobs:
           AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
         run: node scripts/refresh-questions.mjs --per ${{ inputs.per || '1' }}
-      - name: Refresh the tech feed
-        env:
-          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
-          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
-        run: node scripts/build-trending.mjs || echo "feed refresh skipped"
       - run: npm test
       - name: Commit and deploy
         env:

@@ -20,10 +20,11 @@ const ENDPOINT = (process.env.AZURE_OPENAI_ENDPOINT || '').replace(/\/+$/, '');
 const KEY = process.env.AZURE_OPENAI_API_KEY;
 const DEPLOYMENT = process.env.DRAFT_DEPLOYMENT || 'gpt-4.1';
 const args = process.argv.slice(2);
-const MAX = Number(args.includes('--max') ? args[args.indexOf('--max') + 1] : 36);
+// Runs every 6 hours: about 13 new stories each time, ~50 a day.
+const MAX = Number(args.includes('--max') ? args[args.indexOf('--max') + 1] : 14);
 const DRY = args.includes('--dry');
 const OUT = resolve(root, 'web/content/trending.json');
-const KEEP_DAYS = 21;
+const KEEP_DAYS = 7; // ~50 a day, so about 350 stories at most
 const now = Date.now();
 
 // Releases of the tools interviews ask about. GitHub serves an Atom feed per repo.
@@ -58,6 +59,21 @@ const RSS = {
   'Microsoft': ['https://blogs.microsoft.com/feed/', 'world'],
   'NVIDIA': ['https://nvidianews.nvidia.com/releases.xml', 'world'],
   'Meta AI': ['https://ai.meta.com/blog/rss/', 'world'],
+  'InfoQ': ['https://feed.infoq.com/', 'system-design'],
+  'The New Stack': ['https://thenewstack.io/feed/', 'devops'],
+  'Krebs on Security': ['https://krebsonsecurity.com/feed/', 'security'],
+  'The Hacker News (security)': ['https://feeds.feedburner.com/TheHackersNews', 'security'],
+  'Android Developers': ['https://android-developers.googleblog.com/feeds/posts/default?alt=rss', 'mobile'],
+  'Swift.org': ['https://www.swift.org/atom.xml', 'mobile'],
+  'Databricks': ['https://www.databricks.com/feed', 'data'],
+  'Snowflake': ['https://www.snowflake.com/feed/', 'data'],
+  'CNCF': ['https://www.cncf.io/feed/', 'kubernetes'],
+  'Docker blog': ['https://www.docker.com/feed/', 'docker'],
+  'web.dev': ['https://web.dev/feed.xml', 'react'],
+  'Rust blog': ['https://blog.rust-lang.org/feed.xml', 'general'],
+  'Wired (business)': ['https://www.wired.com/feed/category/business/latest/rss', 'world'],
+  'Apple newsroom': ['https://www.apple.com/newsroom/rss-feed.rss', 'world'],
+  'AMD newsroom': ['https://www.amd.com/en/newsroom/rss.xml', 'world'],
 };
 
 function curl(url) {
@@ -100,7 +116,7 @@ async function collect() {
   } catch { /* skip */ }
   const seen = new Set();
   return raw.filter(r => { const k = r.url.replace(/[?#].*$/, ''); if (seen.has(k)) return false; seen.add(k); return true; })
-    .sort((a, b) => (b.points || 0) - (a.points || 0) || b.date - a.date).slice(0, 120);
+    .sort((a, b) => (b.points || 0) - (a.points || 0) || b.date - a.date);
 }
 
 async function ai(messages, maxTokens) {
@@ -121,12 +137,14 @@ const SYSTEM = `You write a light, factual tech feed for software engineers prep
 Two kinds of cards:
 - "dev": what a working engineer would want to know and could come up in an interview: releases and features of tools, cloud changes, engineering write-ups, important outages or security issues.
 - "world": what is happening in the tech industry that people talk about: launches and announcements from big companies (NVIDIA, Microsoft, Apple, Google, Amazon, Meta, OpenAI, Anthropic and others), major AI model releases, big chips, platform shifts, large acquisitions, notable earnings or market moves explained plainly. Keep it factual and neutral.
-Aim for roughly 60% dev and 40% world. Skip politics, celebrity drama, rumours, opinion pieces, self-promotion, beginner tutorials and anything you cannot describe accurately from the item. Write headlines in plain English a busy reader gets in one glance.
+Aim for roughly 60% dev and 40% world, and spread the dev cards across sectors: AI/ML, cloud, security, data, devops/Kubernetes, frontend, backend languages, mobile, databases, open source and hardware. Never two cards about the same news. Skip politics, celebrity drama, rumours, opinion pieces, self-promotion, beginner tutorials and anything you cannot describe accurately from the item. Write headlines in plain English a busy reader gets in one glance.
 For each chosen item write: {"i": index of the item, "title": a plain headline in your own words (max 70 chars), "what": what happened in 1-2 sentences, "why": why it matters to an engineer in 1 sentence, "q": one interview question about the underlying concept this news touches (a regex vulnerability → "What is ReDoS and how do you prevent it?"; a cross-region failover feature → "How would you design cross-region failover?"), never trivia about the news itself, "a": a crisp answer in 1-2 sentences, "kind": "dev" or "world", "area": one of react, angular, javascript, java, python, go, dotnet, mobile, kubernetes, docker, cloud, infra, devops, sql, data, kafka, ai, qa, security, system-design, general}.
 Rules: write in your own words, never copy sentences from the source. Only state facts present in the item or that you are certain of; if the item is too thin to describe, skip it. No hype, no emoji, no exclamation marks.`;
 
 async function main() {
-  const items = await collect();
+  const prevAll = existsSync(OUT) ? JSON.parse(readFileSync(OUT, 'utf8')).cards || [] : [];
+  const have = new Set(prevAll.map(c => c.url.replace(/[?#].*$/, '')));
+  const items = (await collect()).filter(x => !have.has(x.url.replace(/[?#].*$/, ''))).slice(0, 160); // only what the feed has not covered
   console.log(`collected ${items.length} items`);
   if (DRY) { items.slice(0, 15).forEach(x => console.log(`- [${x.source}] ${x.title}`)); return; }
   if (!ENDPOINT || !KEY) { console.error('Set AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY'); process.exit(1); }
@@ -143,7 +161,7 @@ async function main() {
   }
   const prev = existsSync(OUT) ? JSON.parse(readFileSync(OUT, 'utf8')).cards || [] : [];
   const ids = new Set(cards.map(c => c.id));
-  const merged = [...cards, ...prev.filter(c => !ids.has(c.id) && c.date > now - KEEP_DAYS * 864e5)].sort((a, b) => b.date - a.date).slice(0, 150);
+  const merged = [...cards, ...prev.filter(c => !ids.has(c.id) && c.date > now - KEEP_DAYS * 864e5)].sort((a, b) => b.date - a.date).slice(0, 400);
   writeFileSync(OUT, JSON.stringify({ updated: new Date().toISOString(), cards: merged }, null, 0));
   console.log(`wrote ${cards.length} new, ${merged.length} total`);
 }
