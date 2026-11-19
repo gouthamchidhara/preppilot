@@ -1234,3 +1234,25 @@ html { background: var(--desk); color-scheme: light dark; }
 .gen-steps li { animation: gen-on 12s steps(1) both; opacity: .4; }
 .gen-steps li:nth-child(1) { animation-delay: 0s; } .gen-steps li:nth-child(2) { animation-delay: 3s; } .gen-steps li:nth-child(3) { animation-delay: 7s; } .gen-steps li:nth-child(4) { animation-delay: 11s; }
 @keyframes gen-on { to { opacity: 1; color: var(--ink); } }
+
+/* ---------- What's new in tech: plain, readable feed ---------- */
+.tf { display: grid; gap: 0; max-width: 640px; }
+.tf-head { padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.tf-head h1 { margin: 0 0 4px; }
+.tf-item { padding: 20px 0; border-bottom: 1px solid var(--line); display: grid; gap: 8px; }
+.tf-meta { margin: 0; font-size: 13px; color: var(--muted); }
+.tf-item h2 { margin: 0; font-size: 1.15rem; line-height: 1.35; letter-spacing: -.01em; }
+.tf-item p { margin: 0; color: var(--ink-soft); line-height: 1.55; }
+.tf-why { color: var(--muted) !important; font-size: .95rem; }
+.tf-q { margin-top: 4px; padding: 10px 14px; border-radius: 12px; background: var(--sunk); }
+.tf-q summary { cursor: pointer; font-weight: 600; color: var(--ink); line-height: 1.45; list-style: none; }
+.tf-q summary::-webkit-details-marker { display: none; }
+.tf-q summary::before { content: 'In an interview: '; color: var(--muted); font-weight: 500; }
+.tf-q p { margin-top: 8px !important; }
+.tf-src { justify-self: start; font-size: 13px; color: var(--muted); }
+.tf-more { padding: 24px 0; display: grid; gap: 10px; justify-items: start; }
+.tf-q summary { display: block !important; }
+.tf-q summary::before { display: block; margin-bottom: 4px; font-size: 12px; font-weight: 600; letter-spacing: .02em; content: 'In an interview'; }
+.tf-q summary::after { display: none !important; }
+.tf-q:not([open]) summary { color: var(--ink); }
+.tf-q[open] summary { margin-bottom: 2px; }

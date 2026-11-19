@@ -35,12 +35,17 @@ jobs:
           AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
         run: node scripts/refresh-questions.mjs --per ${{ inputs.per || '1' }}
+      - name: Refresh the tech feed
+        env:
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+        run: node scripts/build-trending.mjs || echo "feed refresh skipped"
       - run: npm test
       - name: Commit and deploy
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if git diff --quiet -- web/content content-src; then echo "No new questions today"; exit 0; fi
+          if git diff --quiet -- web/content content-src && git diff --quiet --cached -- web/content; then echo "No new questions today"; exit 0; fi
           git config user.name "preppilot-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add web/content content-src

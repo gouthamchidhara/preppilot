@@ -784,13 +784,14 @@ function lsPicksHtml() {
   const n = newCards().length;
   const has = k => fieldCards(k).length;
   const picks = [
+    ['ndgo', 'trend', 'bolt', 'What’s new in tech', 'Short reads from this week’s releases and engineering blogs'],
     n ? ['newdeck', '', 'spark', `New this month`, `${n} fresh question${n === 1 ? '' : 's'} from what developers are hitting now`] : null,
     has('trouble') ? ['fielddeck', 'trouble', 'alert', 'Troubleshooting', 'Real errors, the cause and the fix'] : null,
     has('scenarios') ? ['fielddeck', 'scenarios', 'target', 'Real scenarios', 'What interviewers ask about actual work'] : null,
     has('terms') ? ['fielddeck', 'terms', 'book', 'Terminology', 'The words you will hear'] : null,
   ].filter(Boolean);
   if (!picks.length) return '';
-  return `<div class="ls-picks"><span class="muted small">Quick picks</span>${picks.map(([act, k, icon, t, d]) => `<button class="ls-item" data-act="${act}" data-k="${k}">${ic(icon)}<span class="main"><b>${t}</b><span>${esc(d)}</span></span>${hasPro() || act === 'newdeck' ? ic('right') : '<span class="tag">Pro</span>'}</button>`).join('')}</div>`;
+  return `<div class="ls-picks"><span class="muted small">Quick picks</span>${picks.map(([act, k, icon, t, d]) => `<button class="ls-item" data-act="${act}" data-k="${k}" data-v="${k}">${ic(icon)}<span class="main"><b>${t}</b><span>${esc(d)}</span></span>${hasPro() || act !== 'fielddeck' ? ic('right') : '<span class="tag">Pro</span>'}</button>`).join('')}</div>`;
 }
 // Questions added by the daily refresh (marked with the month), from the user's own topics.
 function newCards() {
@@ -1457,6 +1458,38 @@ function dayLabel(t) {
   if (days < 7) return new Date(t).toLocaleDateString(undefined, { weekday: 'long' });
   return new Date(t).toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
 }
+/* ---------- What's new in tech: a light feed for when studying gets old ---------- */
+const AREA_OF_ROLE = { java: 'java', spring: 'java', jvm: 'java', python: 'python', react: 'react', angular: 'angular', js: 'javascript', typescript: 'javascript', node: 'javascript', go: 'go', dotnet: 'dotnet', csharp: 'dotnet', k8s: 'kubernetes', docker: 'docker', cloud: 'cloud', sql: 'sql', data: 'data', spark: 'data', streaming: 'kafka', llm: 'ai', ml: 'ai', security: 'security', 'system-design': 'system-design' };
+async function loadTrending() {
+  if (S.trend?.loading || S.trend?.cards) return;
+  S.trend = { loading: true };
+  try { const r = await fetch(`content/trending.json?d=${new Date().toISOString().slice(0, 13)}`); S.trend = await r.json(); }
+  catch { S.trend = { cards: [], failed: true }; }
+  if (S.view === 'trend') render();
+}
+const ago = t => { const h = Math.floor((Date.now() - t) / 36e5); return h < 1 ? 'just now' : h < 24 ? `${h}h ago` : `${Math.floor(h / 24)}d ago`; };
+function trendView() {
+  const T = S.trend;
+  if (!T?.cards) { loadTrending(); return '<div class="tf"><h1>What’s new in tech</h1><p class="muted">Loading…</p></div>'; }
+  // The user's own stack first, newest within each.
+  const mine = new Set(rankTopics(topics(), profile()).flatMap(t => Object.entries(AREA_OF_ROLE).filter(([k]) => t.id.includes(k)).map(([, v]) => v)));
+  const cards = [...T.cards].sort((a, b) => (mine.has(b.area) ? 864e5 : 0) + b.date - ((mine.has(a.area) ? 864e5 : 0) + a.date));
+  const pro = hasPro() || isAdmin();
+  const shown = pro ? cards : cards.slice(0, 6);
+  return `<div class="tf">
+    <header class="tf-head"><h1>What’s new in tech</h1><p class="muted small">From release notes, cloud updates and engineering blogs. Updated daily.</p></header>
+    ${shown.map(c => `<article class="tf-item">
+      <p class="tf-meta">${esc(c.source)} · ${ago(c.date)}</p>
+      <h2>${esc(c.title)}</h2>
+      <p>${esc(c.what)}</p>
+      ${c.why ? `<p class="tf-why">${esc(c.why)}</p>` : ''}
+      <details class="tf-q"><summary>${esc(c.q)}</summary><p>${esc(c.a)}</p></details>
+      <a class="tf-src" href="${esc(c.url)}" target="_blank" rel="noopener">Read the source</a>
+    </article>`).join('') || '<p class="muted">Nothing new yet today. Check back later.</p>'}
+    ${pro || cards.length <= 6 ? '' : `<div class="tf-more"><p>${cards.length - 6} more stories in the full feed.</p><button class="btn primary" data-act="plans">Unlock with Pro</button></div>`}
+  </div>`;
+}
+
 /* App-wide side panel, ChatGPT style: sections, recent chats, New chat + profile. */
 function navDrawerHtml(key) {
   const a = store.account(), list = store.chats(), cur = store.chatCur();
@@ -1476,6 +1509,7 @@ function navDrawerHtml(key) {
       ${item('home', 'Home', 'home', key === 'home')}
       ${item('deck', 'Cards', 'cards', key === 'deck')}
       ${item('jobfocus', 'Job focus', 'target', key === 'focus')}
+      ${item('trend', 'What’s new in tech', 'bolt', key === 'trend')}
       ${item('live', 'Live AI interview', 'mic', false)}
       ${item('custom', 'Custom subjects', 'plus', key === 'custom')}
       ${hasPro() || isAdmin() ? '' : item('plans', 'Pricing', 'spark', false)}
@@ -2098,6 +2132,7 @@ function render() {
     : key === 'chat' ? chatView()
     : key === 'custom' ? customView()
     : key === 'focus' ? jobFocusView()
+    : key === 'trend' ? trendView()
     : key === 'settings' ? settingsView()
     : homeView();
   app.innerHTML = `<div class="${changed ? 'view' : ''}">${html}</div>`;
