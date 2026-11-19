@@ -7,7 +7,7 @@ import { native, signedIn, signOut, renderGoogleButton, refreshAccount, onAccoun
 import { initContent, getCatalog, getManifest, roleById, topicMeta, ensureTopics, ensureForProfile, loadedTopics, reportUrl } from './content.js';
 import { diagramHtml, diagramFor, storyView, registerDiagramSpec } from './diagrams.js';
 import { todayKey, recordActivity, streakDays, lastNDays } from './stats.js';
-import { popOutCards, pipSupport } from './pip.js';
+import { popOutCards, pipSupport, pipOpen } from './pip.js';
 import { ringOffset, nextStage, prevStage, sceneName } from './animate.js';
 
 const DAY = 86400000;
@@ -1980,6 +1980,7 @@ function prefsSection() {
   return `<section class="pf-prefs">
     <h2>Display</h2>
     <div class="pf-row"><div><b>Text size</b><span class="muted small">Lessons, cards and answers</span></div>${seg('textsize', ts, [['s', '<span class="ts-s">A</span>', 'Small'], ['m', '<span class="ts-m">A</span>', 'Medium'], ['l', '<span class="ts-l">A</span>', 'Large']])}</div>
+    ${pipSupport() && !native() ? `<div class="pf-row"><div><b>Float cards automatically</b><span class="muted small">Your first click on PrepPilot opens the floating cards, so they stay on top of your other apps</span></div>${seg('pipauto', lsGet('pp.pipAuto', 'off'), [['off', 'Off'], ['on', 'On']])}</div>` : ''}
     <div class="pf-row"><div><b>Cards open in</b><span class="muted small">Switch any time on the cards screen</span></div>${seg('prefmode', dm, [['steady', 'Steady'], ['swipe', 'Swipe']])}</div>
   </section>`;
 }
@@ -2397,6 +2398,12 @@ function mixTopics(cards) {
 }
 
 // Floating cards window (desktop browsers): keeps cards on top while you work in other apps.
+// "Float cards automatically": browsers need a click to open it, so the first click of each visit does.
+document.addEventListener('pointerdown', () => {
+  if (S.pipAutoDone || lsGet('pp.pipAuto', 'off') !== 'on' || !signedIn() || !profile() || pipOpen() || !pipSupport() || native()) return;
+  S.pipAutoDone = true;
+  popOut();
+}, true);
 const popBtn = () => (pipSupport() ? `<button class="iconbtn plain pop-btn" data-act="popout" aria-label="Float these cards over other apps" title="Float over other apps">${ic('pip')}</button>` : '');
 async function popOut() {
   let cards;
@@ -2819,6 +2826,7 @@ document.addEventListener('click', async e => {
   else if (a === 'reveal') { S.reveal = true; render(); }
   else if (a === 'grade') gradeCard(b.dataset.ok === '1');
   else if (a === 'popout') popOut();
+  else if (a === 'pipauto') { lsSet('pp.pipAuto', b.dataset.v); if (b.dataset.v === 'on') { S.pipAutoDone = true; popOut(); } render(); }
   else if (a === 'dgprev') { stopDgAutoplay(); S.dgStages[id] = prevStage(S.dgStages[id] ?? null); refreshDgSheet(id); render(); }
   else if (a === 'dgnext') { stopDgAutoplay(); S.dgStages[id] = nextStage(S.dgStages[id] ?? null, (diagramFor(id)?.steps.length || 1)); refreshDgSheet(id); render(); }
   else if (a === 'dgreplay') { stopDgAutoplay(); S.dgStages[id] = null; refreshDgSheet(id); render(); }
