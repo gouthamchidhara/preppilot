@@ -62,10 +62,19 @@ export function scoreTopic(topic, profile) {
 }
 
 export function rankTopics(topics, profile) {
+  // Several roles: on equal scores, take turns between them (each role's top topic, then each role's
+  // second...), so adding Python to an infra profile shows Python near the top, not after every infra topic.
+  const roles = effectiveRoles(profile);
+  const turn = {};
+  if (roles.length > 1) for (const r of roles) {
+    topics.map((t, i) => ({ id: t.id, w: t.roles?.[r] ?? 0, i })).filter(x => x.w > 0)
+      .sort((a, b) => b.w - a.w || a.i - b.i)
+      .forEach((x, pos) => { turn[x.id] = Math.min(turn[x.id] ?? Infinity, pos); });
+  }
   return topics
-    .map((t, i) => ({ topic: t, score: scoreTopic(t, profile), i }))
+    .map((t, i) => ({ topic: t, score: scoreTopic(t, profile), i, turn: turn[t.id] ?? 0 }))
     .filter(x => x.score > 0)
-    .sort((a, b) => b.score - a.score || a.i - b.i)
+    .sort((a, b) => b.score - a.score || a.turn - b.turn || a.i - b.i)
     .map(x => ({ ...x.topic, score: x.score }));
 }
 

@@ -230,7 +230,10 @@ function nextTopic(p = profile()) {
   const all = rankTopics(topics(), p).filter(t => !isLocked(t.id));
   // Lead with the user's technology; the soft-skill topics come after.
   const list = [...all.filter(t => !['behavioral', 'scenarios'].includes(t.id)), ...all.filter(t => ['behavioral', 'scenarios'].includes(t.id))];
-  return list.find(t => { const r = readiness([t], p, prog); return r.total && r.pct < 80; }) || list[0] || null;
+  // Just added a role in Profile: lead with its topics.
+  let fresh = []; try { fresh = JSON.parse(lsGet('pp.newTopics', 'null'))?.ids || []; } catch { /* none */ }
+  const open = t => { const r = readiness([t], p, prog); return r.total && r.pct < 80; };
+  return list.find(t => fresh.includes(t.id) && open(t)) || list.find(open) || list[0] || null;
 }
 
 function dailyReminder() {
@@ -699,6 +702,7 @@ async function saveProfile() {
   const d = S.draft;
   if (!d?.roleIds.length || (d.roleIds.includes('other') && (!d.baseRoleId || !d.otherRole))) return oops('Choose a role, and fill in the details if you picked "Other".');
   const prev = profile();
+  const before = new Set(prev ? rankTopics(topics(), prev).map(t => t.id) : []);
   const p = { ...d, roleId: d.roleIds[0], planStart: prev?.planStart || Date.now() };
   if (!p.roleIds.includes('other')) { delete p.otherRole; delete p.baseRoleId; }
   const roles = effectiveRoles(p).map(roleById).filter(Boolean);
@@ -710,7 +714,13 @@ async function saveProfile() {
   if (p.roleIds.includes('other') && p.otherRole !== prev?.otherRole) ai.reportRole(p.otherRole).catch(() => {});
   app.innerHTML = '<p class="muted">Building your plan…</p>';
   try { await ensureForProfile(p); } catch { oops('Could not download your topics. Check your connection.'); }
-  if (prev) toast('Profile saved. Your plan is updated.');
+  if (prev) {
+    // Tell them what the change added, on Home.
+    const added = rankTopics(topics(), p).filter(t => !before.has(t.id));
+    const newRoles = p.roleIds.filter(id => !(prev.roleIds || []).includes(id)).map(id => id === 'other' ? p.otherRole : roleName(id)).filter(Boolean);
+    if (added.length) lsSet('pp.newTopics', JSON.stringify({ ids: added.map(t => t.id), roles: newRoles, at: Date.now() }));
+    else toast('Profile saved. Your plan is updated.');
+  }
   S.view = 'home'; render();
 }
 
@@ -844,6 +854,21 @@ function learnSearchHtml(p) {
   </section>`;
 }
 
+function newTopicsNote() {
+  let n; try { n = JSON.parse(lsGet('pp.newTopics', 'null')); } catch { n = null; }
+  if (!n?.ids?.length) return '';
+  const list = n.ids.map(id => topics().find(t => t.id === id)).filter(Boolean);
+  if (!list.length) return '';
+  const cards = list.reduce((k, t) => k + t.qa.length, 0);
+  const first = list.find(t => !isLocked(t.id)) || list[0];
+  return `<section class="new-note">
+    <div class="nn-top"><span class="nn-ic">${ic('spark')}</span><div><b>${list.length} new topic${list.length > 1 ? 's' : ''} · ${cards} cards added</b><span class="muted small">${n.roles?.length ? `For ${esc(n.roles.join(', '))}. ` : ''}Mixed into your plan below.</span></div>
+      <button class="iconbtn plain" data-act="nndismiss" aria-label="Dismiss">${ic('x')}</button></div>
+    <div class="chips">${list.slice(0, 8).map(t => `<button class="chip" data-act="learn" data-id="${t.id}">${esc(t.name)}</button>`).join('')}${list.length > 8 ? `<span class="muted small">+${list.length - 8} more</span>` : ''}</div>
+    <div class="row"><button class="btn primary" data-act="deck" data-id="${esc(list.filter(t => !isLocked(t.id)).map(t => t.id).join(','))}">${ic('cards')}Practice the new cards</button><button class="btn quiet" data-act="learn" data-id="${first.id}">Start with ${esc(first.name)}</button></div>
+  </section>`;
+}
+
 function homeView() {
   const p = profile();
   const relevant = rankTopics(topics(), p);
@@ -876,6 +901,7 @@ function homeView() {
   const lockedCards = relevant.filter(t => isLocked(t.id)).reduce((n, t) => n + t.qa.length, 0);
   return `<div class="stack loose">
     ${learnSearchHtml(p)}
+    ${newTopicsNote()}
     <div class="curated-head"><h2>Curated for you</h2><span class="muted small">${esc(roleIds.map(label).join(' and '))}${p.level ? ` · ${esc(p.level)}` : ''}</span></div>
     ${nt ? `<section class="card stacked">
       <div class="card-head"><span>Up next</span>${hasPro() ? '' : `<span>${relevant.length - relevant.filter(t => isLocked(t.id)).length} of ${relevant.length} topics open</span>`}</div>
@@ -2716,6 +2742,7 @@ document.addEventListener('click', async e => {
   else if (a === 'buildrole') buildRoleGuide();
   else if (a === 'cnext') { S.ci++; render(); }
   else if (a === 'cprev') { S.ci--; render(); }
+  else if (a === 'nndismiss') { lsSet('pp.newTopics', ''); render(); }
   else if (a === 'editprofile') { S.editProfile = !S.editProfile; render(); }
   else if (a === 'textsize') { setTextSize(b.dataset.v); render(); }
   else if (a === 'prefmode') { setDeckMode(b.dataset.v); render(); }

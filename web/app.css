@@ -1367,3 +1367,12 @@ html { background: var(--desk); color-scheme: light dark; }
 .lv-custom[open] summary::after { transform: rotate(-90deg); }
 .lv-custom summary .muted { margin-left: auto; text-transform: capitalize; }
 .lv-custom > .stack { padding: 0 16px 16px; }
+
+/* "New cards added" after a profile change */
+.new-note { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--accent); border-radius: 18px; background: var(--accent-soft); }
+.nn-top { display: flex; align-items: flex-start; gap: 12px; }
+.nn-top > div { flex: 1; display: grid; gap: 2px; }
+.nn-ic { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--accent); color: #fff; flex: none; }
+.nn-ic .ic { width: 18px; height: 18px; }
+.new-note .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.new-note .chip { background: var(--paper); }
