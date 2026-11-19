@@ -925,8 +925,23 @@ const JF_SAMPLE = { role: 'Backend Engineer (example)', sample: true, stack: [
     { q: 'How do you give a service access to S3?', a: 'An IAM role attached to the task or instance with least-privilege policy; never hard-coded keys.' },
     { q: 'What makes a deploy highly available?', a: 'Multiple availability zones behind a load balancer, health checks and auto scaling.' } ] },
 ] };
-function jfSaved() { try { return JSON.parse(localStorage.getItem(JF_KEY) || 'null'); } catch { return null; } }
-function jfSave(d) { try { d ? localStorage.setItem(JF_KEY, JSON.stringify(d)) : localStorage.removeItem(JF_KEY); } catch { /* storage blocked: keep in memory only */ } }
+const JOBS_KEY = 'pp.jobs', JOBS_MAX = 30;
+function jfAll() {
+  try {
+    const list = JSON.parse(localStorage.getItem(JOBS_KEY) || 'null');
+    if (Array.isArray(list)) return list;
+    const old = JSON.parse(localStorage.getItem(JF_KEY) || 'null'); // one saved job from before
+    return old ? [{ ...old, id: old.id || 'j0' }] : [];
+  } catch { return []; }
+}
+function jfSaved() { return jfAll()[0] || null; }
+function jfSave(d) {
+  if (!d || d.sample) return;
+  d.id ||= Date.now().toString(36);
+  if (!d.text && S.jf?.text) d.text = S.jf.text;
+  try { localStorage.setItem(JOBS_KEY, JSON.stringify([d, ...jfAll().filter(x => x.id !== d.id)].slice(0, JOBS_MAX))); } catch { /* storage blocked */ }
+}
+function jfRemove(id) { try { localStorage.setItem(JOBS_KEY, JSON.stringify(jfAll().filter(x => x.id !== id))); } catch { /* storage blocked */ } }
 
 function jobFocusEntry() {
   return `<section class="jf-entry">
@@ -936,31 +951,34 @@ function jobFocusEntry() {
 }
 
 function jobFocusView() {
-  const J = S.jf || (S.jf = { result: jfSaved(), sel: 0, busy: false, text: '', open: new Set() });
+  const J = S.jf || (S.jf = { result: jfSaved(), sel: 0, busy: false, text: jfSaved()?.text || '', open: new Set() });
   const pro = hasPro();
   const r = J.result || (pro ? null : JF_SAMPLE);
+  const jobs = pro ? jfAll() : [];
+  if (pro && r && !jobs.some(j => j.id === r.id)) jobs.unshift(r); // still writing: show it as the current job
   const head = `<div class="row between"><button class="back" data-act="home">${ic('left')}Plan</button><span class="tag">${ic(pro ? 'target' : 'lock')} Pro</span></div>`;
-  if (!r) return `<div class="stack jf">${head}
+  const switcher = jobs.length ? `<div class="jf-jobs" role="tablist">${jobs.map(j => `<button class="jf-job ${r && j.id === r.id ? 'on' : ''}" data-act="jfopen" data-id="${esc(j.id)}">${esc(j.role || 'Job post')}</button>`).join('')}${r ? `<button class="jf-job add" data-act="jfnew">${ic('plus')}New job</button>` : ''}</div>` : '';
+  if (!r) return `<div class="stack jf">${head}${switcher}
     <h1>Prep for this exact job</h1>
-    <p class="lede">Paste the job description. We pick the top 5 skills it is most likely to test, with flashcards for each, most likely questions first.</p>
+    <p class="lede">Paste the job description. We pull out every skill it will test and turn each one into a deck of cards, easiest first.</p>
     <textarea id="jfText" class="jf-text" rows="9" maxlength="6000" placeholder="Paste the job description or its requirements section…" ${J.busy ? 'disabled' : ''}>${esc(J.text)}</textarea>
-    <div class="row"><button class="btn primary" data-act="jfgo" ${J.busy ? 'disabled' : ''}>${J.busy ? 'Reading the job post…' : 'Show my top 5'}</button><span class="muted small">Uses 5 AI messages.</span></div>
-    ${J.busy ? `<div class="jf-skel" aria-hidden="true">${'<i></i>'.repeat(5)}</div>` : ''}
+    <div class="row"><button class="btn primary" data-act="jfgo" ${J.busy ? 'disabled' : ''}>${J.busy ? 'Reading the job post…' : 'Build my decks'}</button><span class="muted small">Your job posts stay saved here.</span></div>
+    ${J.busy ? `<div class="jf-decks" aria-hidden="true">${'<div class="jf-deck skel"></div>'.repeat(6)}</div>` : ''}
   </div>`;
-  const sel = Math.min(J.sel || 0, r.stack.length - 1);
-  const t = r.stack[sel];
-  const open = J.open || (J.open = new Set());
-  const cardsHtml = t.cards ? t.cards.map((c, i) => `<details class="card jf-card" style="--k:${i}" data-k="${sel}-${i}" ${open.has(`${sel}-${i}`) ? 'open' : ''}><summary><span class="jf-n">${i + 1}</span><span class="q">${esc(c.q)}</span></summary><p class="ans">${esc(c.a)}</p></details>`).join('')
-    : t.err ? `<div class="jf-err"><span>${esc(t.err)}</span><button class="btn" data-act="jfretry" data-i="${sel}">Try again</button></div>`
-    : `<p class="muted small jf-writing">Writing the ${esc(t.name)} cards…</p>${'<div class="jf-skel-card" aria-hidden="true"></div>'.repeat(4)}`;
-  return `<div class="stack jf">${head}
-    ${r.sample ? `<div class="jf-sample"><b>This is an example.</b><span>With Pro, paste your own job post and get cards for it.</span><button class="btn primary" data-act="plans">Unlock with Pro</button></div>` : ''}
-    <div><div class="label">Top 5 for</div><h1 class="jf-role">${esc(r.role || 'this job')}</h1></div>
-    <div class="chips jf-chips" role="tablist">${r.stack.map((x, i) => `<button class="chip ${i === sel ? 'on' : ''}" role="tab" aria-selected="${i === sel}" data-act="jfpick" data-i="${i}" style="--k:${i}"><b>${i + 1}</b> ${esc(x.name)}${x.cards ? ` <span class="jf-count">${x.cards.length}</span>` : x.err ? '' : ' <span class="jf-dot" aria-label="loading"></span>'}</button>`).join('')}</div>
-    <p class="jf-why">${esc(t.why)}</p>
-    <div class="jf-cards">${cardsHtml}</div>
+  const total = r.stack.reduce((n, t) => n + (t.cards?.length || 0), 0);
+  const decks = r.stack.map((t, i) => {
+    const state = t.cards ? `<span class="jf-deck-n">${t.cards.length} cards</span>` : t.err ? `<span class="jf-deck-n err">Tap to retry</span>` : `<span class="jf-deck-n"><span class="jf-dot"></span> Writing…</span>`;
+    return `<button class="jf-deck ${t.cards ? '' : 'wait'}" style="--k:${i}" data-act="${t.cards ? 'jfdeck' : t.err ? 'jfretry' : ''}" data-i="${i}" ${!t.cards && !t.err ? 'disabled' : ''}>
+      <span class="jf-deck-i">${i + 1}</span><b>${esc(t.name)}</b>${t.why ? `<span class="jf-deck-why">${esc(t.why)}</span>` : ''}${state}</button>`;
+  }).join('');
+  return `<div class="stack jf">${head}${switcher}
+    ${r.sample ? `<div class="jf-sample"><b>This is an example.</b><span>With Pro, paste your own job post and get decks for it.</span><button class="btn primary" data-act="plans">Unlock with Pro</button></div>` : ''}
+    <div class="jf-hero"><div class="label">Your decks for</div><h1 class="jf-role">${esc(r.role || 'this job')}</h1>
+      <p class="muted">${r.stack.length} skills${total ? ` · ${total} cards` : ''}</p>
+      <button class="btn primary jf-all" data-act="jfswipe" ${total ? '' : 'disabled'}>${ic('cards')}Practice all${total ? ` ${total}` : ''} cards</button></div>
+    <div class="jf-decks">${decks}</div>
     ${r.sample ? '' : briefSectionHtml(r)}
-    ${r.sample ? '' : `<div class="row"><button class="btn primary" data-act="jfswipe" ${r.stack.some(x => x.cards) ? '' : 'disabled'}>${ic('cards')}Swipe through all</button><button class="btn quiet" data-act="jfnew">${ic('refresh')}New job post</button></div>`}
+    ${r.sample ? '' : `<button class="link quiet small jf-del" data-act="jfdel">Remove this job post</button>`}
   </div>`;
 }
 
@@ -976,10 +994,9 @@ function briefSectionHtml(r) {
   return `<section class="brief">
     <h3>Your practice brief</h3>
     <div class="brief-block"><span class="brief-l">Tell me about yourself</span><p>${esc(b.about)}</p></div>
-    <div class="brief-block"><span class="brief-l">Likely questions</span>${b.qa.map(x => `<details class="tf-q"><summary>${esc(x.q)}</summary><p>${esc(x.a)}</p></details>`).join('')}</div>
-    ${b.stories?.length ? `<div class="brief-block"><span class="brief-l">Stories to tell</span>${b.stories.map(x => `<details class="tf-q"><summary>${esc(x.prompt)}</summary><p>${esc(x.story)}</p></details>`).join('')}</div>` : ''}
+    <button class="jf-deck brief-deck" data-act="jfbriefswipe"><span class="jf-deck-i">${ic('cards')}</span><b>Your answers for this role</b><span class="jf-deck-why">Likely questions answered with your own projects${b.stories?.length ? ', plus stories to tell' : ''}.</span><span class="jf-deck-n">${b.qa.length + (b.stories?.length || 0)} cards</span></button>
     ${b.ask?.length ? `<div class="brief-block"><span class="brief-l">Questions to ask them</span><ul>${b.ask.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}
-    <div class="row"><button class="btn primary" data-act="jfmock">${ic('mic')}Mock interview for this role</button><button class="btn" data-act="jfbriefswipe">${ic('cards')}Swipe the questions</button></div>
+    <button class="btn primary" data-act="jfmock">${ic('mic')}Mock interview for this role</button>
     <button class="link quiet small" data-act="jfbriefnew">Rebuild with a different résumé</button>
   </section>`;
 }
@@ -989,7 +1006,7 @@ async function buildBrief() {
   lsSet('pp.resume', resume);
   S.briefBusy = true; render();
   try {
-    const d = await ai.post('/api/jobfocus/brief', { jd: J.text, resume });
+    const d = await ai.post('/api/jobfocus/brief', { jd: J.result.text || J.text, resume });
     J.result.brief = { role: d.role, about: d.about, qa: d.qa, stories: d.stories, ask: d.ask };
     jfSave(J.result);
   } catch (e) { if (e.code === 'pro') S.showPlans = true; else aiFailed(e); }
@@ -1012,7 +1029,7 @@ async function jobFocusGo() {
   try {
     // Step 1 (~1-2 s): the five skills. The screen fills right away.
     const d = await ai.post('/api/jobfocus', { text: J.text });
-    J.result = { role: d.role, stack: d.stack.map(t => ({ ...t, cards: null })) }; J.ticket = d.ticket; J.sel = 0; J.open = new Set();
+    J.result = { id: Date.now().toString(36), role: d.role, text: J.text, stack: d.stack.map(t => ({ ...t, cards: null })) }; J.ticket = d.ticket; J.sel = 0; J.open = new Set();
   } catch (e) {
     if (e.code === 'pro') S.showPlans = true;
     else oops(e.message || 'Could not read that job post. Try again.');
@@ -2330,6 +2347,13 @@ function startDeck(ids, opts = {}) {
 }
 
 // Job focus cards as a swipe round: every skill mixed together. Not part of the spaced-repetition plan.
+function startSkillDeck(i) {
+  const t = S.jf?.result?.stack[i];
+  if (!t?.cards) return;
+  const cards = t.cards.map((c, k) => ({ id: `jf-${i}-${k}`, topic: t.name, topicName: t.name, q: c.q, a: c.a, l: 0, jf: true }));
+  S.deck = { cards, results: [], free: false, total: cards.length, mode: 'swipe', jf: true };
+  S.di = 0; S.reveal = false; S.view = 'deck'; render();
+}
 function startJobDeck() {
   const r = S.jf?.result;
   if (!r) return;
@@ -2655,7 +2679,7 @@ document.addEventListener('click', async e => {
   else if (a === 'jfbrief') buildBrief();
   else if (a === 'jfbriefoff') { S.liveBrief = null; liveSetupSheet(); }
   else if (a === 'jfbriefswipe') startBriefDeck();
-  else if (a === 'jfmock') { S.liveBrief = { jd: S.jf?.text || '', resume: lsGet('pp.resume', '') }; liveSetupSheet(); }
+  else if (a === 'jfmock') { S.liveBrief = { jd: S.jf?.result?.text || S.jf?.text || '', resume: lsGet('pp.resume', '') }; liveSetupSheet(); }
   else if (a === 'jfbriefnew') { if (S.jf?.result) { delete S.jf.result.brief; jfSave(S.jf.result); } render(); }
   else if (a === 'tfscope') { S.tfScope = b.dataset.v; render(); document.getElementById('tfSnap')?.scrollTo({ top: 0 }); }
   else if (a === 'newchat') { store.newChat(); S.chatContext = ''; S.drawer = false; render(); document.getElementById('chatInput')?.focus(); }
@@ -2718,7 +2742,10 @@ document.addEventListener('click', async e => {
   else if (a === 'jfgo') jobFocusGo();
   else if (a === 'jfpick') { S.jf.sel = Number(b.dataset.i) || 0; render(); }
   else if (a === 'jfretry') jobFocusCards(Number(b.dataset.i) || 0);
-  else if (a === 'jfnew') { S.jf.result = null; S.jf.sel = 0; jfSave(null); render(); }
+  else if (a === 'jfnew') { S.jf.result = null; S.jf.text = ''; S.jf.sel = 0; render(); }
+  else if (a === 'jfopen') { const j = jfAll().find(x => x.id === b.dataset.id); if (j) { S.jf.result = j; S.jf.text = j.text || ''; } render(); }
+  else if (a === 'jfdeck') startSkillDeck(Number(b.dataset.i) || 0);
+  else if (a === 'jfdel') { if (confirm('Remove this job post and its decks?')) { jfRemove(S.jf.result?.id); const n = jfSaved(); S.jf.result = n; S.jf.text = n?.text || ''; render(); } }
   else if (a === 'pickfree') { S.showPlans = false; render(); }
   else if (a === 'unpaywall') { S.paywall = false; render(); }
   else if (a === 'buysub') buy('pro');

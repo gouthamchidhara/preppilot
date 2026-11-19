@@ -517,8 +517,8 @@ test('Job focus: Pro only, skills first, then cards per skill with a signed tick
   const boss = await signIn('boss@gmail.com', 'boss-jd');
   assert.notEqual((await call('POST jobfocus', { text: jd }, boss)).status, 402);
   // skills: capped at 5, need at least 2
-  const sk = sanitizeJobSkills(JSON.stringify({ role: 'Backend', level: 'senior', stack: Array.from({ length: 8 }, (_, i) => ({ name: `T${i}`, why: 'w', focus: 'f' })) }));
-  assert.equal(sk.stack.length, 5); assert.equal(sk.level, 'senior');
+  const sk = sanitizeJobSkills(JSON.stringify({ role: 'Backend', level: 'senior', stack: Array.from({ length: 10 }, (_, i) => ({ name: `T${i}`, why: 'w', focus: 'f' })) }));
+  assert.equal(sk.stack.length, 8); assert.equal(sk.level, 'senior');
   assert.equal(sanitizeJobSkills('not json'), null);
   // cards: comprehensive (up to 10), at least 3
   const card = { q: 'Q?', a: 'A.' };
