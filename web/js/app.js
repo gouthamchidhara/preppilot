@@ -1693,7 +1693,7 @@ function liveSettings() {
     lengthMin: 240,
     voice: saved.voice !== false,
     style: ['friendly', 'direct', 'tough'].includes(saved.style) ? saved.style : 'friendly',
-    speaker: LIVE_VOICES.some(v => v[0] === saved.speaker) ? saved.speaker : 'marin',
+    speaker: 'marin', // one voice for everyone: the one users liked, and no extra wait
     topic: typeof saved.topic === 'string' ? saved.topic : '',
     difficulty: ['junior', 'mid', 'senior'].includes(saved.difficulty) ? saved.difficulty : (p?.level || 'mid'),
     use: saved.use === 'interview' ? 'interview' : 'talk',
@@ -1725,8 +1725,7 @@ function liveSetupSheet() {
     <input type="hidden" name="use" value="${use === 'interview' ? 'interview' : 'talk'}">
     ${S.liveBrief?.jd ? `<p class="lv-brief-on">${ic('target')}Mock interview for <b>${esc(S.jf?.result?.role || 'your role')}</b>, using your résumé. <button type="button" class="link quiet small" data-act="jfbriefoff">Turn off</button></p>` : ''}
     <label>Topic focus<select name="topic"><option value="">All my topics</option>${relevant.map(t => `<option value="${esc(t.name)}" ${s.topic === t.name ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
-    <details class="lv-custom practice-only" ${use === 'interview' ? 'hidden' : ''}><summary><span>Customize</span><span class="muted small">${esc((LIVE_VOICES.find(v => v[0] === s.speaker)?.[1] || '').split(':')[0])} · ${s.style} · ${esc((LEVELS.find(l => l.id === s.difficulty)?.name || s.difficulty).split(' ')[0])}</span></summary><div class="stack">
-      <label>Voice<select name="speaker">${LIVE_VOICES.map(([v, n]) => `<option value="${v}" ${s.speaker === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+    <details class="lv-custom practice-only" ${use === 'interview' ? 'hidden' : ''}><summary><span>Customize</span><span class="muted small">${s.style} · ${esc((LEVELS.find(l => l.id === s.difficulty)?.name || s.difficulty).split(' ')[0])}</span></summary><div class="stack">
       <label>AI style<select name="style">${[['friendly', 'Friendly and encouraging'], ['direct', 'Direct, no small talk'], ['tough', 'Tough, probes every gap']].map(([v, n]) => `<option value="${v}" ${s.style === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
       <label>Difficulty<select name="difficulty">${LEVELS.map(l => `<option value="${l.id}" ${s.difficulty === l.id ? 'selected' : ''}>${esc(l.name)}</option>`).join('')}</select></label>
       <label class="switch"><input type="checkbox" name="voice" ${s.voice ? 'checked' : ''}>AI speaks out loud</label>
@@ -2566,7 +2565,6 @@ document.addEventListener('submit', async e => {
       lengthMin: 240, // no length to pick: the session runs until it is ended, paused or out of minutes
       voice: fd.get('voice') === 'on',
       style: String(fd.get('style') || 'friendly'),
-      speaker: String(fd.get('speaker') || 'marin'),
       topic: String(fd.get('topic') || ''),
       difficulty: String(fd.get('difficulty') || 'mid'),
       use: fd.get('use') === 'interview' ? 'interview' : 'talk',
