@@ -1277,3 +1277,8 @@ html { background: var(--desk); color-scheme: light dark; }
 @media (prefers-reduced-motion: reduce) { .tf-hint { animation: none; } }
 .tf.tf-snap { display: block; }
 .tf-snap .tf-item { box-sizing: border-box; }
+/* Feed scope: two quiet tabs */
+.tf-scope { display: inline-flex; gap: 4px; padding: 3px; margin: 0 0 6px; border-radius: 99px; background: var(--sunk); }
+.tf-scope button { padding: 7px 16px; border: 0; border-radius: 99px; background: none; color: var(--muted); font: 600 14px var(--sans); cursor: pointer; }
+.tf-scope button.on { background: var(--paper); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+.tf-snap { height: calc(100dvh - 130px - env(safe-area-inset-top)); }

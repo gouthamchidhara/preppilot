@@ -1473,11 +1473,13 @@ function trendView() {
   if (!T?.cards) { loadTrending(); return '<div class="tf"><h1>What’s new in tech</h1><p class="muted">Loading…</p></div>'; }
   // The user's own stack first, newest within each.
   const mine = new Set(rankTopics(topics(), profile()).flatMap(t => Object.entries(AREA_OF_ROLE).filter(([k]) => t.id.includes(k)).map(([, v]) => v)));
-  const cards = [...T.cards].sort((a, b) => (mine.has(b.area) ? 864e5 : 0) + b.date - ((mine.has(a.area) ? 864e5 : 0) + a.date));
+  const scope = S.tfScope || 'dev';
+  const cards = [...T.cards].filter(c => (c.kind || 'dev') === scope).sort((a, b) => (mine.has(b.area) ? 864e5 : 0) + b.date - ((mine.has(a.area) ? 864e5 : 0) + a.date));
   const pro = hasPro() || isAdmin();
   const shown = pro ? cards : cards.slice(0, 6);
   // One story per screen, swipe up for the next (snap scroll).
-  return `<div class="tf tf-snap" id="tfSnap">
+  return `<div class="tf-scope" role="tablist"><button role="tab" class="${scope === 'dev' ? 'on' : ''}" data-act="tfscope" data-v="dev">For you</button><button role="tab" class="${scope === 'world' ? 'on' : ''}" data-act="tfscope" data-v="world">Tech world</button></div>
+  <div class="tf tf-snap" id="tfSnap">
     ${shown.map((c, i) => `<article class="tf-item">
       <div class="tf-card">
         <p class="tf-meta">${esc(c.source)} · ${ago(c.date)}</p>
@@ -2607,6 +2609,7 @@ document.addEventListener('click', async e => {
   else if (a === 'textsize') { setTextSize(b.dataset.v); render(); }
   else if (a === 'prefmode') { setDeckMode(b.dataset.v); render(); }
   else if (a === 'newdeck') startNewDeck();
+  else if (a === 'tfscope') { S.tfScope = b.dataset.v; render(); document.getElementById('tfSnap')?.scrollTo({ top: 0 }); }
   else if (a === 'newchat') { store.newChat(); S.chatContext = ''; S.drawer = false; render(); document.getElementById('chatInput')?.focus(); }
   else if (a === 'drawer') { setDrawer(!S.drawer); }
   else if (a === 'ndall') { S.ndAll = !S.ndAll; syncDrawer(S.lastView); }

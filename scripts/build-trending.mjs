@@ -20,7 +20,7 @@ const ENDPOINT = (process.env.AZURE_OPENAI_ENDPOINT || '').replace(/\/+$/, '');
 const KEY = process.env.AZURE_OPENAI_API_KEY;
 const DEPLOYMENT = process.env.DRAFT_DEPLOYMENT || 'gpt-4.1';
 const args = process.argv.slice(2);
-const MAX = Number(args.includes('--max') ? args[args.indexOf('--max') + 1] : 24);
+const MAX = Number(args.includes('--max') ? args[args.indexOf('--max') + 1] : 36);
 const DRY = args.includes('--dry');
 const OUT = resolve(root, 'web/content/trending.json');
 const KEEP_DAYS = 21;
@@ -49,6 +49,15 @@ const RSS = {
   'Spring blog': ['https://spring.io/blog.atom', 'java'],
   'Node.js blog': ['https://nodejs.org/en/feed/blog.xml', 'javascript'],
   'Hugging Face blog': ['https://huggingface.co/blog/feed.xml', 'ai'],
+  // Tech world: the companies and products everyone is talking about.
+  'TechCrunch': ['https://techcrunch.com/feed/', 'world'],
+  'The Verge': ['https://www.theverge.com/rss/tech/index.xml', 'world'],
+  'Ars Technica': ['https://feeds.arstechnica.com/arstechnica/technology-lab', 'world'],
+  'OpenAI': ['https://openai.com/news/rss.xml', 'world'],
+  'Google': ['https://blog.google/technology/ai/rss/', 'world'],
+  'Microsoft': ['https://blogs.microsoft.com/feed/', 'world'],
+  'NVIDIA': ['https://nvidianews.nvidia.com/releases.xml', 'world'],
+  'Meta AI': ['https://ai.meta.com/blog/rss/', 'world'],
 };
 
 function curl(url) {
@@ -109,8 +118,11 @@ async function ai(messages, maxTokens) {
 }
 
 const SYSTEM = `You write a light, factual tech feed for software engineers preparing for interviews. Output ONLY JSON: {"cards":[...]}.
-From the candidate items, choose the ones a working engineer would genuinely want to know this week and that could come up in an interview: releases and features of major tools, cloud changes, notable engineering write-ups, important outages or security issues, meaningful AI developments. Skip funding, business news, opinion pieces, politics, drama, self-promotion, tutorials for beginners, and anything you cannot describe accurately from the item.
-For each chosen item write: {"i": index of the item, "title": a plain headline in your own words (max 70 chars), "what": what happened in 1-2 sentences, "why": why it matters to an engineer in 1 sentence, "q": one interview question about the underlying concept this news touches (a regex vulnerability → "What is ReDoS and how do you prevent it?"; a cross-region failover feature → "How would you design cross-region failover?"), never trivia about the news itself, "a": a crisp answer in 1-2 sentences, "area": one of react, angular, javascript, java, python, go, dotnet, mobile, kubernetes, docker, cloud, infra, devops, sql, data, kafka, ai, qa, security, system-design, general}.
+Two kinds of cards:
+- "dev": what a working engineer would want to know and could come up in an interview: releases and features of tools, cloud changes, engineering write-ups, important outages or security issues.
+- "world": what is happening in the tech industry that people talk about: launches and announcements from big companies (NVIDIA, Microsoft, Apple, Google, Amazon, Meta, OpenAI, Anthropic and others), major AI model releases, big chips, platform shifts, large acquisitions, notable earnings or market moves explained plainly. Keep it factual and neutral.
+Aim for roughly 60% dev and 40% world. Skip politics, celebrity drama, rumours, opinion pieces, self-promotion, beginner tutorials and anything you cannot describe accurately from the item. Write headlines in plain English a busy reader gets in one glance.
+For each chosen item write: {"i": index of the item, "title": a plain headline in your own words (max 70 chars), "what": what happened in 1-2 sentences, "why": why it matters to an engineer in 1 sentence, "q": one interview question about the underlying concept this news touches (a regex vulnerability → "What is ReDoS and how do you prevent it?"; a cross-region failover feature → "How would you design cross-region failover?"), never trivia about the news itself, "a": a crisp answer in 1-2 sentences, "kind": "dev" or "world", "area": one of react, angular, javascript, java, python, go, dotnet, mobile, kubernetes, docker, cloud, infra, devops, sql, data, kafka, ai, qa, security, system-design, general}.
 Rules: write in your own words, never copy sentences from the source. Only state facts present in the item or that you are certain of; if the item is too thin to describe, skip it. No hype, no emoji, no exclamation marks.`;
 
 async function main() {
@@ -126,7 +138,7 @@ async function main() {
     for (const c of out.cards || []) {
       const src = batch[c.i];
       if (!src || !c.title || !c.what || !c.q || !c.a) continue;
-      cards.push({ id: Buffer.from(src.url).toString('base64url').slice(-16), title: String(c.title).slice(0, 90), what: String(c.what).slice(0, 320), why: String(c.why || '').slice(0, 220), q: String(c.q).slice(0, 200), a: String(c.a).slice(0, 360), area: String(c.area || src.area || 'general'), source: src.source, url: src.url, date: src.date || now });
+      cards.push({ id: Buffer.from(src.url).toString('base64url').slice(-16), title: String(c.title).slice(0, 90), what: String(c.what).slice(0, 320), why: String(c.why || '').slice(0, 220), q: String(c.q).slice(0, 200), a: String(c.a).slice(0, 360), kind: c.kind === 'world' || src.area === 'world' ? 'world' : 'dev', area: String(c.area || src.area || 'general'), source: src.source, url: src.url, date: src.date || now });
     }
   }
   const prev = existsSync(OUT) ? JSON.parse(readFileSync(OUT, 'utf8')).cards || [] : [];
