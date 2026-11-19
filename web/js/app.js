@@ -3,7 +3,7 @@ import { store } from './store.js';
 import { ai } from './ai.js';
 import { voice } from './voice.js';
 import { VoiceSession, realtimeSupported } from './realtime.js';
-import { native, signedIn, signOut, renderGoogleButton, refreshAccount, onAccountChange, nativeSignIn, nativePurchase, nativeBuyLive, nativeRestore, listenNative, notifyBadge, notifyDaily, promptNotifications } from './auth.js';
+import { native, signedIn, signOut, renderGoogleButton, refreshAccount, onAccountChange, nativeSignIn, nativePurchase, nativeBuyLive, nativeRestore, listenNative, notifyBadge, notifyDaily, notifyWeek, promptNotifications } from './auth.js';
 import { initContent, getCatalog, getManifest, roleById, topicMeta, ensureTopics, ensureForProfile, loadedTopics, reportUrl } from './content.js';
 import { diagramHtml, diagramFor, storyView, registerDiagramSpec } from './diagrams.js';
 import { todayKey, recordActivity, streakDays, lastNDays } from './stats.js';
@@ -239,13 +239,52 @@ function dailyReminder() {
   const n = pickNudge(topic, due.length);
   return { title: n.title, body: `${line}. ${n.body}`.slice(0, 240), due: due.length };
 }
-let lastBadge = -1, lastDailyKey = '';
+// A week of reminders, scheduled ahead so every morning is different even if the app stays closed.
+// Context first (interview countdown, streak at risk, unused Live AI minutes, coming back), then jokes.
+function reminderWeek() {
+  const p = profile();
+  if (!p) return [];
+  const prog = store.progress();
+  const nt = nextTopic(p);
+  const due = dueCards(topics(), p, prog, Date.now(), 999).length;
+  const topic = nt ? nt.name : 'your next topic';
+  const list = NUDGES?.nudges?.length ? NUDGES.nudges : [FALLBACK_NUDGE];
+  const days = daysUntil(p.interviewDate || p.date);
+  const streak = streakDays(store.activity(), todayKey());
+  const acc = store.account();
+  const liveMin = acc?.plan === 'pro' ? acc.proLiveLeft || 0 : 0;
+  const fill = s => s.replaceAll('{topic}', topic).replaceAll('{due}', String(due));
+  const out = [];
+  const start = store.nudgeIndex() || 0;
+  for (let i = 1; i <= 7; i++) {
+    const at = new Date(); at.setDate(at.getDate() + i); at.setHours(9, 0, 0, 0);
+    const left = days === null ? null : days - i;
+    let n;
+    if (left === 0) n = { title: 'Interview day. You’ve got this.', body: 'Skip the cramming. Skim three cards, breathe, and go be great.' };
+    else if (left === 1) n = { title: 'Interview tomorrow', body: `One light round of ${topic} today. Then sleep. Sleep is also prep.` };
+    else if (left !== null && left > 1 && left <= 7 && i % 2 === 1) n = { title: `${left} days to go`, body: `The countdown is real. ${topic} is the move today.` };
+    else if (liveMin >= 10 && i === 3) n = { title: `${liveMin} Live AI minutes, just sitting there`, body: 'Say your answers out loud to an interviewer that never sighs. Even five minutes counts.' };
+    else if (i === 6 && streak === 0) n = { title: 'We saved your seat', body: `No guilt, no streak drama. Just ${topic}, whenever you're ready.` };
+    else { const pick = list[(start + i) % list.length]; n = { title: fill(pick.title), body: fill(pick.body) }; }
+    out.push({ at: at.getTime(), title: n.title.slice(0, 80), body: n.body.slice(0, 200) });
+  }
+  // Tonight: protect a live streak if nothing was practised today.
+  const today = store.activity()?.[todayKey()];
+  if (streak > 0 && !today) {
+    const ev = new Date(); ev.setHours(19, 30, 0, 0);
+    if (ev.getTime() > Date.now() + 600000) out.unshift({ at: ev.getTime(), title: `Your ${streak}-day streak is nervous`, body: `One ${topic} card keeps it alive. That's the whole ask.` });
+  }
+  return out;
+}
+let lastBadge = -1, lastDailyKey = '', lastWeekKey = '';
 function syncNativeHome() {
   const d = dailyReminder();
   if (!d) return;
   if (d.due !== lastBadge) { lastBadge = d.due; notifyBadge(d.due); }
   const key = `${d.title}|${d.body}`;
   if (key !== lastDailyKey) { lastDailyKey = key; notifyDaily(d.title, d.body); }
+  const week = reminderWeek(), wk = week.map(x => x.title).join('|') + new Date().toDateString();
+  if (week.length && wk !== lastWeekKey) { lastWeekKey = wk; notifyWeek(week); } // newer app builds; older ones ignore it
 }
 
 /* ---------- onboarding ---------- */
@@ -1754,7 +1793,7 @@ function prepSummary() {
   if (!p) return '';
   const m = migrateProfile(p);
   const roles = m.roleIds.map(id => id === 'other' ? p.otherRole : roleName(id)).filter(Boolean).join(', ');
-  const days = daysUntil(p.date);
+  const days = daysUntil(p.interviewDate || p.date);
   const r = readiness(rankTopics(topics(), p), p, store.progress());
   const streak = streakDays(store.activity(), todayKey());
   if (S.editProfile) return `<section class="stack"><div class="sec-head"><h2>Your prep</h2><button class="link quiet small" data-act="editprofile">Done</button></div>${onboardingView(p)}</section>`;

@@ -4,9 +4,9 @@ import { readFileSync } from 'node:fs';
 
 const data = JSON.parse(readFileSync(new URL('../web/content/nudges.json', import.meta.url), 'utf8'));
 
-test('nudges file: exactly 50 fresh rotating messages', () => {
-  assert.equal(data.version, 1);
-  assert.equal(data.nudges.length, 50);
+test('nudges file: 75 fresh rotating messages', () => {
+  assert.equal(data.version, 2);
+  assert.equal(data.nudges.length, 75);
   const titles = new Set();
   let withPlaceholder = 0;
   for (const n of data.nudges) {

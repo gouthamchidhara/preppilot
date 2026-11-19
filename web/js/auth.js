@@ -94,6 +94,7 @@ export function nativeRestore(userKey) { toNative({ type: 'restore', userKey });
 // Badge + daily reminder: no-ops on the web (no WebView bridge there).
 export function notifyBadge(count) { toNative({ type: 'badge', count }); }
 export function notifyDaily(title, body) { toNative({ type: 'daily', title, body }); }
+export function notifyWeek(items) { toNative({ type: 'week', items }); }
 export function promptNotifications() { toNative({ type: 'promptNotifications' }); }
 
 export function listenNative({ onError, onPurchased, onCancelled }) {

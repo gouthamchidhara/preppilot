@@ -1,1 +1,305 @@
-{"nudges": [{"body": "{topic} is on the menu. Small bites, big brain.", "title": "Today's warm-up"}, {"body": "It would like a quick round of {topic} before lunch.", "title": "Your brain called"}, {"body": "Your {topic} cards are warmed up and waiting.", "title": "Coffee's on"}, {"body": "Not really. But {topic} is, and it is very polite about it.", "title": "The panel is waiting"}, {"body": "{topic} fits in the gap between meetings. Probably.", "title": "Two minutes, one topic"}, {"body": "One card at a time beats one cram session every time.", "title": "Slow and steady"}, {"body": "Water it with a quick {topic} round. It likes attention.", "title": "Your streak is a plant"}, {"body": "You actually know more {topic} than you did last week.", "title": "Plot twist"}, {"body": "Today's workout is {topic}. No sweat, just synapses.", "title": "Brain gym"}, {"body": "{topic} misses you. It said so. Well, it would if it could.", "title": "A gentle reminder"}, {"body": "{topic} and a warm drink. That is the whole plan.", "title": "Interview prep, but cozy"}, {"body": "A round of {topic} is the cheapest upgrade available.", "title": "You, but 1% sharper"}, {"body": "{topic} is here when you are. It is patient like that.", "title": "No rush, just rhythm"}, {"body": "Nobody claps for flashcards. Your future self will, though.", "title": "The quiet win"}, {"body": "{topic} fits in your pocket and your coffee break.", "title": "A pocket-sized lesson"}, {"body": "Partly {topic}, with a 100% chance of feeling smarter after.", "title": "Today's forecast"}, {"body": "{topic} is a snack, not a feast. Help yourself.", "title": "Brain snacks"}, {"body": "Every card you know today is one you will not have to relearn.", "title": "The long game"}, {"body": "Hello from {topic}. It brought flashcards and zero judgment.", "title": "A small hello"}, {"body": "One round of {topic}, then the day is officially yours.", "title": "The warm-up lap"}, {"body": "Interviews are loud. {topic} practice is quiet. Enjoy the quiet.", "title": "The calm before"}, {"body": "You have seen these {topic} cards before. That is the point.", "title": "A good kind of deja vu"}, {"body": "If a {topic} card takes two minutes, do it now. Most take less.", "title": "The two-minute rule"}, {"body": "{topic} pairs well with toast. Science has not checked, but still.", "title": "Brain, meet breakfast"}, {"body": "{topic} is back. It missed you and brought no homework.", "title": "A friendly face"}, {"body": "Strong answers are built one {topic} card at a time.", "title": "The slow build"}, {"body": "{topic} is trending in your head. Ride the wave.", "title": "Your interview era"}, {"body": "One card leads to another. That is how streaks are born.", "title": "A little momentum"}, {"body": "Cramming is loud. {topic} a little every day is quiet and works.", "title": "The anti-cram"}, {"body": "Every {topic} answer you say out loud gets smoother.", "title": "The practice effect"}, {"body": "Confidence is just {topic} you have rehearsed. Go rehearse.", "title": "A quiet confidence"}, {"body": "Not bread. {topic}. But the same daily habit energy.", "title": "The daily bread"}, {"body": "It is {topic}. It was inside you all along. Cheesy, but true.", "title": "Your secret weapon"}, {"body": "Do future you a favor: five minutes of {topic} today.", "title": "The five-minute favor"}, {"body": "Stretch it gently with {topic}. It stretches back.", "title": "The comfort zone"}, {"body": "It is {topic} o'clock somewhere. Here, it is now.", "title": "Brain o'clock"}, {"body": "One {topic} card is one step up. The view improves.", "title": "The steady climb"}, {"body": "Future you says thanks for the {topic} practice. And the snacks.", "title": "A note from the future"}, {"body": "{topic} is just a topic. You are the one doing the learning.", "title": "You have got this"}, {"body": "{topic} fits between two meetings. We timed it.", "title": "Five minutes, tops"}, {"body": "Someone will ask about {topic} one day. Be the one who knows.", "title": "Your future standup"}, {"body": "One {topic} card now beats ten tomorrow night.", "title": "Small win available"}, {"body": "Just long enough for a quick round of {topic}.", "title": "The kettle is boiling"}, {"body": "Tell me about {topic}. You will want an answer ready.", "title": "Interviewer, probably"}, {"body": "Same brain, slightly sharper after five minutes of {topic}.", "title": "Still you"}, {"body": "Swap one scroll for one {topic} card. Nobody will notice.", "title": "Commute upgrade"}, {"body": "{topic} has been very patient with you.", "title": "Gentle tap on the shoulder"}, {"body": "Three {topic} cards. Then you can go back to whatever that was.", "title": "Low effort, high return"}, {"body": "A quick {topic} round, then the internet is all yours again.", "title": "Before the next tab"}, {"body": "Pick up {topic} where you left it. It did not go anywhere.", "title": "Right where you left it"}], "version": 1}
+{
+"nudges": [
+{
+"body": "{topic} is on the menu. Small bites, big brain.",
+"title": "Today's warm-up"
+},
+{
+"body": "It would like a quick round of {topic} before lunch.",
+"title": "Your brain called"
+},
+{
+"body": "Your {topic} cards are warmed up and waiting.",
+"title": "Coffee's on"
+},
+{
+"body": "Not really. But {topic} is, and it is very polite about it.",
+"title": "The panel is waiting"
+},
+{
+"body": "{topic} fits in the gap between meetings. Probably.",
+"title": "Two minutes, one topic"
+},
+{
+"body": "One card at a time beats one cram session every time.",
+"title": "Slow and steady"
+},
+{
+"body": "Water it with a quick {topic} round. It likes attention.",
+"title": "Your streak is a plant"
+},
+{
+"body": "You actually know more {topic} than you did last week.",
+"title": "Plot twist"
+},
+{
+"body": "Today's workout is {topic}. No sweat, just synapses.",
+"title": "Brain gym"
+},
+{
+"body": "{topic} misses you. It said so. Well, it would if it could.",
+"title": "A gentle reminder"
+},
+{
+"body": "{topic} and a warm drink. That is the whole plan.",
+"title": "Interview prep, but cozy"
+},
+{
+"body": "A round of {topic} is the cheapest upgrade available.",
+"title": "You, but 1% sharper"
+},
+{
+"body": "{topic} is here when you are. It is patient like that.",
+"title": "No rush, just rhythm"
+},
+{
+"body": "Nobody claps for flashcards. Your future self will, though.",
+"title": "The quiet win"
+},
+{
+"body": "{topic} fits in your pocket and your coffee break.",
+"title": "A pocket-sized lesson"
+},
+{
+"body": "Partly {topic}, with a 100% chance of feeling smarter after.",
+"title": "Today's forecast"
+},
+{
+"body": "{topic} is a snack, not a feast. Help yourself.",
+"title": "Brain snacks"
+},
+{
+"body": "Every card you know today is one you will not have to relearn.",
+"title": "The long game"
+},
+{
+"body": "Hello from {topic}. It brought flashcards and zero judgment.",
+"title": "A small hello"
+},
+{
+"body": "One round of {topic}, then the day is officially yours.",
+"title": "The warm-up lap"
+},
+{
+"body": "Interviews are loud. {topic} practice is quiet. Enjoy the quiet.",
+"title": "The calm before"
+},
+{
+"body": "You have seen these {topic} cards before. That is the point.",
+"title": "A good kind of deja vu"
+},
+{
+"body": "If a {topic} card takes two minutes, do it now. Most take less.",
+"title": "The two-minute rule"
+},
+{
+"body": "{topic} pairs well with toast. Science has not checked, but still.",
+"title": "Brain, meet breakfast"
+},
+{
+"body": "{topic} is back. It missed you and brought no homework.",
+"title": "A friendly face"
+},
+{
+"body": "Strong answers are built one {topic} card at a time.",
+"title": "The slow build"
+},
+{
+"body": "{topic} is trending in your head. Ride the wave.",
+"title": "Your interview era"
+},
+{
+"body": "One card leads to another. That is how streaks are born.",
+"title": "A little momentum"
+},
+{
+"body": "Cramming is loud. {topic} a little every day is quiet and works.",
+"title": "The anti-cram"
+},
+{
+"body": "Every {topic} answer you say out loud gets smoother.",
+"title": "The practice effect"
+},
+{
+"body": "Confidence is just {topic} you have rehearsed. Go rehearse.",
+"title": "A quiet confidence"
+},
+{
+"body": "Not bread. {topic}. But the same daily habit energy.",
+"title": "The daily bread"
+},
+{
+"body": "It is {topic}. It was inside you all along. Cheesy, but true.",
+"title": "Your secret weapon"
+},
+{
+"body": "Do future you a favor: five minutes of {topic} today.",
+"title": "The five-minute favor"
+},
+{
+"body": "Stretch it gently with {topic}. It stretches back.",
+"title": "The comfort zone"
+},
+{
+"body": "It is {topic} o'clock somewhere. Here, it is now.",
+"title": "Brain o'clock"
+},
+{
+"body": "One {topic} card is one step up. The view improves.",
+"title": "The steady climb"
+},
+{
+"body": "Future you says thanks for the {topic} practice. And the snacks.",
+"title": "A note from the future"
+},
+{
+"body": "{topic} is just a topic. You are the one doing the learning.",
+"title": "You have got this"
+},
+{
+"body": "{topic} fits between two meetings. We timed it.",
+"title": "Five minutes, tops"
+},
+{
+"body": "Someone will ask about {topic} one day. Be the one who knows.",
+"title": "Your future standup"
+},
+{
+"body": "One {topic} card now beats ten tomorrow night.",
+"title": "Small win available"
+},
+{
+"body": "Just long enough for a quick round of {topic}.",
+"title": "The kettle is boiling"
+},
+{
+"body": "Tell me about {topic}. You will want an answer ready.",
+"title": "Interviewer, probably"
+},
+{
+"body": "Same brain, slightly sharper after five minutes of {topic}.",
+"title": "Still you"
+},
+{
+"body": "Swap one scroll for one {topic} card. Nobody will notice.",
+"title": "Commute upgrade"
+},
+{
+"body": "{topic} has been very patient with you.",
+"title": "Gentle tap on the shoulder"
+},
+{
+"body": "Three {topic} cards. Then you can go back to whatever that was.",
+"title": "Low effort, high return"
+},
+{
+"body": "A quick {topic} round, then the internet is all yours again.",
+"title": "Before the next tab"
+},
+{
+"body": "Pick up {topic} where you left it. It did not go anywhere.",
+"title": "Right where you left it"
+},
+{
+"title": "git commit -m \"learned stuff\"",
+"body": "Two minutes of {topic} and that commit message is finally true."
+},
+{
+"title": "It works on my machine",
+"body": "Make it work in the interview too. One round of {topic}."
+},
+{
+"title": "404: excuses not found",
+"body": "{topic} is ready. You are ready. Let's go."
+},
+{
+"title": "Stack Overflow can't come with you",
+"body": "Into the interview room, that is. {topic} can, if you practise it."
+},
+{
+"title": "Your rubber duck is bored",
+"body": "Explain some {topic} to it. Then explain it to us."
+},
+{
+"title": "Merge conflict detected",
+"body": "Between you and {topic}. Resolve it in five minutes."
+},
+{
+"title": "sudo study",
+"body": "Permission granted. {topic} is waiting."
+},
+{
+"title": "Not a drill",
+"body": "Okay, it is a drill. A {topic} drill. Very low stakes."
+},
+{
+"title": "Ctrl+S your brain",
+"body": "Save some {topic} before the day overwrites it."
+},
+{
+"title": "The recruiter energy is high",
+"body": "Match it with a quick round of {topic}."
+},
+{
+"title": "Ship it",
+"body": "One small {topic} round. Tiny diff, big impact."
+},
+{
+"title": "Your neurons filed a ticket",
+"body": "Priority: high. Request: more {topic}. Effort: 2 minutes."
+},
+{
+"title": "Breaking: local dev gets sharper",
+"body": "Sources confirm a round of {topic} was involved."
+},
+{
+"title": "Unit test for your brain",
+"body": "Assert you know {topic}. Run it now, see what fails."
+},
+{
+"title": "Big O of you",
+"body": "O(1) effort today, O(log n) panic on interview day."
+},
+{
+"title": "Hot take",
+"body": "{topic} is more fun than doomscrolling. Test the hypothesis."
+},
+{
+"title": "Achievement: opened a notification",
+"body": "Next achievement: one round of {topic}."
+},
+{
+"title": "The cache is cold",
+"body": "Warm it up with a few {topic} cards."
+},
+{
+"title": "Deploy confidence to production",
+"body": "Build step: five minutes of {topic}."
+},
+{
+"title": "Your future offer letter says hi",
+"body": "It also says: please practise {topic}."
+},
+{
+"title": "Don't get ghosted",
+"body": "{topic} is still waiting for a reply. A quick round counts."
+},
+{
+"title": "Weekly standup with yourself",
+"body": "Yesterday: nothing. Today: {topic}. Blockers: none."
+},
+{
+"title": "TL;DR",
+"body": "{topic}. Five minutes. You'll thank yourself."
+},
+{
+"title": "Retry with backoff",
+"body": "Missed yesterday? Totally fine. Try {topic} again today."
+},
+{
+"title": "Feature flag: smart_mode=true",
+"body": "Enabled by one round of {topic}."
+}
+],
+"version": 2
+}

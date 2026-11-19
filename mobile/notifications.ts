@@ -45,3 +45,21 @@ export async function promptDailyReminder(): Promise<boolean> {
   if (granted && lastDaily) await scheduleDailyReminder(lastDaily.title, lastDaily.body);
   return granted;
 }
+
+// A week of different reminders at fixed times (one-off triggers). Replaces the single repeating
+// daily reminder, so mornings never show the same line twice.
+const WEEK_PREFIX = 'preppilot-week-';
+export async function scheduleWeek(items: { at: number; title: string; body: string }[]): Promise<void> {
+  if (!(await notificationsGranted())) return;
+  const all = await Notifications.getAllScheduledNotificationsAsync().catch(() => []);
+  await Promise.all(all.filter(n => n.identifier.startsWith(WEEK_PREFIX) || n.identifier === DAILY_ID)
+    .map(n => Notifications.cancelScheduledNotificationAsync(n.identifier).catch(() => {})));
+  for (const [i, it] of items.slice(0, 10).entries()) {
+    if (!(it.at > Date.now())) continue;
+    await Notifications.scheduleNotificationAsync({
+      identifier: WEEK_PREFIX + i,
+      content: { title: it.title, body: it.body },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(it.at) },
+    }).catch(() => {});
+  }
+}
