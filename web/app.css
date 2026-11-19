@@ -1342,3 +1342,4 @@ html { background: var(--desk); color-scheme: light dark; }
 .sw-a.long { font-size: 1rem; line-height: 1.55; }
 .sw-a, .sw-more { touch-action: pan-y; overscroll-behavior: contain; }
 #swTop.more .sw-tip { display: none; }
+.pulse.paused { animation: none; opacity: .45; }

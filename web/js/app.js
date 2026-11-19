@@ -49,6 +49,7 @@ function md(s) {
   return parts.map((p, i) => (i % 2 ? `<pre><code>${esc(p.replace(/\n$/, ''))}</code></pre>` : fmt(p).replace(/(^|<br>)[-*] /g, '$1• '))).join('');
 }
 const ICONS = {
+  pause: '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>',
   bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
   mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
   micoff: '<path d="M9 9v2a3 3 0 0 0 5 2.2M15 9.5V6a3 3 0 0 0-5.7-1.3M5 11a7 7 0 0 0 11.5 5.4M19 11a7 7 0 0 1-.4 2.3M12 18v3M3 3l18 18"/>',
@@ -1402,8 +1403,17 @@ function voicePanel() {
         ${S.rtMode === 'listen' ? '<button class="btn primary" data-act="rtrespond">Get feedback</button>' : '<button class="btn" data-act="rtinterrupt">Interrupt</button>'}
         <button class="btn ${S.muted ? 'on' : ''}" data-act="rtmute" aria-pressed="${!!S.muted}">${ic(S.muted ? 'micoff' : 'mic')}${S.muted ? 'Mic off' : 'Mic on'}</button>
         ${S.rtSpeaks ? `<button class="btn ${S.soundOff ? 'on' : ''}" data-act="rtsound" aria-pressed="${!!S.soundOff}">${ic(S.soundOff ? 'soundoff' : 'sound')}${S.soundOff ? 'Sound off' : 'Sound on'}</button>` : ''}
+        ${S.rtMode === 'live' ? `<button class="btn" data-act="livepause">${ic('pause')}Pause</button>` : ''}
         <button class="btn danger" data-act="rtstop">End</button>
       </div>
+    </section>`;
+  }
+  if (S.livePaused) {
+    const oneTime = S.livePaused.oneTime;
+    return `<section class="panel stage lv-paused">
+      <div class="pulse paused" aria-hidden="true"></div>
+      <div><div class="status">Paused</div><div class="timer">${oneTime ? 'Your one-time hour keeps running' : 'Your minutes are not counting'}</div></div>
+      <div class="ctl"><button class="btn primary" data-act="liveresume">${ic('play')}Resume</button><button class="btn quiet" data-act="livediscard">End</button></div>
     </section>`;
   }
   if (!(S.voiceServer && realtimeSupported)) {
@@ -1840,6 +1850,15 @@ function rtHandlers() {
     },
     end(reason) {
       const wasLive = S.rtMode === 'live';
+      if (S.livePausing) {
+        S.livePausing = false;
+        S.livePaused = { oneTime: !S.rtFromPlan };
+        S.rt = null; S.rtMode = null; S.rtStatus = ''; S.live = null; S.pendingUser = false; S.heard = ''; S.hintFor = null;
+        store.setChat(store.chat().filter(m => m.content !== '🎙 …'));
+        refreshAccount().catch(() => {});
+        if (S.view === 'chat') render();
+        return;
+      }
       const retry = wasLive && /^Connection lost/.test(reason || '') && (S.liveRetries || 0) < 3;
       S.rt = null; S.rtMode = null; S.rtStatus = ''; S.live = null; S.pendingUser = false; S.muted = false; S.soundOff = false; S.rtSpeaks = false; S.heard = ''; S.hintFor = null; S.liveHint = null; S.liveUse = null;
       store.setChat(store.chat().filter(m => m.content !== '🎙 …'));
@@ -1855,6 +1874,18 @@ function rtHandlers() {
   };
 }
 
+function pauseLive(auto) {
+  if (S.rtMode !== 'live' || !S.rt) return;
+  S.livePausing = true;
+  S.rt.stop();
+  if (auto) {
+    const body = S.livePaused?.oneTime ? 'Tap to pick up where you left off.' : 'Your minutes stopped counting. Tap to pick up where you left off.';
+    window.ReactNativeWebView?.postMessage(JSON.stringify({ type: 'liveNotice', title: 'Live AI paused', body }));
+    store.setChat([...store.chat(), { role: 'assistant', content: 'ℹ️ Paused when you left the app. Tap Resume to carry on.' }]);
+  }
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) pauseLive(true); });
+
 async function startVoice(mode) {
   if (!(S.voiceServer && realtimeSupported)) return oops('Live voice isn\'t available on this device right now.');
   if (S.rtStarting) return;
@@ -1867,10 +1898,13 @@ async function startVoice(mode) {
     // Live AI uses its own settings: voice on/off, length, style, topic focus, difficulty.
     const live = mode === 'live' ? liveSettings() : null;
     if (live && S.liveBrief) live.brief = S.liveBrief;
+    S.livePaused = null;
     S.liveUse = live?.use || null;
     const speak = mode === 'live' ? live.voice && live.use !== 'interview' : mode !== 'listen' || store.speak();
     S.rtSpeaks = speak; S.soundOff = false; S.heard = '';
-    await session.start({ mode, speak, profileSummary: summary(), context: S.chatContext, live, noIdle: isAdmin() });
+    await session.start({ mode, speak, profileSummary: summary(), context: S.resumeCtx || S.chatContext, live, noIdle: isAdmin() });
+    S.resumeCtx = '';
+    S.rtFromPlan = !!session.fromPlan;
   } catch (e) {
     S.rt = null; S.rtMode = null;
     if (e.code === 'quota') S.paywall = true;
@@ -2764,6 +2798,14 @@ document.addEventListener('click', async e => {
   else if (a === 'rtmute') { S.muted = !S.muted; S.rt?.setMuted(S.muted); render(); }
   else if (a === 'rtsound') { S.soundOff = !S.soundOff; S.rt?.setSoundOff(S.soundOff); render(); }
   else if (a === 'rtstop') S.rt?.stop();
+  else if (a === 'livepause') pauseLive();
+  else if (a === 'liveresume') {
+    // A new call does not remember the old one: hand it the last few turns so it carries on.
+    const turns = store.chat().filter(m => !isNotice(m)).slice(-8).map(m => `${m.role === 'user' ? 'Candidate' : 'You'}: ${m.content}`).join('\n');
+    S.resumeCtx = `${S.chatContext ? S.chatContext + '\n\n' : ''}The session was paused and is now resuming. Do not greet or re-introduce yourself; say one short line like "Welcome back" and continue from here.\nConversation so far:\n${turns}`.slice(-3000);
+    S.livePaused = null; startVoice('live');
+  }
+  else if (a === 'livediscard') { S.livePaused = null; render(); }
   else if (a === 'nsignin') nativeSignIn(b.dataset.p);
   else if (a === 'signout') { S.rt?.stop(); store.setAccessCode(''); signOut(); S.paywall = false; S.guest = false; S.onboard = false; S.view = 'home'; S.adminSug = null; render(); scrollToY(0); }
   else if (a === 'delacct') {

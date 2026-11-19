@@ -8,7 +8,7 @@ import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { GoogleSignin, isSuccessResponse, isErrorWithCode, statusCodes } from '@react-native-google-signin/google-signin';
 import Purchases, { type PurchasesError } from 'react-native-purchases';
-import { setBadgeCount, scheduleDailyReminder, promptDailyReminder, scheduleWeek } from './notifications';
+import { setBadgeCount, scheduleDailyReminder, promptDailyReminder, scheduleWeek, notifyNow } from './notifications';
 
 type Extra = { webUrl: string; googleWebClientId: string; googleIosClientId: string; revenueCatIosKey: string; revenueCatAndroidKey: string };
 const extra = Constants.expoConfig?.extra as Extra;
@@ -23,7 +23,7 @@ if (extra.googleWebClientId) {
 if (rcKey) Purchases.configure({ apiKey: rcKey });
 const LIVE_PRODUCT = 'mock_session_60min'; // store product id for a Live AI session
 
-type FromWeb = { type: 'signin'; provider: 'google' | 'apple' } | { type: 'identify'; userKey: string } | { type: 'purchase' | 'restore'; userKey: string } | { type: 'buyLive'; userKey: string } | { type: 'signout' } | { type: 'badge'; count: number } | { type: 'daily'; title: string; body: string } | { type: 'week'; items: { at: number; title: string; body: string }[] } | { type: 'promptNotifications' };
+type FromWeb = { type: 'signin'; provider: 'google' | 'apple' } | { type: 'identify'; userKey: string } | { type: 'purchase' | 'restore'; userKey: string } | { type: 'buyLive'; userKey: string } | { type: 'signout' } | { type: 'badge'; count: number } | { type: 'daily'; title: string; body: string } | { type: 'week'; items: { at: number; title: string; body: string }[] } | { type: 'promptNotifications' } | { type: 'liveNotice'; title: string; body: string };
 
 export default function App() {
   const web = useRef<WebView>(null);
@@ -130,6 +130,7 @@ export default function App() {
     if (m.type === 'badge') return setBadgeCount(m.count).catch(() => {});
     if (m.type === 'daily') return scheduleDailyReminder(m.title, m.body).catch(() => {});
     if (m.type === 'week') return scheduleWeek(m.items).catch(() => {});
+    if (m.type === 'liveNotice') return notifyNow(m.title, m.body).catch(() => {});
     if (m.type === 'promptNotifications') return promptDailyReminder().catch(() => {});
     if (m.type === 'signout') {
       GoogleSignin.signOut().catch(() => {});

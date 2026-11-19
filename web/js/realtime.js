@@ -51,6 +51,7 @@ export class VoiceSession {
     this.callId = data.callId; // set first: if anything below fails, stop() still ends the call and refunds
     await pc.setRemoteDescription({ type: 'answer', sdp: data.sdp });
     this.degraded = data.degraded;
+    this.fromPlan = !!data.fromPlan;
     this.allowedSec = data.allowedSec;
     this.bump();
     if (data.account) setAccount(data.account);

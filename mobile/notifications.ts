@@ -63,3 +63,9 @@ export async function scheduleWeek(items: { at: number; title: string; body: str
     }).catch(() => {});
   }
 }
+
+// Shown right away, e.g. "Live AI paused" when the phone locks mid-session.
+export async function notifyNow(title: string, body: string): Promise<void> {
+  if (!(await notificationsGranted())) return;
+  await Notifications.scheduleNotificationAsync({ identifier: 'live-paused', content: { title, body }, trigger: null }).catch(() => {});
+}
