@@ -1264,3 +1264,16 @@ html { background: var(--desk); color-scheme: light dark; }
 .lv-pill { flex: none; padding: 6px 12px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); font: 700 13px var(--sans); white-space: nowrap; }
 .lv-bar { height: 6px; border-radius: 6px; background: var(--sunk); overflow: hidden; }
 .lv-bar i { display: block; height: 100%; border-radius: 6px; background: var(--accent); }
+
+/* Snap-scroll feed: one story per screen */
+.tf-snap { max-width: 640px; height: calc(100dvh - 86px - env(safe-area-inset-top)); overflow-y: auto; scroll-snap-type: y mandatory; overscroll-behavior: contain; margin: 0 -4px; scrollbar-width: none; }
+.tf-snap::-webkit-scrollbar { display: none; }
+.tf-snap .tf-item { min-height: 100%; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; display: flex; flex-direction: column; justify-content: center; padding: 8px 4px; border: 0; }
+.tf-snap .tf-card { display: grid; gap: 10px; padding: 22px 20px; border-radius: 22px; background: var(--paper); border: 1px solid var(--line); box-shadow: 0 8px 26px rgba(0,0,0,.06); max-height: 100%; overflow-y: auto; }
+.tf-snap .tf-card h2 { font-size: 1.35rem; }
+.tf-hint { margin: 14px 0 0; text-align: center; font-size: 13px; color: var(--muted); animation: tf-bob 1.6s ease-in-out infinite; }
+@keyframes tf-bob { 50% { transform: translateY(-4px); } }
+.tf-end .tf-card { text-align: center; justify-items: center; }
+@media (prefers-reduced-motion: reduce) { .tf-hint { animation: none; } }
+.tf.tf-snap { display: block; }
+.tf-snap .tf-item { box-sizing: border-box; }

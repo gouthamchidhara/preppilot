@@ -1476,17 +1476,20 @@ function trendView() {
   const cards = [...T.cards].sort((a, b) => (mine.has(b.area) ? 864e5 : 0) + b.date - ((mine.has(a.area) ? 864e5 : 0) + a.date));
   const pro = hasPro() || isAdmin();
   const shown = pro ? cards : cards.slice(0, 6);
-  return `<div class="tf">
-    <header class="tf-head"><h1>What’s new in tech</h1><p class="muted small">From release notes, cloud updates and engineering blogs. Updated daily.</p></header>
-    ${shown.map(c => `<article class="tf-item">
-      <p class="tf-meta">${esc(c.source)} · ${ago(c.date)}</p>
-      <h2>${esc(c.title)}</h2>
-      <p>${esc(c.what)}</p>
-      ${c.why ? `<p class="tf-why">${esc(c.why)}</p>` : ''}
-      <details class="tf-q"><summary>${esc(c.q)}</summary><p>${esc(c.a)}</p></details>
-      <a class="tf-src" href="${esc(c.url)}" target="_blank" rel="noopener">Read the source</a>
-    </article>`).join('') || '<p class="muted">Nothing new yet today. Check back later.</p>'}
-    ${pro || cards.length <= 6 ? '' : `<div class="tf-more"><p>${cards.length - 6} more stories in the full feed.</p><button class="btn primary" data-act="plans">Unlock with Pro</button></div>`}
+  // One story per screen, swipe up for the next (snap scroll).
+  return `<div class="tf tf-snap" id="tfSnap">
+    ${shown.map((c, i) => `<article class="tf-item">
+      <div class="tf-card">
+        <p class="tf-meta">${esc(c.source)} · ${ago(c.date)}</p>
+        <h2>${esc(c.title)}</h2>
+        <p>${esc(c.what)}</p>
+        ${c.why ? `<p class="tf-why">${esc(c.why)}</p>` : ''}
+        <details class="tf-q"><summary>${esc(c.q)}</summary><p>${esc(c.a)}</p></details>
+        <a class="tf-src" href="${esc(c.url)}" target="_blank" rel="noopener">Read the source</a>
+      </div>
+      ${i === 0 ? '<p class="tf-hint">Swipe up for the next story</p>' : ''}
+    </article>`).join('') || '<article class="tf-item"><div class="tf-card"><p class="muted">Nothing new yet today. Check back later.</p></div></article>'}
+    ${pro || cards.length <= 6 ? '<article class="tf-item tf-end"><div class="tf-card"><h2>You’re all caught up</h2><p>New stories arrive every day.</p></div></article>' : `<article class="tf-item tf-end"><div class="tf-card"><h2>${cards.length - 6} more stories today</h2><p>The full feed comes with Pro.</p><button class="btn primary" data-act="plans">Try Pro free for 3 days</button></div></article>`}
   </div>`;
 }
 
