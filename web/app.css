@@ -1343,3 +1343,20 @@ html { background: var(--desk); color-scheme: light dark; }
 .sw-a, .sw-more { touch-action: pan-y; overscroll-behavior: contain; }
 #swTop.more .sw-tip { display: none; }
 .pulse.paused { animation: none; opacity: .45; }
+
+/* Live AI call bar, docked above the composer */
+.callbar { display: grid; gap: 10px; margin-bottom: 10px; padding: 12px 12px 10px; border: 1px solid var(--line-strong); border-radius: 22px; background: var(--paper); box-shadow: 0 10px 30px -18px rgba(0,0,0,.35); }
+.cb-top { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 0 6px; }
+.cb-top .status { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cb-top .timer { margin-left: auto; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cb-top .timer.low { color: var(--warn); }
+.cb-row { display: flex; justify-content: space-around; gap: 4px; }
+.cb-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; padding: 2px 0; border: 0; background: none; color: var(--ink); font: 600 11.5px var(--sans); }
+.cb-ic { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; background: var(--sunk); transition: transform .1s, background .15s; }
+.cb-ic .ic { width: 22px; height: 22px; }
+.cb-btn:active .cb-ic { transform: scale(.92); }
+.cb-btn.on .cb-ic { background: var(--ink); color: var(--paper); }
+.cb-btn.end .cb-ic { background: #d6453d; color: #fff; }
+.cb-btn.go .cb-ic { background: var(--accent); color: #fff; }
+.cb-l { color: var(--muted); }
+.ai-dock:has(.callbar) .composer textarea { font-size: 15px; }

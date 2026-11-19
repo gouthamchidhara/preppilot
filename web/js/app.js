@@ -1394,26 +1394,27 @@ const MODE_NAME = { talk: 'Talk', listen: 'Rehearse', live: 'Live AI' };
 const clock = sec => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
 
 function voicePanel() {
+  // Call bar: sits at the bottom next to the thumb, like a phone call.
+  const cb = (act, icon, label, extra = '') => `<button class="cb-btn ${extra}" data-act="${act}" aria-label="${label}"><span class="cb-ic">${ic(icon)}</span><span class="cb-l">${label}</span></button>`;
   if (S.rt) {
-    return `<section class="panel stage">
-      <div class="pulse status-${S.rtStatus} ${S.muted ? 'muted' : ''}" id="rtOrb"></div>
-      <div><div class="status" id="rtStatus">${esc(S.muted ? 'Muted' : STATUS[S.rtStatus] || S.rtStatus)}</div>
-        <div class="timer" id="rtTimer">${esc(MODE_NAME[S.rtMode] || '')}</div></div>
-      <div class="ctl">
-        ${S.rtMode === 'listen' ? '<button class="btn primary" data-act="rtrespond">Get feedback</button>' : '<button class="btn" data-act="rtinterrupt">Interrupt</button>'}
-        <button class="btn ${S.muted ? 'on' : ''}" data-act="rtmute" aria-pressed="${!!S.muted}">${ic(S.muted ? 'micoff' : 'mic')}${S.muted ? 'Mic off' : 'Mic on'}</button>
-        ${S.rtSpeaks ? `<button class="btn ${S.soundOff ? 'on' : ''}" data-act="rtsound" aria-pressed="${!!S.soundOff}">${ic(S.soundOff ? 'soundoff' : 'sound')}${S.soundOff ? 'Sound off' : 'Sound on'}</button>` : ''}
-        ${S.rtMode === 'live' ? `<button class="btn" data-act="livepause">${ic('pause')}Pause</button>` : ''}
-        <button class="btn danger" data-act="rtstop">End</button>
+    return `<section class="callbar" aria-label="Voice controls">
+      <div class="cb-top"><div class="pulse status-${S.rtStatus} ${S.muted ? 'muted' : ''}" id="rtOrb"></div>
+        <span class="status" id="rtStatus">${esc(S.muted ? 'Muted' : STATUS[S.rtStatus] || S.rtStatus)}</span>
+        <span class="timer" id="rtTimer">${esc(MODE_NAME[S.rtMode] || '')}</span></div>
+      <div class="cb-row">
+        ${cb('rtmute', S.muted ? 'micoff' : 'mic', S.muted ? 'Unmute' : 'Mute', S.muted ? 'on' : '')}
+        ${S.rtSpeaks ? cb('rtsound', S.soundOff ? 'soundoff' : 'sound', S.soundOff ? 'Sound off' : 'Sound', S.soundOff ? 'on' : '') : ''}
+        ${S.rtMode === 'listen' ? cb('rtrespond', 'check', 'Feedback') : cb('rtinterrupt', 'stop', 'Interrupt')}
+        ${S.rtMode === 'live' ? cb('livepause', 'pause', 'Pause') : ''}
+        ${cb('rtstop', 'x', 'End', 'end')}
       </div>
     </section>`;
   }
   if (S.livePaused) {
     const oneTime = S.livePaused.oneTime;
-    return `<section class="panel stage lv-paused">
-      <div class="pulse paused" aria-hidden="true"></div>
-      <div><div class="status">Paused</div><div class="timer">${oneTime ? 'Your one-time hour keeps running' : 'Your minutes are not counting'}</div></div>
-      <div class="ctl"><button class="btn primary" data-act="liveresume">${ic('play')}Resume</button><button class="btn quiet" data-act="livediscard">End</button></div>
+    return `<section class="callbar paused" aria-label="Voice controls">
+      <div class="cb-top"><div class="pulse paused" aria-hidden="true"></div><span class="status">Paused</span><span class="timer">${oneTime ? 'Your one-time hour keeps running' : 'Minutes not counting'}</span></div>
+      <div class="cb-row">${cb('liveresume', 'play', 'Resume', 'go')}${cb('livediscard', 'x', 'End', 'end')}</div>
     </section>`;
   }
   if (!(S.voiceServer && realtimeSupported)) {
@@ -1662,8 +1663,8 @@ function chatView() {
   return `<div class="ai-layout"><div class="stack chat ai-tab">
     <div class="ai-head">
       <h1 class="ai-title">${esc(cur?.title || 'AI coach')}</h1>
-      ${S.rt ? '<span></span>' : `<button class="iconbtn plain" data-act="newchat" aria-label="New chat" title="New chat">${ic('edit')}</button>`}</div>
-    ${S.rt ? voicePanel() : S.paywall ? paywallCard() : liveStrip()}
+      ${S.rt || S.livePaused ? '<span></span>' : `<button class="iconbtn plain" data-act="newchat" aria-label="New chat" title="New chat">${ic('edit')}</button>`}</div>
+    ${S.rt || S.livePaused ? '' : S.paywall ? paywallCard() : liveStrip()}
     ${S.rtMode === 'live' && S.liveHint ? liveHintCard() : ''}
     ${S.chatContext ? `<p class="note row between"><span>Talking about <b>${esc(S.chatContext.split('\n')[0])}</b></span><button class="link quiet" data-act="dropctx">Remove</button></p>` : ''}
     <div class="msgs" id="msgs">${started ? msgs.map(bubble).join('') : `<div class="ai-hello"><h2>How can I help you prepare?</h2><p class="muted small">Ask anything, or pick one to start.</p></div>
@@ -1673,7 +1674,7 @@ function chatView() {
     ${live}${S.busy ? '<div class="msg assistant"><span class="dots"><i></i><i></i><i></i></span></div>' : ''}</div>
     ${nudge}
     ${lowFree && !S.rt ? `<p class="note row between small"><span>${a.msgsLeft} free message${a.msgsLeft === 1 ? '' : 's'} left.</span><button class="link" data-act="plans">See Pro</button></p>` : ''}
-    <div class="ai-dock"><form id="chatForm" class="composer">
+    <div class="ai-dock">${S.rt || S.livePaused ? voicePanel() : ''}<form id="chatForm" class="composer">
       <textarea id="chatInput" rows="1" maxlength="2000" placeholder="${S.rt ? 'Or type your reply' : 'Message the AI coach'}" aria-label="Message"></textarea>
       ${S.rt ? '' : `<button type="button" class="iconbtn plain ${store.speak() ? 'on' : ''}" data-act="speak" aria-pressed="${store.speak()}" aria-label="Read replies aloud" title="Read replies aloud">${ic(store.speak() ? 'sound' : 'soundoff')}</button>`}
       ${S.rt ? '' : `<button type="button" class="iconbtn ${S.listening ? 'on' : 'plain'}" data-act="mic" ${voice.canListen ? '' : 'disabled'} aria-label="${S.listening ? 'Stop dictation' : 'Dictate'}" title="${voice.canListen ? 'Dictate' : 'Dictation is not supported here'}">${ic(S.listening ? 'stop' : 'mic')}</button>`}
