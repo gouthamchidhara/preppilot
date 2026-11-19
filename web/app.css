@@ -1256,3 +1256,11 @@ html { background: var(--desk); color-scheme: light dark; }
 .tf-q summary::after { display: none !important; }
 .tf-q:not([open]) summary { color: var(--ink); }
 .tf-q[open] summary { margin-bottom: 2px; }
+/* Live AI sheet header */
+.lv-head { display: flex; align-items: center; gap: 12px; }
+.lv-head h2 { margin: 0; }
+.lv-head .grow { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.lv-wave { width: 44px; height: 44px; background: var(--ink); color: var(--paper); }
+.lv-pill { flex: none; padding: 6px 12px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); font: 700 13px var(--sans); white-space: nowrap; }
+.lv-bar { height: 6px; border-radius: 6px; background: var(--sunk); overflow: hidden; }
+.lv-bar i { display: block; height: 100%; border-radius: 6px; background: var(--accent); }

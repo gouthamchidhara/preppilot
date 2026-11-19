@@ -1633,10 +1633,13 @@ function liveSetupSheet() {
   const state = admin ? 'Admin account: no limits.' : left >= 20 ? `Your session is still open with ${Math.ceil(left / 60)} minutes left.` : credits ? `You have ${credits} one-time session${credits > 1 ? 's' : ''} ready. Heads up: starting one begins a fixed 60-minute clock. It keeps running if you leave, and unused minutes are not given back.` : fromPlan ? `Included in Pro: ${proLeft} of ${offer().proLive} minutes left this month. Only the time you are connected is counted, so you can stop and come back any time.` : 'You need a Live AI session to start. See pricing for the options.';
   const opt = (v, t, d) => `<label class="use-opt"><input type="radio" name="use" value="${v}" ${use === v ? 'checked' : ''}><span><b>${t}</b><span class="muted small">${d}</span></span></label>`;
   sheet(`<form id="liveSetupForm" class="stack">
-    <h2>Live AI</h2>
-    <p class="muted">${esc(state)}</p>
+    <div class="lv-head"><span class="ls-wave lv-wave" aria-hidden="true">${Array.from({ length: 5 }, (_, i) => `<i style="--w:${i}"></i>`).join('')}</span>
+      <div class="grow"><h2>Live AI</h2><span class="muted small">Interview, quiz, explain. Just talk.</span></div>
+      ${admin ? '' : fromPlan ? `<span class="lv-pill">${Math.floor(proWin / 60)} min left</span>` : left >= 20 ? `<span class="lv-pill">${Math.ceil(left / 60)} min left</span>` : credits ? `<span class="lv-pill">${credits} ready</span>` : ''}</div>
+    ${fromPlan ? `<div class="lv-bar" aria-hidden="true"><i style="width:${Math.min(100, Math.round(proWin / 36))}%"></i></div><p class="muted small" style="margin:-6px 0 0">Only talk time counts.</p>`
+      : credits && left < 20 ? '<p class="muted small" style="margin:0">One fixed 60-minute session. The clock starts when you begin.</p>'
+      : admin || left >= 20 ? '' : `<p class="muted small" style="margin:0">${esc(state)}</p>`}
     <input type="hidden" name="use" value="${use === 'interview' ? 'interview' : 'talk'}">
-    <p class="note small">A natural voice conversation with the AI coach. Use it however helps: ask it to interview you, quiz you on a topic, explain something, or rehearse your stories. Just say what you want.</p>
     <label>Session length<select name="lengthMin">${(admin ? [240, 20, 30, 45, 60] : fromPlan ? [20, 30] : [20, 30, 45, 60]).map(n => `<option value="${n}" ${s.lengthMin === n || (fromPlan && n === 30 && s.lengthMin > 30) ? 'selected' : ''}>${n === 240 ? 'No limit' : n + ' minutes'}</option>`).join('')}</select></label>
     <label>Topic focus<select name="topic"><option value="">All my topics</option>${relevant.map(t => `<option value="${esc(t.name)}" ${s.topic === t.name ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
     <div class="practice-only stack" ${use === 'interview' ? 'hidden' : ''}>
