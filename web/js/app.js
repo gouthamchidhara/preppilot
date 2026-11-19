@@ -7,6 +7,7 @@ import { native, signedIn, signOut, renderGoogleButton, refreshAccount, onAccoun
 import { initContent, getCatalog, getManifest, roleById, topicMeta, ensureTopics, ensureForProfile, loadedTopics, reportUrl } from './content.js';
 import { diagramHtml, diagramFor, storyView, registerDiagramSpec } from './diagrams.js';
 import { todayKey, recordActivity, streakDays, lastNDays } from './stats.js';
+import { popOutCards, pipSupport } from './pip.js';
 import { ringOffset, nextStage, prevStage, sceneName } from './animate.js';
 
 const DAY = 86400000;
@@ -50,6 +51,7 @@ function md(s) {
 }
 const ICONS = {
   pause: '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>',
+  pip: '<rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="12" width="7" height="5" rx="1"/>',
   bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
   mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
   micoff: '<path d="M9 9v2a3 3 0 0 0 5 2.2M15 9.5V6a3 3 0 0 0-5.7-1.3M5 11a7 7 0 0 0 11.5 5.4M19 11a7 7 0 0 1-.4 2.3M12 18v3M3 3l18 18"/>',
@@ -909,7 +911,7 @@ function homeView() {
       <p class="muted" style="margin-top:8px">${esc(nextHint)}</p>
       <div class="row" style="margin-top:20px">
         <button class="btn primary" data-act="learn" data-id="${nt.id}">${started ? 'Continue' : 'Start the lesson'}</button>
-        <button class="btn" data-act="deck" data-id="${nt.id}">Practice flashcards</button>
+        <button class="btn" data-act="deck" data-id="${nt.id}">Practice flashcards</button>${pipSupport() ? `<button class="btn quiet" data-act="popout">${ic('cards')}Float over other apps</button>` : ''}
         ${hasPro() ? '' : `<button class="btn quiet" data-act="plans">${ic('lock')}Unlock all ${relevant.length} topics</button>`}
       </div>
     </section>` : ''}
@@ -1170,7 +1172,7 @@ function deckView() {
   const intro = swipe && lsGet('pp.swipeIntro', '') !== '1';
   return `<div class="stack ${swipe ? 'swipe-mode' : ''}">
     ${S.lsLabel ? `<p class="ls-now">${ic('search')}${esc(S.lsLabel)}</p>` : ''}
-    <div class="deck-top"><button class="back" data-act="${d.jf ? 'jobfocus' : 'home'}">${ic('left')}${d.jf ? 'Job focus' : 'Stop'}</button><span class="deck-count">${S.di + 1}<i>/</i>${d.cards.length}</span>${d.jf ? '<span></span>' : modeToggle(false)}</div>
+    <div class="deck-top"><button class="back" data-act="${d.jf ? 'jobfocus' : 'home'}">${ic('left')}${d.jf ? 'Job focus' : 'Stop'}</button><span class="deck-count">${S.di + 1}<i>/</i>${d.cards.length}</span>${popBtn()}${d.jf ? '<span></span>' : modeToggle(false)}</div>
     <div class="bar"><i style="width:${(S.di * 100) / d.cards.length}%"></i></div>
     ${d.free && S.di === 0 ? `<p class="note small row between"><span>Shuffled on Free. Pro takes you through every card in your workflow’s order.</span><button class="link" data-act="plans">See Pro</button></p>` : ''}
     ${singleTopic && diagramFor(singleTopic) ? `<div class="row between"><span></span><button class="link quiet small" data-act="dgsheet" data-id="${singleTopic}">How it works — see the diagram</button></div>` : ''}
@@ -1217,7 +1219,7 @@ function swipeView() {
   const streak = S.swStreak || 0;
   return `<div class="stack swipe-screen">
     ${S.lsLabel ? `<p class="ls-now">${ic('search')}${esc(S.lsLabel)}</p>` : ''}
-    <div class="deck-top"><button class="back" data-act="${d.jf ? 'jobfocus' : 'home'}">${ic('left')}${d.jf ? 'Job focus' : 'Stop'}</button><span class="deck-count" id="swCount">${S.di + 1}<i>/</i>${d.cards.length}</span>${d.jf ? '<span></span>' : modeToggle(true)}</div>
+    <div class="deck-top"><button class="back" data-act="${d.jf ? 'jobfocus' : 'home'}">${ic('left')}${d.jf ? 'Job focus' : 'Stop'}</button><span class="deck-count" id="swCount">${S.di + 1}<i>/</i>${d.cards.length}</span>${popBtn()}${d.jf ? '<span></span>' : modeToggle(true)}</div>
     <div class="sw-dots" aria-hidden="true">${d.cards.map((_, i) => `<i class="${i < S.di ? (d.results[i] ? 'ok' : 'no') : i === S.di ? 'now' : ''}"></i>`).join('')}</div>
     <div class="sw-stage" id="swStage">${swStageHtml()}${intro ? `<div class="sw-intro"><div class="sw-hand" aria-hidden="true"><i></i></div><b>Swipe right on what you know</b><span>Tap to flip. <b>Right</b> if you know it, <b>left</b> if you don’t, <b>up</b> if you know it cold. No ghosting.</span><button class="btn primary" data-act="swipeintro">Let’s play</button></div>` : ''}
       <div class="sw-streak ${streak >= 3 ? 'show' : ''}" id="swStreak">${streak} in a row</div><div class="sw-burst" id="swBurst" aria-hidden="true"></div></div>
@@ -2394,6 +2396,29 @@ function mixTopics(cards) {
   return out;
 }
 
+// Floating cards window (desktop browsers): keeps cards on top while you work in other apps.
+const popBtn = () => (pipSupport() ? `<button class="iconbtn plain pop-btn" data-act="popout" aria-label="Float these cards over other apps" title="Float over other apps">${ic('pip')}</button>` : '');
+async function popOut() {
+  let cards;
+  if (S.view === 'deck' && S.deck && S.di < S.deck.cards.length) cards = S.deck.cards.slice(S.di);
+  else {
+    const pro = hasPro(), p = profile();
+    let list = dueCards(topics(), p, store.progress(), Date.now(), 999);
+    if (!pro) { const allowed = freeCardIds(); list = list.filter(c => allowed.has(c.id)); }
+    cards = interviewRound(list, { weightOf: id => { const t = topicById(id); return t ? topicWeight(t, p) : 0; }, mix: true, limit: pro ? 20 : FREE_CARDS });
+  }
+  cards = cards.map(c => ({ ...c, topicName: c.topicName || topicName(c.topic) }));
+  if (!cards.length) return toast('No cards due right now.');
+  try {
+    const ok = await popOutCards({ cards, onGrade: (c, ok) => {
+      if (!c.jf) { const prog = store.progress(); prog[c.id] = review(prog[c.id], ok); store.setProgress(prog); }
+      store.setActivity(recordActivity(store.activity(), todayKey(), ok));
+    }, onDone: () => render() });
+    if (!ok) toast('Floating cards work in Chrome, Edge and Safari on a computer.');
+    else if (S.view === 'deck') { S.view = 'home'; render(); }
+  } catch { toast('Could not open the floating window. Try again.'); }
+}
+
 function startDeck(ids, opts = {}) {
   if (!ids) S.lsLabel = '';
   const mode = opts.mode || deckMode();
@@ -2793,6 +2818,7 @@ document.addEventListener('click', async e => {
   else if (a === 'roledeck') startRoleDeck(id);
   else if (a === 'reveal') { S.reveal = true; render(); }
   else if (a === 'grade') gradeCard(b.dataset.ok === '1');
+  else if (a === 'popout') popOut();
   else if (a === 'dgprev') { stopDgAutoplay(); S.dgStages[id] = prevStage(S.dgStages[id] ?? null); refreshDgSheet(id); render(); }
   else if (a === 'dgnext') { stopDgAutoplay(); S.dgStages[id] = nextStage(S.dgStages[id] ?? null, (diagramFor(id)?.steps.length || 1)); refreshDgSheet(id); render(); }
   else if (a === 'dgreplay') { stopDgAutoplay(); S.dgStages[id] = null; refreshDgSheet(id); render(); }

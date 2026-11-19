@@ -1376,3 +1376,4 @@ html { background: var(--desk); color-scheme: light dark; }
 .nn-ic .ic { width: 18px; height: 18px; }
 .new-note .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .new-note .chip { background: var(--paper); }
+.pop-btn { margin-left: auto; }
