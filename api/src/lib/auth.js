@@ -55,7 +55,7 @@ export async function verifyIdToken(provider, token, now = Date.now()) {
   return { key: `${provider}:${payload.sub}`, provider, email: (payload.email || '').toLowerCase(), name: payload.name || '' };
 }
 
-function secret() {
+export function secret() {
   const s = process.env.SESSION_SECRET;
   if (s && s.length >= 32) return s;
   // Dev/test only: random per process (sessions reset on restart).

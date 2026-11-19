@@ -1,5 +1,6 @@
 // Framework-agnostic handlers: (req) -> { status, body, headers }.
 // req = { body, headers (lower-case keys), ip }
+import { secret as sessionSecret } from './auth.js';
 import { complete, llmConfigured } from './llm.js';
 import { rateLimit, outOfScope, smallTalk, SCOPE_REPLY, validateChat, validateGenerate, validateLiveHint, validateSuggestion, sanitizeGenerated } from './guard.js';
 import { chatSystemPrompt, generateSystemPrompt, generateUserPrompt } from './prompts.js';
@@ -349,7 +350,7 @@ export const JF_CARDS = 8;
 export const JF_SKILLS = 8;
 const clip = (x, n) => (typeof x === 'string' ? x.replace(/\s+/g, ' ').trim().slice(0, n) : '');
 const clipKeep = (x, n) => (typeof x === 'string' ? x.trim().slice(0, n) : ''); // keeps line breaks in code
-const jfSecret = () => process.env.SESSION_SECRET || 'dev-only-secret';
+const jfSecret = () => sessionSecret(); // same rules as sign-in sessions: no fixed fallback
 const jfSign = body => createHmac('sha256', jfSecret()).update(body).digest('base64url');
 export function jfTicket(payload, now = Date.now()) {
   const body = Buffer.from(JSON.stringify({ ...payload, exp: now + 30 * 60000 })).toString('base64url');
