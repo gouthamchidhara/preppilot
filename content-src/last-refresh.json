@@ -1,186 +1,174 @@
 {
   "month": "2026-11",
-  "at": "2026-11-19T15:55:09.686Z",
-  "added": 30,
+  "at": "2026-11-20T15:37:35.200Z",
+  "added": 28,
   "report": [
     {
       "topic": "system-design",
       "qs": [
-        "How would you design a system that supports dynamic model routing for coding agents, ensuring low latency and high throughput?"
+        "How would you design a system to allow users to interactively explore architecture diagrams, ensuring scalability and real-time updates as multiple users collaborate?"
       ]
     },
     {
       "topic": "concurrency",
       "qs": [
-        "In modern C++ (post-C++20), how do you safely transfer ownership of a coroutine handle between threads, and what pitfalls should you consider with `std::jthread` and coroutine destruction?"
-      ]
-    },
-    {
-      "topic": "sql-advanced",
-      "qs": [
-        "How would you use the `AT TIME ZONE` clause in SQL to convert timestamps accurately across daylight saving transitions, and what pitfalls should you watch for with ambiguous or unknown time zone strings?"
+        "How do modern Python libraries like `concurrent.futures` handle thread safety when integrating with GUI frameworks such as Tkinter, and what are the best practices for updating UI elements from worker threads?"
       ]
     },
     {
       "topic": "data-modeling",
       "qs": [
-        "How would you decide between storing semi-structured product attributes using a `JSONB` column versus creating normalized tables in a modern lakehouse architecture?"
+        "How would you model a context-dependent relationship between entities, such as when the path between tables can vary based on business logic, to avoid forbidden cycles in a dimensional schema?"
       ]
     },
     {
       "topic": "etl-elt",
       "qs": [
-        "How can you leverage dbt's `state:modified` selector to optimize CI/CD pipelines for large-scale ELT projects?"
+        "How does dbt's exposure feature help manage and document downstream data dependencies in modern ELT workflows?"
+      ]
+    },
+    {
+      "topic": "airflow",
+      "qs": [
+        "How would you ensure reliable triggering of downstream DAGs using `TriggerDagRunOperator` in Airflow, especially in light of recent issues with missing run IDs?"
       ]
     },
     {
       "topic": "streaming",
       "qs": [
-        "What are the implications of using tiered storage in Kafka for managing large topic retention, and how does it affect consumer read performance?"
+        "What are the considerations and potential pitfalls when enabling Kafka's tiered storage for topics with log compaction enabled?"
       ]
     },
     {
       "topic": "warehouses",
       "qs": [
-        "How would you implement and manage OAuth token refresh for programmatic access to Snowflake, considering current best practices and recent platform enhancements?"
+        "How does Databricks Unity Catalog enhance data governance in a lakehouse environment, and what are key considerations when migrating from legacy table access controls?"
+      ]
+    },
+    {
+      "topic": "csharp-core",
+      "qs": [
+        "How can you leverage C# 11's generic math interfaces, such as `INumber<T>`, to write reusable numeric algorithms, and what are the challenges when downcasting between generic interfaces?"
+      ]
+    },
+    {
+      "topic": "efcore",
+      "qs": [
+        "How can you configure EF Core to generate separate database sequences for each entity table when using SQL Server, and what are the implications for primary key generation?"
+      ]
+    },
+    {
+      "topic": "html-css",
+      "qs": [
+        "How would you use the `:has()` CSS relational pseudo-class to create interactive UI elements, such as highlighting a tab when its corresponding pane is visible, without relying on JavaScript?"
       ]
     },
     {
       "topic": "react",
       "qs": [
-        "How does React's new concurrent rendering mode affect the behavior of components that fetch data asynchronously, and what strategies can you use to prevent UI flicker during transitions?"
+        "How does React's new Rust-based compiler integrated with Vite affect component rendering and what changes must developers make to their codebase to leverage its optimizations?"
       ]
     },
     {
-      "topic": "angular",
+      "topic": "browser-performance",
       "qs": [
-        "How would you ensure that a dynamically created Angular component properly reacts to changes in a signal used for its state?"
+        "How can leveraging WebAssembly (WASM) and GPU rendering in a JavaScript web app impact the browser's rendering pipeline and Core Web Vitals, and what are the key considerations for optimizing performance?"
       ]
     },
     {
-      "topic": "accessibility",
+      "topic": "state-management",
       "qs": [
-        "What are the key accessibility considerations when implementing a data grid component in a web application?"
+        "How would you configure an infinite cache lifetime for a query in Redux Toolkit Query, and what are the implications of this setting?"
       ]
     },
     {
-      "topic": "go-core",
+      "topic": "go-concurrency",
       "qs": [
-        "How would you implement a generic constraint in Go to ensure a type parameter is a struct that embeds a specific base type?"
+        "How would you use the new `sync.Pool` enhancements in Go 1.22 to optimize memory usage in a high-concurrency server, and what are the trade-offs of relying on object pooling for frequently allocated buffers?"
       ]
     },
     {
       "topic": "network",
       "qs": [
-        "How would you implement a logical network overlay between distributed nodes to ensure isolation and reliable communication, and which protocols or technologies would you use?"
+        "How would you troubleshoot intermittent packet loss in a microservices architecture running on Kubernetes, considering recent changes in CNI (Container Network Interface) plugins and overlay networking?"
       ]
     },
     {
-      "topic": "docker",
+      "topic": "k8s",
       "qs": [
-        "How can you configure a Docker Compose service to automatically run a database initialization script when the container starts, ensuring the script executes only once even if the container restarts?"
+        "How can you leverage the `ValidatingAdmissionPolicy` resource introduced in recent Kubernetes versions to enforce custom deployment prerequisites, such as required labels or resource limits, before pods are scheduled?"
       ]
     },
     {
-      "topic": "cicd",
+      "topic": "cloud",
       "qs": [
-        "How would you configure a GitHub Actions workflow to ensure that a pipeline triggered by a pull request always tests the changes against the latest `main` branch, even when the workflow is re-run?"
-      ]
-    },
-    {
-      "topic": "monitoring",
-      "qs": [
-        "How would you use Prometheus or Grafana to monitor and alert on unauthorized AI agent behavior in a production environment?"
+        "How would you configure autoscaling for an AWS ECS Fargate service that needs to scale from zero tasks when an SQS queue receives messages, ensuring no initial capacity is wasted?"
       ]
     },
     {
       "topic": "jvm",
       "qs": [
-        "How does the JVM's support for Project Panama's native memory access API affect memory management and performance tuning strategies?"
+        "How does the JVM's support for value objects (inline classes) in recent versions impact memory layout and garbage collection behavior?"
       ]
     },
     {
       "topic": "statistics",
       "qs": [
-        "How would you detect and address complete separation in a binomial generalized linear mixed model (GLMM) when analyzing experimental data?"
+        "How would you handle missing data in a regression analysis to ensure unbiased inference, and which modern techniques are commonly used?"
+      ]
+    },
+    {
+      "topic": "python-data",
+      "qs": [
+        "What recent improvements in pandas have made handling DataFrames with duplicate indices more robust, and how would you consolidate duplicate index entries into a single Series while preserving data integrity?"
       ]
     },
     {
       "topic": "ml-ops",
       "qs": [
-        "How would you adapt your model monitoring strategy to detect subtle shifts in web content structure that may indicate increased AI-generated material?"
+        "How would you integrate real-time drift detection for models served via Kubernetes using the latest Prometheus and Grafana features?"
       ]
     },
     {
       "topic": "llm-apps",
       "qs": [
-        "How would you monitor and manage token quotas when deploying LLM applications on managed cloud services like Amazon Bedrock, especially to avoid unexpected downtime?"
+        "What are the key considerations when integrating plugin-based gateways, such as those built in Rust, into LLM agent pipelines for production environments?"
       ]
     },
     {
       "topic": "android-kotlin",
       "qs": [
-        "In Jetpack Compose, how would you manage a long-running animation to prevent it from being interrupted by frequent updates to a backing `StateFlow`?"
-      ]
-    },
-    {
-      "topic": "js-core",
-      "qs": [
-        "How would you implement serialization and deserialization of complex JavaScript objects, including those with circular references, in Node.js?"
-      ]
-    },
-    {
-      "topic": "node-runtime",
-      "qs": [
-        "How would you use the `worker_threads` module to offload serialization and deserialization of large objects in Node.js, and what are the key considerations for transferring data efficiently between threads?"
-      ]
-    },
-    {
-      "topic": "express-nest",
-      "qs": [
-        "How would you centralize OIDC token validation in a NestJS monorepo, ensuring that token verification logic is shared across multiple services while keeping each service secure and decoupled?"
+        "With Kotlin 2.4.0 and recent Android Gradle Plugin updates, what should you watch out for when configuring your project to ensure smooth Compose compilation and dependency resolution?"
       ]
     },
     {
       "topic": "python-web",
       "qs": [
-        "How would you use SQLModel in FastAPI to retrieve a single row along with data from two related tables in one response?"
-      ]
-    },
-    {
-      "topic": "python-async",
-      "qs": [
-        "How would you safely use `ContextVar` to propagate context across both async and thread-based concurrency in Python, especially when using `asyncio.run_in_executor()`?"
-      ]
-    },
-    {
-      "topic": "python-packaging",
-      "qs": [
-        "What steps would you take to troubleshoot a situation where a package installed with `uv` is not recognized by VS Code, but works when running scripts from the command line?"
+        "How can you use Pydantic's new `field_validator` feature in FastAPI to enforce a conditionally required field based on another field's value?"
       ]
     },
     {
       "topic": "api-testing",
       "qs": [
-        "How do you test REST APIs that implement OAuth 2.1 with PKCE, and what challenges might arise in automating these flows?"
+        "How would you test REST API endpoints for compliance with OpenAPI 3.1 contracts, and what tools or features are now available to automate this validation?"
       ]
     },
     {
       "topic": "performance-testing",
       "qs": [
-        "How would you approach performance testing for an LLM inference engine deployed on AWS Trainium, and what metrics would you prioritize?"
+        "How would you adapt your performance testing strategy for a system that heavily integrates with AI-powered agents, such as coding assistants or autonomous bots, given their unpredictable workload patterns?"
       ]
     },
     {
       "topic": "appsec",
       "qs": [
-        "How would you use passive API traffic analysis to detect Business Logic Authorization (BOLA) vulnerabilities in a microservices environment?"
+        "When using Java to generate self-signed certificates for development, what security precautions should you take to avoid misuse in production environments?"
       ]
     },
     {
       "topic": "threat-modeling",
       "qs": [
-        "How would you use passive API traffic analysis to identify potential Broken Object Level Authorization (BOLA) threats during threat modeling?"
+        "When incorporating third-party packages, how would you update your threat modeling process to address risks from supply chain attacks, such as those flagged by advanced dependency scanning tools in CI/CD pipelines?"
       ]
     }
   ]
