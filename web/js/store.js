@@ -74,4 +74,11 @@ export const store = {
     return id;
   },
   resetAll() { Object.values(K).forEach(k => localStorage.removeItem(k)); },
+  // Sign out: remove everything personal so the next person starts fresh. Device settings
+  // (text size, card mode, install id) stay.
+  clearUser() {
+    const personal = [K.profile, K.progress, K.custom, K.privatePacks, K.chat, K.chats, K.chatCur, K.liveSettings, K.activity, K.access,
+      'pp.jobs', 'pp.jobfocus', 'pp.resume', 'pp.newTopics', 'pp.freeCards', 'pp.pipAuto', 'pp.pipSpeed'];
+    personal.forEach(k => { try { localStorage.removeItem(k); } catch { /* blocked */ } });
+  },
 };

@@ -2872,7 +2872,16 @@ document.addEventListener('click', async e => {
   }
   else if (a === 'livediscard') { S.livePaused = null; render(); }
   else if (a === 'nsignin') nativeSignIn(b.dataset.p);
-  else if (a === 'signout') { S.rt?.stop(); store.setAccessCode(''); signOut(); S.paywall = false; S.guest = false; S.onboard = false; S.view = 'home'; S.adminSug = null; render(); scrollToY(0); }
+  else if (a === 'signout') {
+    sheet(`<h2>Sign out?</h2>
+      <p class="muted">Your profile, card progress, chats and saved job posts are removed from this device, so the next person starts fresh. Your purchases stay with your account.</p>
+      <div class="row"><button class="btn grow" data-act="closesheet">Cancel</button><button class="btn danger" data-act="signout-yes">Sign out</button></div>`);
+  }
+  else if (a === 'signout-yes') {
+    closeSheet(); S.rt?.stop(); signOut(); store.clearUser();
+    Object.assign(S, { paywall: false, guest: false, onboard: false, view: 'home', adminSug: null, deck: null, draft: null, jf: null, livePaused: null, liveBrief: null, chatContext: '', prevMap: null, pickMode: null });
+    render(); scrollToY(0);
+  }
   else if (a === 'delacct') {
     sheet(`<h2>Delete your account?</h2>
       <p class="muted">This removes your email, plan and AI usage from our servers right away. It does not cancel a Pro subscription: do that in your ${window.PP_PLATFORM === 'android' ? 'Google Play' : 'Apple ID'} subscription settings.</p>
