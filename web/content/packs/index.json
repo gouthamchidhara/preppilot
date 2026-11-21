@@ -17,8 +17,8 @@
   {
    "id": "core-dev",
    "name": "Developer fundamentals",
-   "version": "23fec8ca40",
-   "bytes": 97013,
+   "version": "688f8d63cf",
+   "bytes": 98916,
    "topics": [
     {
      "id": "dsa",
@@ -79,8 +79,8 @@
   {
    "id": "data",
    "name": "Data Engineering",
-   "version": "1fd2e5542c",
-   "bytes": 89085,
+   "version": "099b6d404e",
+   "bytes": 92716,
    "topics": [
     {
      "id": "sql-advanced",
@@ -135,8 +135,8 @@
   {
    "id": "dotnet",
    "name": ".NET",
-   "version": "ceb2ac51e1",
-   "bytes": 42529,
+   "version": "ced12a170c",
+   "bytes": 43700,
    "topics": [
     {
      "id": "csharp-core",
@@ -167,8 +167,8 @@
   {
    "id": "frontend",
    "name": "Frontend",
-   "version": "20fb3fb01d",
-   "bytes": 64150,
+   "version": "ea896b9596",
+   "bytes": 64695,
    "topics": [
     {
      "id": "html-css",
@@ -211,8 +211,8 @@
   {
    "id": "go",
    "name": "Go",
-   "version": "2e99e3d493",
-   "bytes": 22985,
+   "version": "9f83b2b8ce",
+   "bytes": 23781,
    "topics": [
     {
      "id": "go-core",
@@ -231,8 +231,8 @@
   {
    "id": "infra",
    "name": "Infrastructure Engineering",
-   "version": "51ece220b1",
-   "bytes": 183893,
+   "version": "4877d064a0",
+   "bytes": 185037,
    "topics": [
     {
      "id": "linux",
@@ -314,8 +314,8 @@
   {
    "id": "java",
    "name": "Java",
-   "version": "c13eeb116c",
-   "bytes": 45651,
+   "version": "4e8be173c6",
+   "bytes": 46872,
    "topics": [
     {
      "id": "java-core",
@@ -346,8 +346,8 @@
   {
    "id": "ml",
    "name": "Machine Learning & AI",
-   "version": "43fd76b540",
-   "bytes": 57365,
+   "version": "124c70a250",
+   "bytes": 59858,
    "topics": [
     {
      "id": "statistics",
@@ -384,8 +384,8 @@
   {
    "id": "mobile",
    "name": "Mobile",
-   "version": "cf0963371e",
-   "bytes": 43333,
+   "version": "bbf3e08ce6",
+   "bytes": 43982,
    "topics": [
     {
      "id": "ios-swift",
@@ -416,8 +416,8 @@
   {
    "id": "node",
    "name": "JavaScript & Node.js",
-   "version": "1d51730e06",
-   "bytes": 43639,
+   "version": "05f09bdd8c",
+   "bytes": 44894,
    "topics": [
     {
      "id": "js-core",
@@ -448,8 +448,8 @@
   {
    "id": "python",
    "name": "Python",
-   "version": "5315706b3a",
-   "bytes": 44147,
+   "version": "53f621c816",
+   "bytes": 44744,
    "topics": [
     {
      "id": "python-core",
@@ -480,8 +480,8 @@
   {
    "id": "quality",
    "name": "Quality & Security",
-   "version": "7ea079453b",
-   "bytes": 67628,
+   "version": "bc953c306a",
+   "bytes": 69560,
    "topics": [
     {
      "id": "test-strategy",
