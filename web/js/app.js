@@ -1639,7 +1639,8 @@ function navDrawerHtml(key) {
   </aside>`;
 }
 function syncDrawer(key) {
-  const on = !!(profile() && signedIn() && !['landing', 'login', 'onboard'].includes(key));
+  // Same layout signed in or not: the old bottom tabs are gone for everyone.
+  const on = !!(profile() && !['landing', 'login', 'onboard', 'plans'].includes(key));
   document.body.classList.toggle('has-drawer', on);
   document.body.classList.toggle('drawer-open', on && !!S.drawer);
   const el = document.getElementById('appDrawer');
@@ -2766,7 +2767,11 @@ document.addEventListener('click', async e => {
     return;
   }
   if (a === 'closesheet') closeSheet();
-  else if (a === 'startonboard') { S.login = false; S.onboard = true; S.guest = true; render(); }
+  else if (a === 'startonboard') {
+    // Get started = a first-time setup. A plan left on this device by someone who never signed in is cleared.
+    if (!signedIn()) { store.clearUser(); Object.assign(S, { draft: null, deck: null, jf: null, prevMap: null, pickMode: null }); }
+    S.login = false; S.onboard = true; S.guest = true; render();
+  }
   else if (a === 'login') { S.login = true; render(); }
   else if (a === 'loginback') { S.login = false; render(); }
   else if (a === 'feat') showFeat(Number(b.dataset.i) || 0, true);
