@@ -1246,26 +1246,37 @@ document.addEventListener('touchmove', e => {
     if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { dz = null; return; } // a scroll
     if (Math.abs(dx) < 12 || (dz.open ? dx > 0 : dx < 0)) return;
     dz.on = true; dz.drawer.style.transition = 'none';
+    document.body.classList.add('drawer-drag');
   }
   const x = dz.open ? Math.min(0, dx) : Math.min(0, -dz.w + dx);
   dz.drawer.style.transform = `translateX(${x}px)`; dz.drawer.style.opacity = 1; dz.x2 = dx;
   const shell = document.getElementById('shell');
-  if (shell) { shell.style.transition = 'none'; shell.style.transform = `translateX(${dz.w + x}px)`; shell.style.borderRadius = '28px'; }
+  if (shell) { shell.style.transition = 'none'; shell.style.transform = `translateX(${dz.w + x}px)`; shell.style.borderRadius = '28px'; shell.style.setProperty('--scrim-o', String(Math.max(0, Math.min(1, (dz.w + x) / dz.w)))); }
 }, { passive: true });
-function dzEnd() {
+// Release, or the browser taking the gesture back (touchcancel): glide to
+// open/closed from the finger's position instead of snapping. Transitions
+// are restored first; the dragged transforms are cleared on the next frame
+// so the CSS transition animates from where the finger left off.
+function endDrawerDrag() {
   if (!dz) return;
   const d = dz; dz = null;
   if (!d.on) return;
-  d.drawer.style.transition = ''; d.drawer.style.transform = ''; d.drawer.style.opacity = '';
+  document.body.classList.remove('drawer-drag');
   const shell = document.getElementById('shell');
-  if (shell) { shell.style.transition = ''; shell.style.transform = ''; shell.style.borderRadius = ''; }
+  d.drawer.style.transition = '';
+  if (shell) shell.style.transition = '';
   const open = d.open ? d.x2 > -d.w * 0.3 : d.x2 > Math.min(90, d.w * 0.3);
-  setDrawer(open);
+  requestAnimationFrame(() => {
+    if (dz) return; // a new drag started in the meantime; leave it alone
+    d.drawer.style.transform = ''; d.drawer.style.opacity = '';
+    if (shell) { shell.style.transform = ''; shell.style.borderRadius = ''; shell.style.removeProperty('--scrim-o'); }
+    setDrawer(open);
+  });
 }
-document.addEventListener('touchend', dzEnd);
-document.addEventListener('touchcancel', () => { if (dz) { dz.x2 = dz.open ? 0 : -1e9; dzEnd(); } });
+document.addEventListener('touchend', endDrawerDrag);
+document.addEventListener('touchcancel', endDrawerDrag);
 // Safety net: if anything ever leaves the panel half-open (app sent to background mid-swipe), reset it.
-document.addEventListener('visibilitychange', () => { const d = document.querySelector('.nd'), sh = document.getElementById('shell'); dz = null; if (d) { d.style.transform = ''; d.style.transition = ''; d.style.opacity = ''; } if (sh) { sh.style.transform = ''; sh.style.transition = ''; sh.style.borderRadius = ''; } });
+document.addEventListener('visibilitychange', () => { const d = document.querySelector('.nd'), sh = document.getElementById('shell'); dz = null; document.body.classList.remove('drawer-drag'); if (d) { d.style.transform = ''; d.style.transition = ''; d.style.opacity = ''; } if (sh) { sh.style.transform = ''; sh.style.transition = ''; sh.style.borderRadius = ''; } });
 
 /* Keyboard open on a phone: pin the chat input right on top of the keyboard (iOS shrinks only the
    visual viewport, so a bottom-docked box would otherwise float with a gap or hide under the keys). */
@@ -1612,7 +1623,7 @@ function navDrawerHtml(key) {
     chats = groups.map(g => `<span class="nd-day">${esc(g.label)}</span>${g.items.map(c => `<button class="nd-chat-item ${key === 'chat' && c.id === cur ? 'on' : ''}" data-act="ndchat" data-id="${c.id}">${esc(c.title)}</button>`).join('')}`).join('');
   } else chats = list.slice(0, 6).map(c => `<button class="nd-chat-item ${key === 'chat' && c.id === cur ? 'on' : ''}" data-act="ndchat" data-id="${c.id}">${esc(c.title)}</button>`).join('');
   return `<aside class="nd" aria-label="Menu">
-    <div class="nd-head"><b>PrepPilot</b><button class="nd-round" data-act="ndgo" data-v="search" aria-label="Search topics">${ic('search')}</button></div>
+    <div class="nd-head"><b>PrepPilot</b><span class="nd-head-btns"><button class="nd-round" data-act="ndgo" data-v="search" aria-label="Search topics">${ic('search')}</button><button class="nd-round nd-menu" data-act="drawer" aria-label="Close panel">${ic('menu')}</button></span></div>
     <nav class="nd-nav">
       ${item('home', 'Home', 'home', key === 'home')}
       ${item('deck', 'Cards', 'cards', key === 'deck')}

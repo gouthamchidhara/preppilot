@@ -1165,9 +1165,9 @@ body.has-drawer .menu-btn { display: grid; }
 body.has-drawer .top { justify-content: flex-start; }
 body.has-drawer .top #topRight { margin-left: auto; }
 body.has-drawer .top .brand { margin-left: 4px; }
-#shell { position: relative; z-index: 2; min-height: 100vh; background: var(--desk); transition: transform .32s cubic-bezier(.2, .8, .2, 1), border-radius .32s; }
+#shell { position: relative; z-index: 2; min-height: 100vh; background: var(--desk); touch-action: pan-y; transition: transform .32s cubic-bezier(.2, .8, .2, 1), border-radius .32s; }
 body.drawer-open #shell { transform: translateX(min(82vw, 320px)); border-radius: 28px; box-shadow: -14px 0 40px rgba(0,0,0,.14); overflow: hidden; height: 100vh; }
-.nd { position: fixed; z-index: 1; top: 0; left: 0; bottom: 0; width: min(82vw, 320px); display: flex; flex-direction: column; padding: calc(18px + env(safe-area-inset-top)) 14px calc(16px + env(safe-area-inset-bottom)); background: var(--paper); transform: translateX(-24%); opacity: 0; transition: transform .32s cubic-bezier(.2, .8, .2, 1), opacity .25s; }
+.nd { position: fixed; z-index: 1; top: 0; left: 0; bottom: 0; width: min(82vw, 320px); display: flex; flex-direction: column; padding: calc(18px + env(safe-area-inset-top)) 14px calc(16px + env(safe-area-inset-bottom)); background: var(--paper); touch-action: pan-y; transform: translateX(-24%); opacity: 0; transition: transform .32s cubic-bezier(.2, .8, .2, 1), opacity .25s; }
 body.drawer-open .nd { transform: none; opacity: 1; }
 .nd-head { display: flex; align-items: center; justify-content: space-between; padding: 0 6px 14px 12px; }
 .nd-head b { font-size: 1.5rem; letter-spacing: -.02em; }
@@ -1377,3 +1377,14 @@ html { background: var(--desk); color-scheme: light dark; }
 .new-note .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .new-note .chip { background: var(--paper); }
 .pop-btn { margin-left: auto; }
+
+/* Drawer on narrow screens (from main, 18 Nov): header hidden but keeps its space, slid-away page dimmed. */
+@media (max-width: 899px) { body.drawer-open .top { visibility: hidden; } }
+@media (max-width: 899px) {
+  #shell::after { content: ''; position: absolute; inset: 0; z-index: 30; border-radius: inherit; background: rgba(15, 20, 21, .45); opacity: var(--scrim-o, 0); pointer-events: none; transition: opacity .32s; }
+  body.drawer-open #shell { --scrim-o: 1; }
+  body.drawer-open #shell::after { pointer-events: auto; }
+  body.drawer-drag #shell::after { transition: none; }
+}
+.nd-head-btns { display: flex; gap: 8px; align-items: center; }
+@media (min-width: 900px) { body.has-drawer .nd-menu { display: none; } }
