@@ -17,8 +17,8 @@
   {
    "id": "core-dev",
    "name": "Developer fundamentals",
-   "version": "688f8d63cf",
-   "bytes": 98916,
+   "version": "2c7f9d467c",
+   "bytes": 100073,
    "topics": [
     {
      "id": "dsa",
@@ -79,8 +79,8 @@
   {
    "id": "data",
    "name": "Data Engineering",
-   "version": "099b6d404e",
-   "bytes": 92716,
+   "version": "8531fbdabc",
+   "bytes": 95096,
    "topics": [
     {
      "id": "sql-advanced",
@@ -167,8 +167,8 @@
   {
    "id": "frontend",
    "name": "Frontend",
-   "version": "ea896b9596",
-   "bytes": 64695,
+   "version": "0613837e19",
+   "bytes": 66347,
    "topics": [
     {
      "id": "html-css",
@@ -211,8 +211,8 @@
   {
    "id": "go",
    "name": "Go",
-   "version": "9f83b2b8ce",
-   "bytes": 23781,
+   "version": "a6d8dc56b7",
+   "bytes": 24427,
    "topics": [
     {
      "id": "go-core",
@@ -231,8 +231,8 @@
   {
    "id": "infra",
    "name": "Infrastructure Engineering",
-   "version": "4877d064a0",
-   "bytes": 185037,
+   "version": "2687ccf9fd",
+   "bytes": 194989,
    "topics": [
     {
      "id": "linux",
@@ -314,8 +314,8 @@
   {
    "id": "java",
    "name": "Java",
-   "version": "4e8be173c6",
-   "bytes": 46872,
+   "version": "b7f9b455c3",
+   "bytes": 47525,
    "topics": [
     {
      "id": "java-core",
@@ -346,8 +346,8 @@
   {
    "id": "ml",
    "name": "Machine Learning & AI",
-   "version": "124c70a250",
-   "bytes": 59858,
+   "version": "b8619914d4",
+   "bytes": 60995,
    "topics": [
     {
      "id": "statistics",
@@ -384,8 +384,8 @@
   {
    "id": "mobile",
    "name": "Mobile",
-   "version": "bbf3e08ce6",
-   "bytes": 43982,
+   "version": "cbc8cb2438",
+   "bytes": 44601,
    "topics": [
     {
      "id": "ios-swift",
@@ -416,8 +416,8 @@
   {
    "id": "node",
    "name": "JavaScript & Node.js",
-   "version": "05f09bdd8c",
-   "bytes": 44894,
+   "version": "2ff230987a",
+   "bytes": 46798,
    "topics": [
     {
      "id": "js-core",
@@ -448,8 +448,8 @@
   {
    "id": "python",
    "name": "Python",
-   "version": "53f621c816",
-   "bytes": 44744,
+   "version": "fe13cc9921",
+   "bytes": 45427,
    "topics": [
     {
      "id": "python-core",
