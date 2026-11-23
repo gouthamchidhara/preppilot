@@ -17,8 +17,8 @@
   {
    "id": "core-dev",
    "name": "Developer fundamentals",
-   "version": "2c7f9d467c",
-   "bytes": 100073,
+   "version": "436dd1b85b",
+   "bytes": 101467,
    "topics": [
     {
      "id": "dsa",
@@ -79,8 +79,8 @@
   {
    "id": "data",
    "name": "Data Engineering",
-   "version": "8531fbdabc",
-   "bytes": 95096,
+   "version": "5511767c1b",
+   "bytes": 97600,
    "topics": [
     {
      "id": "sql-advanced",
@@ -167,8 +167,8 @@
   {
    "id": "frontend",
    "name": "Frontend",
-   "version": "0613837e19",
-   "bytes": 66347,
+   "version": "3861afe3a1",
+   "bytes": 67684,
    "topics": [
     {
      "id": "html-css",
@@ -231,8 +231,8 @@
   {
    "id": "infra",
    "name": "Infrastructure Engineering",
-   "version": "2687ccf9fd",
-   "bytes": 194989,
+   "version": "32ef7d28c1",
+   "bytes": 196762,
    "topics": [
     {
      "id": "linux",
@@ -314,8 +314,8 @@
   {
    "id": "java",
    "name": "Java",
-   "version": "b7f9b455c3",
-   "bytes": 47525,
+   "version": "13c155936d",
+   "bytes": 48884,
    "topics": [
     {
      "id": "java-core",
@@ -346,8 +346,8 @@
   {
    "id": "ml",
    "name": "Machine Learning & AI",
-   "version": "b8619914d4",
-   "bytes": 60995,
+   "version": "d9c293ea38",
+   "bytes": 62323,
    "topics": [
     {
      "id": "statistics",
@@ -384,8 +384,8 @@
   {
    "id": "mobile",
    "name": "Mobile",
-   "version": "cbc8cb2438",
-   "bytes": 44601,
+   "version": "77e3055759",
+   "bytes": 45761,
    "topics": [
     {
      "id": "ios-swift",
@@ -416,8 +416,8 @@
   {
    "id": "node",
    "name": "JavaScript & Node.js",
-   "version": "2ff230987a",
-   "bytes": 46798,
+   "version": "d0505da329",
+   "bytes": 49407,
    "topics": [
     {
      "id": "js-core",
@@ -448,8 +448,8 @@
   {
    "id": "python",
    "name": "Python",
-   "version": "fe13cc9921",
-   "bytes": 45427,
+   "version": "23f6c0d63c",
+   "bytes": 46649,
    "topics": [
     {
      "id": "python-core",
@@ -480,8 +480,8 @@
   {
    "id": "quality",
    "name": "Quality & Security",
-   "version": "bc953c306a",
-   "bytes": 69560,
+   "version": "74873a88c6",
+   "bytes": 71403,
    "topics": [
     {
      "id": "test-strategy",
