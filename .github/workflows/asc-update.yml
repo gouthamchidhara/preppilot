@@ -1,0 +1,29 @@
+name: App Store pricing update (one-off)
+
+# Sets Pro to $6.99 in the USA, updates its description and adds a 3-day free trial, using the
+# App Store Connect key already stored in GitHub secrets. Runs when this file is pushed to the
+# release branch (workflow_dispatch only works once the file is on main).
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/eloquent-pasteur-wdc9yd]
+    paths: [.github/workflows/asc-update.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Update App Store Connect
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: node scripts/asc-update.mjs
