@@ -2907,7 +2907,7 @@ document.addEventListener('click', async e => {
       <div class="row"><button class="btn grow" data-act="closesheet">Cancel</button><button class="btn danger" data-act="signout-yes">Sign out</button></div>`);
   }
   else if (a === 'signout-yes') {
-    closeSheet(); S.rt?.stop(); signOut(); store.clearUser();
+    closeSheet(); S.rt?.stop(); await S.flushUserData?.(); signOut(); store.clearUser();
     Object.assign(S, { paywall: false, guest: false, onboard: false, view: 'home', adminSug: null, deck: null, draft: null, jf: null, livePaused: null, liveBrief: null, chatContext: '', prevMap: null, pickMode: null });
     render(); scrollToY(0);
   }
@@ -2974,6 +2974,29 @@ document.addEventListener('click', async e => {
   // Account changes (sign-in, usage updates, purchases) re-render unless a voice reply is streaming.
   // Start from the stored account so the plans screen opens on a fresh sign-in, not on every launch.
   let prevAccount = store.account();
+  // Profile and card progress live with the account too: saved a few seconds after a change,
+  // restored on sign-in when this device has none (e.g. after signing out).
+  let syncTimer = 0;
+  const pushUserData = () => { clearTimeout(syncTimer); syncTimer = 0; if (!signedIn() || !profile()) return Promise.resolve();
+    return ai.post('/api/me/data/save', { profile: profile(), progress: store.progress() }).catch(() => {}); };
+  store.onUserData = () => { if (!signedIn()) return; clearTimeout(syncTimer); syncTimer = setTimeout(pushUserData, 4000); };
+  S.flushUserData = pushUserData;
+  let restoredFor = '';
+  const restoreUserData = async () => {
+    const who = store.session(); if (!who || restoredFor === who) return; restoredFor = who;
+    try {
+      const d = await ai.post('/api/me/data', {});
+      if (!profile() && d.profile) {
+        store.setProfile(d.profile);
+        if (d.progress) store.setProgress({ ...d.progress, ...store.progress() });
+        await ensureForProfile(profile()).catch(() => {});
+        S.onboard = false; S.view = 'home'; render();
+        toast('Welcome back. Your plan and progress are restored.');
+      } else if (profile()) pushUserData();
+    } catch { /* offline: try again next sign-in */ }
+  };
+  onAccountChange(acc => { if (acc) restoreUserData(); });
+  if (signedIn()) restoreUserData(); // app opened already signed in
   onAccountChange(acc => {
     if (acc && S.login) { S.login = false; S.view = 'home'; if (!profile()) S.onboard = true; }
     if (acc && !prevAccount && acc.plan === 'free' && profile() && !acc.unlimited) S.showPlans = true;

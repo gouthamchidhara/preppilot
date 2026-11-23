@@ -15,9 +15,9 @@ const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } ca
 
 export const store = {
   profile: () => read(K.profile, null),
-  setProfile: p => write(K.profile, p),
+  setProfile: p => { write(K.profile, p); store.onUserData?.(); },
   progress: () => read(K.progress, {}),
-  setProgress: p => write(K.progress, p),
+  setProgress: p => { write(K.progress, p); store.onUserData?.(); },
   customTopics: () => read(K.custom, []),
   setCustomTopics: t => write(K.custom, t),
   privatePacks: () => read(K.privatePacks, []),

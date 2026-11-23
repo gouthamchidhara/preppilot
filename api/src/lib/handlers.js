@@ -12,6 +12,7 @@ import { webhookAuthorized, applyWebhook, refreshFromRevenueCat } from './billin
 import { getDb } from './db.js';
 import { freshFor, ROLE_LIST } from './fresh.js';
 import { createHash, createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
+import { deflateSync, inflateSync } from 'node:zlib';
 import { sendSuggestionEmail } from './email.js';
 
 const json = (status, body, headers = {}) => ({ status, body, headers });
@@ -509,4 +510,44 @@ export async function handleProfileSuggest(req, log) {
     await refundMsgs(w.ident, COST.chat, q.plan);
     return fail(e, log);
   }
+}
+
+/* ---------- your profile and card progress, kept with the account ---------- */
+// Signing out clears the device; signing back in restores these. Progress is compressed so a
+// full deck history fits in one Table Storage cell (64 KB).
+const SYNC_MAX_PROFILE = 8000, SYNC_MAX_PROGRESS_KEYS = 5000, SYNC_MAX_PACKED = 60000;
+const lastSync = new Map();
+const cleanProgress = p => {
+  if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
+  const out = {};
+  for (const [k, v] of Object.entries(p).slice(0, SYNC_MAX_PROGRESS_KEYS)) {
+    if (/^[\w.-]{1,80}$/.test(k) && v && typeof v === 'object') out[k] = Object.fromEntries(Object.entries(v).filter(([, x]) => typeof x === 'number').slice(0, 8));
+  }
+  return out;
+};
+export async function handleGetMyData(req) {
+  const w = who(req);
+  if (w.error) return w.error;
+  if (w.ident.viaCode) return json(200, {});
+  const d = await (await getDb()).get('prefs', w.ident.key);
+  if (!d) return json(200, {});
+  let progress = null;
+  try { progress = d.prog ? JSON.parse(inflateSync(Buffer.from(d.prog, 'base64')).toString()) : null; } catch { progress = null; }
+  return json(200, { profile: d.profile || null, progress, at: d.at || 0 });
+}
+export async function handleSaveMyData(req, now = Date.now()) {
+  const w = who(req);
+  if (w.error) return w.error;
+  if (w.ident.viaCode) return json(200, { ok: true });
+  const prev = lastSync.get(w.ident.key) || 0;
+  if (now - prev < 2000) return json(429, { error: 'Saving too often.' }, { 'retry-after': '2' });
+  lastSync.set(w.ident.key, now);
+  const b = req.body || {};
+  const profile = b.profile && typeof b.profile === 'object' && !Array.isArray(b.profile) ? b.profile : undefined;
+  if (profile && JSON.stringify(profile).length > SYNC_MAX_PROFILE) return json(413, { error: 'Profile too large.' });
+  const progress = b.progress === undefined ? undefined : cleanProgress(b.progress);
+  const prog = progress ? deflateSync(JSON.stringify(progress)).toString('base64') : undefined;
+  if (prog && prog.length > SYNC_MAX_PACKED) return json(413, { error: 'Progress too large.' });
+  await (await getDb()).update('prefs', w.ident.key, d => ({ ...(d || {}), ...(profile ? { profile } : {}), ...(prog ? { prog } : {}), at: now }));
+  return json(200, { ok: true, at: now });
 }

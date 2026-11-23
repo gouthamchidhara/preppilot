@@ -560,3 +560,19 @@ test('role brief: Pro only, needs a job post and a résumé; Live AI uses the br
   const v = validateRealtime({ sdp: 'v=0', mode: 'live', live: { use: 'talk', brief: { jd, resume: cv } } });
   assert.match(voiceInstructions(v), /PRACTICE BRIEF/); assert.match(voiceInstructions(v), /Kafka migration/);
 });
+
+test('profile and card progress are saved with the account and come back after signing out', async () => {
+  const h = await signIn('sync@gmail.com', 'sync');
+  const profile = { roleIds: ['infra', 'backend-python'], level: 'mid' };
+  const progress = Object.fromEntries(Array.from({ length: 1500 }, (_, i) => [`topic-${i}`, { box: i % 5, due: 1700000000000 + i, last: 1700000000000 }]));
+  assert.deepEqual((await call('POST me/data', {}, h)).body, {});
+  const r = await call('POST me/data/save', { profile, progress }, h);
+  assert.equal(r.status, 200);
+  const back = await call('POST me/data', {}, h);
+  assert.deepEqual(back.body.profile, profile);
+  assert.equal(Object.keys(back.body.progress).length, 1500);
+  assert.deepEqual(back.body.progress['topic-7'], progress['topic-7']);
+  // too soon again: throttled; and no access without signing in
+  assert.equal((await call('POST me/data/save', { profile }, h)).status, 429);
+  assert.equal((await call('POST me/data', {}, {})).status, 401);
+});

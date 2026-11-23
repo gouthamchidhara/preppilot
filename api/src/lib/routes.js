@@ -5,6 +5,8 @@ export const ROUTES = {
   'GET health': () => h.handleHealth(),
   'GET me': h.handleMe,
   'POST me/delete': h.handleDeleteAccount,
+  'POST me/data': h.handleGetMyData,
+  'POST me/data/save': (req) => h.handleSaveMyData(req),
   'POST auth/google': (req, log) => h.handleAuth('google', req, log),
   'POST auth/apple': (req, log) => h.handleAuth('apple', req, log),
   'POST chat': h.handleChat,

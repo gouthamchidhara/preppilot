@@ -23,6 +23,7 @@ export async function upsertUser(ident, now = Date.now()) {
 // Account deletion: drop personal data; keep only the sign-in ID and free-trial usage.
 export async function deleteUser(key, now = Date.now()) {
   await (await getDb()).update('users', key, u => (u ? { key, deleted: true, deletedAt: now, free: u.free || { msgs: 0, voiceSec: 0 } } : undefined));
+  await (await getDb()).update('prefs', key, d => (d ? { deleted: true, at: now } : undefined)); // saved profile and progress go too
 }
 
 export async function loadUser(ident) {
