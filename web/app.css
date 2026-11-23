@@ -1388,3 +1388,6 @@ html { background: var(--desk); color-scheme: light dark; }
 }
 .nd-head-btns { display: flex; gap: 8px; align-items: center; }
 @media (min-width: 900px) { body.has-drawer .nd-menu { display: none; } }
+.jf-mode { align-self: flex-start; }
+.jf-role-in { width: 100%; padding: 14px 16px; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--paper); color: var(--ink); font: 17px var(--sans); }
+.jf .chips { display: flex; flex-wrap: wrap; gap: 8px; }

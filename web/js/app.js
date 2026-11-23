@@ -467,7 +467,7 @@ const FEATURES = [
       <div class="fdl-hint"><span class="fd-tag">How to answer</span><ul><li style="--k:0">Key by customer ID</li><li style="--k:1">Same key → same partition</li><li style="--k:2">Order holds per partition</li></ul></div>
       <div class="fdl-you"><span class="fd-tag">You</span>“We key each message by customer ID, so…”</div>
       <span class="fdl-grade">Strong.</span></div>` },
-  { k: 'job', name: 'Job focus', line: 'Paste the job post. Get the 5 skills it will test.', pts: ['Top 5 skills, picked from the posting', 'Flashcards for each skill', 'Ready in seconds, saved for later'], pro: true,
+  { k: 'job', name: 'Role Ready', line: 'Paste a job post or type a role. Get decks for the skills it tests.', pts: ['Skills picked from the posting or the role', 'A deck for each skill, basics to scenarios', 'Ready in seconds, saved for later'], pro: true,
     demo: () => `<div class="fd fd-job">
       <div class="fdj-post"><i></i><i style="width:88%"></i><i style="width:64%"></i></div>
       <div class="fdj-chips">${['TypeScript', 'React 18', 'Node.js', 'PostgreSQL', 'GraphQL'].map((n, i) => `<span style="--k:${i}"><b>${i + 1}</b>${n}</span>`).join('')}</div>
@@ -520,7 +520,7 @@ function planCompare() {
     <h2 class="l-h2">Start free. Go Pro for the interview week.</h2>
     <div class="lp-grid">
       <div class="lp-col"><b>Free</b><span class="lp-price">$0</span>${ticks(['Your plan and core topics', 'Flashcards that bring misses back', `${o.freeMsgs} AI coach messages to try`, 'Readiness map'])}</div>
-      <div class="lp-col pro"><b>Pro</b><span class="lp-price">${esc(o.proPrice)}</span>${ticks(['Every topic and diagram', 'Unlimited AI coach', 'Job focus: top 5 skills with flashcards', `${o.proLive} Live AI minutes a month, used only while you talk`])}</div>
+      <div class="lp-col pro"><b>Pro</b><span class="lp-price">${esc(o.proPrice)}</span>${ticks(['Every topic and diagram', 'Unlimited AI coach', 'Role Ready: decks for any job post or role', `${o.proLive} Live AI minutes a month, used only while you talk`])}</div>
     </div>
     <div class="row" style="justify-content:center"><button class="btn primary lg" data-act="startonboard">Get started, it’s free</button></div>
   </section>`;
@@ -573,8 +573,8 @@ function landingView() {
       </article>` : '<p class="muted">Loading a card…</p>'}
     </section>
 
-    <section class="l-jf" aria-label="Job focus">
-      <p class="l-tag">## got a job post? <span class="tag">Pro</span></p>
+    <section class="l-jf" aria-label="Role Ready">
+      <p class="l-tag">## role ready <span class="tag">Pro</span></p>
       <h2 class="l-h2">Paste the job. Get the top 5 skills, with flashcards.</h2>
       <p class="muted">We read the requirements, pick the top 5 skills it will test, with flashcards for each. A cheat sheet for this one interview, not another course.</p>
       <div class="jfa" aria-hidden="true">
@@ -979,7 +979,7 @@ function jfRemove(id) { try { localStorage.setItem(JOBS_KEY, JSON.stringify(jfAl
 function jobFocusEntry() {
   return `<section class="jf-entry">
     <span class="jf-ico" aria-hidden="true">${ic('target')}</span>
-    <div><b>Job focus${hasPro() ? '' : ' <span class="tag">Pro</span>'}</b><span class="muted small">Paste the job post. Get the top 5 skills it will test, with flashcards.</span></div>
+    <div><b>Role Ready${hasPro() ? '' : ' <span class="tag">Pro</span>'}</b><span class="muted small">Paste a job post or type a role. Get decks for the skills it tests.</span></div>
     <button class="btn" data-act="jobfocus">Open</button></section>`;
 }
 
@@ -992,10 +992,14 @@ function jobFocusView() {
   const head = `<div class="row between"><button class="back" data-act="home">${ic('left')}Plan</button><span class="tag">${ic(pro ? 'target' : 'lock')} Pro</span></div>`;
   const switcher = jobs.length ? `<div class="jf-jobs" role="tablist">${jobs.map(j => `<button class="jf-job ${r && j.id === r.id ? 'on' : ''}" data-act="jfopen" data-id="${esc(j.id)}">${esc(j.role || 'Job post')}</button>`).join('')}${r ? `<button class="jf-job add" data-act="jfnew">${ic('plus')}New job</button>` : ''}</div>` : '';
   if (!r) return `<div class="stack jf">${head}${switcher}
-    <h1>Prep for this exact job</h1>
-    <p class="lede">Paste the job description. We pull out every skill it will test and turn each one into a deck of cards, easiest first.</p>
-    <textarea id="jfText" class="jf-text" rows="9" maxlength="6000" placeholder="Paste the job description or its requirements section…" ${J.busy ? 'disabled' : ''}>${esc(J.text)}</textarea>
-    <div class="row"><button class="btn primary" data-act="jfgo" ${J.busy ? 'disabled' : ''}>${J.busy ? 'Reading the job post…' : 'Build my decks'}</button><span class="muted small">Your job posts stay saved here.</span></div>
+    <h1>Role Ready</h1>
+    <p class="lede">${J.mode === 'role' ? 'Type any role. We pick the skills its interviews test and build about 25 cards, basics first, real scenarios last.' : 'Paste the job description. We pull out every skill it will test and turn each one into a deck of cards, easiest first.'}</p>
+    <div class="pf-seg jf-mode" role="radiogroup"><button role="radio" aria-checked="${J.mode !== 'role'}" class="${J.mode !== 'role' ? 'on' : ''}" data-act="jfmode" data-v="post">Paste a job post</button><button role="radio" aria-checked="${J.mode === 'role'}" class="${J.mode === 'role' ? 'on' : ''}" data-act="jfmode" data-v="role">Type a role</button></div>
+    ${J.mode === 'role'
+      ? `<input id="jfRole" class="jf-role-in" maxlength="80" placeholder="e.g. Site reliability engineer, Data engineer, iOS developer" value="${esc(J.roleText || '')}" ${J.busy ? 'disabled' : ''}>
+        <div class="chips">${['Site reliability engineer', 'Cloud engineer', 'Data engineer', 'Backend developer (Java)', 'DevOps engineer', 'QA automation engineer'].map(r => `<button class="chip" data-act="jfrolepick" data-v="${esc(r)}">${esc(r)}</button>`).join('')}</div>`
+      : `<textarea id="jfText" class="jf-text" rows="9" maxlength="6000" placeholder="Paste the job description or its requirements section…" ${J.busy ? 'disabled' : ''}>${esc(J.text)}</textarea>`}
+    <div class="row"><button class="btn primary" data-act="jfgo" ${J.busy ? 'disabled' : ''}>${J.busy ? (J.mode === 'role' ? 'Picking the skills…' : 'Reading the job post…') : 'Build my decks'}</button><span class="muted small">Everything you build stays saved here.</span></div>
     ${J.busy ? `<div class="jf-decks" aria-hidden="true">${'<div class="jf-deck skel"></div>'.repeat(6)}</div>` : ''}
   </div>`;
   const total = r.stack.reduce((n, t) => n + (t.cards?.length || 0), 0);
@@ -1055,13 +1059,20 @@ function startBriefDeck() {
 }
 
 async function jobFocusGo() {
-  const J = S.jf; const ta = document.getElementById('jfText');
-  J.text = (ta?.value || '').trim();
-  if (J.text.length < 80) return toast('Paste a bit more of the job description: the requirements section works best.');
+  const J = S.jf;
+  const byRole = J.mode === 'role';
+  if (byRole) {
+    J.roleText = (document.getElementById('jfRole')?.value || '').replace(/\s+/g, ' ').trim();
+    if (J.roleText.length < 2) return toast('Type a role, for example "Site reliability engineer".');
+    J.text = `Role: ${J.roleText}`;
+  } else {
+    J.text = (document.getElementById('jfText')?.value || '').trim();
+    if (J.text.length < 80) return toast('Paste a bit more of the job description: the requirements section works best.');
+  }
   J.busy = true; render();
   try {
-    // Step 1 (~1-2 s): the five skills. The screen fills right away.
-    const d = await ai.post('/api/jobfocus', { text: J.text });
+    // Step 1 (~1-2 s): the skills. The screen fills right away.
+    const d = await ai.post('/api/jobfocus', byRole ? { role: J.roleText } : { text: J.text });
     J.result = { id: Date.now().toString(36), role: d.role, text: J.text, stack: d.stack.map(t => ({ ...t, cards: null })) }; J.ticket = d.ticket; J.sel = 0; J.open = new Set();
   } catch (e) {
     if (e.code === 'pro') S.showPlans = true;
@@ -1162,7 +1173,7 @@ function deckView() {
       <p class="lede">${pct >= 80 ? 'These cards come back later, spaced further apart each time.' : 'The cards you missed come back first next time. Rereading the lessons for those topics will help.'}</p>
       ${worst && diagramFor(worst) ? `<section class="stack tight"><h3>The one to reread: ${esc(topicName(worst))}</h3>${diagramTeaser(worst, diagramHtml(worst))}<div class="row"><button class="btn" data-act="learn" data-id="${worst}">Reread the ${esc(topicName(worst))} lesson</button></div></section>` : ''}
       ${d.free ? `<section class="card live-hero stack"><h2>That was your free round.</h2><p>Free gives you ${FREE_CARDS} cards for each technology you picked, shuffled. Pro opens all ${d.total}, in the order you work, plus troubleshooting and real scenarios from the field.</p><div class="row"><button class="btn invert" data-act="plans">Unlock every card</button></div></section>` : ''}
-      ${d.jf ? `<div class="row"><button class="btn primary" data-act="jfswipe">Swipe them again</button><button class="btn" data-act="jobfocus">Back to Job focus</button></div></div>` : `<div class="row"><button class="btn ${d.free ? '' : 'primary'}" data-act="deck" data-id="${esc((d.ids || []).join(','))}">${d.mode.startsWith('swipe') ? 'Swipe another mix' : 'Practice another round'}</button><button class="btn" data-act="home">Back to plan</button></div></div>`}`;
+      ${d.jf ? `<div class="row"><button class="btn primary" data-act="jfswipe">Swipe them again</button><button class="btn" data-act="jobfocus">Back to Role Ready</button></div></div>` : `<div class="row"><button class="btn ${d.free ? '' : 'primary'}" data-act="deck" data-id="${esc((d.ids || []).join(','))}">${d.mode.startsWith('swipe') ? 'Swipe another mix' : 'Practice another round'}</button><button class="btn" data-act="home">Back to plan</button></div></div>`}`;
   }
   if (d.mode === 'swipe' && S.di < d.cards.length) return swipeView();
   const q = d.cards[S.di];
@@ -1172,12 +1183,12 @@ function deckView() {
   const intro = swipe && lsGet('pp.swipeIntro', '') !== '1';
   return `<div class="stack ${swipe ? 'swipe-mode' : ''}">
     ${S.lsLabel ? `<p class="ls-now">${ic('search')}${esc(S.lsLabel)}</p>` : ''}
-    <div class="deck-top"><button class="back" data-act="${d.jf ? 'jobfocus' : 'home'}">${ic('left')}${d.jf ? 'Job focus' : 'Stop'}</button><span class="deck-count">${S.di + 1}<i>/</i>${d.cards.length}</span>${popBtn()}${d.jf ? '<span></span>' : modeToggle(false)}</div>
+    <div class="deck-top"><button class="back" data-act="${d.jf ? 'jobfocus' : 'home'}">${ic('left')}${d.jf ? 'Role Ready' : 'Stop'}</button><span class="deck-count">${S.di + 1}<i>/</i>${d.cards.length}</span>${popBtn()}${d.jf ? '<span></span>' : modeToggle(false)}</div>
     <div class="bar"><i style="width:${(S.di * 100) / d.cards.length}%"></i></div>
     ${d.free && S.di === 0 ? `<p class="note small row between"><span>Shuffled on Free. Pro takes you through every card in your workflow’s order.</span><button class="link" data-act="plans">See Pro</button></p>` : ''}
     ${singleTopic && diagramFor(singleTopic) ? `<div class="row between"><span></span><button class="link quiet small" data-act="dgsheet" data-id="${singleTopic}">How it works — see the diagram</button></div>` : ''}
     <article class="card stacked flash" id="flash">
-      <div class="card-head"><span>${esc(t?.name || q.topicName || q.topic)}</span><span class="level">${q.kind ? FIELD_KINDS[q.kind] : ['', 'Fundamentals', 'Applied', 'Advanced'][q.l] || (q.jf ? 'Job focus' : '')}</span></div>
+      <div class="card-head"><span>${esc(t?.name || q.topicName || q.topic)}</span><span class="level">${q.kind ? FIELD_KINDS[q.kind] : ['', 'Fundamentals', 'Applied', 'Advanced'][q.l] || (q.jf ? 'Role Ready' : '')}</span></div>
       ${intro ? `<div class="sw-intro" aria-live="polite"><div class="sw-hand" aria-hidden="true"><i></i></div><b>Swipe mode</b><span>Tap to flip. Then swipe <b>right</b> if you knew it, <b>left</b> if you didn’t. Cards come from all your skills, mixed.</span><button class="btn primary" data-act="swipeintro">Let’s go</button></div>` : ''}
       <p class="q">${fmt(q.q)}</p>
       ${S.reveal ? `<div class="ans">${fmt(q.a)}</div>${learnHtml(q)}` : ''}
@@ -1201,7 +1212,7 @@ const modeToggle = swipe => `<div class="mode-tg ${swipe ? 'is-swipe' : ''}" rol
 const cardFace = (q, back) => {
   const t = topicById(q.topic);
   const name = esc(t?.name || q.topicName || q.topic);
-  const lvl = ['', 'Fundamentals', 'Applied', 'Advanced'][q.l] || (q.jf ? 'Job focus' : '');
+  const lvl = ['', 'Fundamentals', 'Applied', 'Advanced'][q.l] || (q.jf ? 'Role Ready' : '');
   return back
     ? `<div class="sw-face back"><div class="sw-head"><span>${name}</span><span>Answer</span></div><p class="sw-q-small">${fmt(q.q)}</p><div class="sw-a${q.a.length > 200 ? ' long' : ''}">${fmt(q.a)}</div>${q.why ? `<div class="sw-more">${learnBody(q)}</div><button class="sw-more-btn" data-act="swmore">${ic('bulb')}<span>Why · Example · Trap</span></button>` : ''}<p class="sw-tip">Right: knew it · Left: not quite · Up: know it cold</p></div>`
     : `<div class="sw-face front"><div class="sw-head"><span>${name}</span><span>${lvl}</span></div><p class="sw-q">${fmt(q.q)}</p><p class="sw-tip">${ic('refresh')}Tap to flip</p></div>`;
@@ -1219,7 +1230,7 @@ function swipeView() {
   const streak = S.swStreak || 0;
   return `<div class="stack swipe-screen">
     ${S.lsLabel ? `<p class="ls-now">${ic('search')}${esc(S.lsLabel)}</p>` : ''}
-    <div class="deck-top"><button class="back" data-act="${d.jf ? 'jobfocus' : 'home'}">${ic('left')}${d.jf ? 'Job focus' : 'Stop'}</button><span class="deck-count" id="swCount">${S.di + 1}<i>/</i>${d.cards.length}</span>${popBtn()}${d.jf ? '<span></span>' : modeToggle(true)}</div>
+    <div class="deck-top"><button class="back" data-act="${d.jf ? 'jobfocus' : 'home'}">${ic('left')}${d.jf ? 'Role Ready' : 'Stop'}</button><span class="deck-count" id="swCount">${S.di + 1}<i>/</i>${d.cards.length}</span>${popBtn()}${d.jf ? '<span></span>' : modeToggle(true)}</div>
     <div class="sw-dots" aria-hidden="true">${d.cards.map((_, i) => `<i class="${i < S.di ? (d.results[i] ? 'ok' : 'no') : i === S.di ? 'now' : ''}"></i>`).join('')}</div>
     <div class="sw-stage" id="swStage">${swStageHtml()}${intro ? `<div class="sw-intro"><div class="sw-hand" aria-hidden="true"><i></i></div><b>Swipe right on what you know</b><span>Tap to flip. <b>Right</b> if you know it, <b>left</b> if you don’t, <b>up</b> if you know it cold. No ghosting.</span><button class="btn primary" data-act="swipeintro">Let’s play</button></div>` : ''}
       <div class="sw-streak ${streak >= 3 ? 'show' : ''}" id="swStreak">${streak} in a row</div><div class="sw-burst" id="swBurst" aria-hidden="true"></div></div>
@@ -1627,7 +1638,7 @@ function navDrawerHtml(key) {
     <nav class="nd-nav">
       ${item('home', 'Home', 'home', key === 'home')}
       ${item('deck', 'Cards', 'cards', key === 'deck')}
-      ${item('jobfocus', 'Job focus', 'target', key === 'focus')}
+      ${item('jobfocus', 'Role Ready', 'target', key === 'focus')}
       ${item('trend', 'What’s new in tech', 'bolt', key === 'trend')}
       ${item('live', 'Live AI interview', 'mic', false)}
       ${item('custom', 'Custom subjects', 'plus', key === 'custom')}
@@ -2864,6 +2875,8 @@ document.addEventListener('click', async e => {
   else if (a === 'jfgo') jobFocusGo();
   else if (a === 'jfpick') { S.jf.sel = Number(b.dataset.i) || 0; render(); }
   else if (a === 'jfretry') jobFocusCards(Number(b.dataset.i) || 0);
+  else if (a === 'jfmode') { S.jf.mode = b.dataset.v; render(); }
+  else if (a === 'jfrolepick') { S.jf.mode = 'role'; S.jf.roleText = b.dataset.v; render(); jobFocusGo(); }
   else if (a === 'jfnew') { S.jf.result = null; S.jf.text = ''; S.jf.sel = 0; render(); }
   else if (a === 'jfopen') { const j = jfAll().find(x => x.id === b.dataset.id); if (j) { S.jf.result = j; S.jf.text = j.text || ''; } render(); }
   else if (a === 'jfdeck') startSkillDeck(Number(b.dataset.i) || 0);
