@@ -17,8 +17,8 @@
   {
    "id": "core-dev",
    "name": "Developer fundamentals",
-   "version": "436dd1b85b",
-   "bytes": 101467,
+   "version": "faa9d39f94",
+   "bytes": 103409,
    "topics": [
     {
      "id": "dsa",
@@ -79,8 +79,8 @@
   {
    "id": "data",
    "name": "Data Engineering",
-   "version": "5511767c1b",
-   "bytes": 97600,
+   "version": "c42ee69a1d",
+   "bytes": 100197,
    "topics": [
     {
      "id": "sql-advanced",
@@ -167,8 +167,8 @@
   {
    "id": "frontend",
    "name": "Frontend",
-   "version": "3861afe3a1",
-   "bytes": 67684,
+   "version": "caa2174119",
+   "bytes": 69592,
    "topics": [
     {
      "id": "html-css",
@@ -211,8 +211,8 @@
   {
    "id": "go",
    "name": "Go",
-   "version": "a6d8dc56b7",
-   "bytes": 24427,
+   "version": "c54c165445",
+   "bytes": 25721,
    "topics": [
     {
      "id": "go-core",
@@ -231,8 +231,8 @@
   {
    "id": "infra",
    "name": "Infrastructure Engineering",
-   "version": "32ef7d28c1",
-   "bytes": 196762,
+   "version": "938ece7b83",
+   "bytes": 198175,
    "topics": [
     {
      "id": "linux",
@@ -314,8 +314,8 @@
   {
    "id": "java",
    "name": "Java",
-   "version": "13c155936d",
-   "bytes": 48884,
+   "version": "f9cc3584f1",
+   "bytes": 49635,
    "topics": [
     {
      "id": "java-core",
@@ -346,8 +346,8 @@
   {
    "id": "ml",
    "name": "Machine Learning & AI",
-   "version": "d9c293ea38",
-   "bytes": 62323,
+   "version": "df2dc63489",
+   "bytes": 62954,
    "topics": [
     {
      "id": "statistics",
@@ -416,8 +416,8 @@
   {
    "id": "node",
    "name": "JavaScript & Node.js",
-   "version": "d0505da329",
-   "bytes": 49407,
+   "version": "ab8dc6465a",
+   "bytes": 49979,
    "topics": [
     {
      "id": "js-core",
@@ -448,8 +448,8 @@
   {
    "id": "python",
    "name": "Python",
-   "version": "23f6c0d63c",
-   "bytes": 46649,
+   "version": "da6ce8d436",
+   "bytes": 48056,
    "topics": [
     {
      "id": "python-core",
@@ -480,8 +480,8 @@
   {
    "id": "quality",
    "name": "Quality & Security",
-   "version": "74873a88c6",
-   "bytes": 71403,
+   "version": "13e9701ea1",
+   "bytes": 72115,
    "topics": [
     {
      "id": "test-strategy",

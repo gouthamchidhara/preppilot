@@ -1,162 +1,126 @@
 {
   "month": "2026-11",
-  "at": "2026-11-23T18:26:42.578Z",
-  "added": 26,
+  "at": "2026-11-24T17:56:29.594Z",
+  "added": 20,
   "report": [
     {
       "topic": "system-design",
       "qs": [
-        "How would you design a system that enables users to collaboratively build and edit interactive architecture diagrams, ensuring low latency updates, granular access control, and scalable state synchronization across thousands of concurrent sessions?"
+        "How would you design a system that allows users to interactively annotate architecture diagrams with comments and links, ensuring both real-time synchronization and auditability of changes?"
+      ]
+    },
+    {
+      "topic": "sql",
+      "qs": [
+        "In recent versions of PostgreSQL, how do composite value comparisons differ from using arrays in WHERE clauses, and what impact does this have on query results and performance?"
       ]
     },
     {
       "topic": "concurrency",
       "qs": [
-        "In .NET 8, what are the best practices for waiting on a `ValueTask` to complete within a synchronous context without incurring heap allocations, and what pitfalls should you avoid?"
+        "How would you minimize cache line contention when multiple threads update adjacent elements in a shared array, and what programming techniques or data structure modifications are effective for this?"
       ]
     },
     {
       "topic": "data-modeling",
       "qs": [
-        "How would you model a Slowly Changing Dimension Type 3 in a modern lakehouse architecture, and what are the limitations compared to Type 2 for tracking historical changes?"
+        "What are the key considerations when modeling audit trails for data corrections in a dimensional warehouse, especially with recent support for ACID transactions in lakehouse platforms?"
       ]
     },
     {
       "topic": "etl-elt",
       "qs": [
-        "How can you use dbt's `contracts` feature to enforce data type consistency in incremental models, and what are some practical benefits of doing so?"
+        "How would you leverage dbt's `defer` functionality in a production ELT workflow to safely test changes without impacting live data transformations?"
       ]
     },
     {
       "topic": "streaming",
       "qs": [
-        "How do Kafka consumer groups interact with tiered storage when reading from topics with high retention, and what configuration changes might be necessary to optimize performance?"
+        "What steps would you take to troubleshoot a Kafka Streams application that fails to recover after an uncaught exception, and how does the `setUncaughtExceptionHandler` API influence this process?"
       ]
     },
     {
       "topic": "warehouses",
       "qs": [
-        "How would you use BigQuery's search indexes to accelerate text search across semi-structured data, and what are the trade-offs to consider for cost and query performance?"
+        "How would you implement and monitor object-level access policies in Databricks Unity Catalog to meet evolving compliance requirements, and what are common pitfalls to avoid?"
       ]
     },
     {
       "topic": "angular",
       "qs": [
-        "How would you handle a race condition where an outdated auto-save HTTP request overwrites a more recent user edit in an Angular application using RxJS or signals?"
+        "When using Angular signals within a component, what steps should you take to ensure that dynamically created child components receive and react to signal updates, especially when using the new `createComponent` API?"
       ]
     },
     {
       "topic": "browser-performance",
       "qs": [
-        "How would you approach optimizing render performance and Core Web Vitals in a browser-based 3D modeling application that uses WebGPU and WASM for real-time rendering?"
+        "What techniques can be used to minimize JavaScript main thread blocking and improve Interaction to Next Paint (INP) when integrating advanced client-side features like AI-powered video editing in the browser?"
+      ]
+    },
+    {
+      "topic": "state-management",
+      "qs": [
+        "How can you implement parameterized selectors in NgRx to efficiently derive data based on dynamic input, and what are the benefits of this approach?"
+      ]
+    },
+    {
+      "topic": "go-core",
+      "qs": [
+        "How would you ensure that a custom struct type used as a map key in Go remains valid and hashable, especially when using generics with type constraints?"
+      ]
+    },
+    {
+      "topic": "go-concurrency",
+      "qs": [
+        "How would you safely handle closing a channel shared among multiple goroutines to avoid panics and ensure all senders and receivers exit cleanly, especially in light of recent best practices for channel ownership?"
       ]
     },
     {
       "topic": "network",
       "qs": [
-        "What are the advantages and potential drawbacks of using DNS-over-HTTPS (DoH) compared to traditional DNS, especially in enterprise network environments?"
+        "How would you design a scalable, low-latency UDP-based communication layer for a real-time multiplayer game, and what networking challenges would you need to address to ensure reliability and fairness among players?"
       ]
     },
     {
       "topic": "k8s",
       "qs": [
-        "How can you use the `TopologySpreadConstraints` feature in recent Kubernetes versions to improve deployment resilience and availability across failure domains?"
-      ]
-    },
-    {
-      "topic": "cloud",
-      "qs": [
-        "How would you enforce and monitor the use of private endpoints for all Azure PaaS resources in a multi-subscription environment, ensuring no resource is ever exposed publicly by misconfiguration?"
-      ]
-    },
-    {
-      "topic": "java-core",
-      "qs": [
-        "How do Java streams handle exceptions during parallel processing, and what patterns are recommended to ensure reliable error handling in concurrent stream operations?"
+        "How would you use the `PodDisruptionBudget` resource to ensure high availability during voluntary disruptions, and what recent changes should you consider when configuring it for large-scale deployments?"
       ]
     },
     {
       "topic": "jvm",
       "qs": [
-        "How does enabling JVM class unloading with the `-XX:+ClassUnloading` flag affect memory management and performance in applications that dynamically load classes, such as plugin-based systems?"
+        "How do JVM features for compressed object pointers (compressed oops) influence memory usage and performance in applications running with large heaps, and what configuration options should you consider when tuning for modern hardware?"
       ]
     },
     {
-      "topic": "statistics",
+      "topic": "ml-ops",
       "qs": [
-        "What steps would you take to ensure the validity of inference when running regression models on datasets with high proportions of zero values, and what recent techniques help address this issue?"
-      ]
-    },
-    {
-      "topic": "llm-apps",
-      "qs": [
-        "How would you implement and enforce granular access controls for agent actions in a cloud-managed LLM agent platform, ensuring that only approved operations are executed during autonomous task planning?"
-      ]
-    },
-    {
-      "topic": "android-kotlin",
-      "qs": [
-        "What are the best practices for handling coroutine cancellation in Jetpack Compose when using `LaunchedEffect` with rapidly updating `StateFlow` values?"
-      ]
-    },
-    {
-      "topic": "flutter",
-      "qs": [
-        "How do you resolve build failures related to Gradle cache locking when upgrading a Flutter project to version 3.47.0 with Android Gradle Plugin 9.1.0?"
+        "How would you leverage the latest MLflow 3.x capabilities to automate lineage tracking for model training pipelines, ensuring traceability of both data and code changes?"
       ]
     },
     {
       "topic": "js-core",
       "qs": [
-        "How would you use JavaScript's `Object.hasOwn()` method to safely check for the presence of a property in an object, and what advantages does it offer over `hasOwnProperty` in modern codebases?"
-      ]
-    },
-    {
-      "topic": "typescript",
-      "qs": [
-        "What challenges might you face when using TypeScript's type inference with discriminated unions where the discriminant is an array or complex structure, and how can you address them?"
-      ]
-    },
-    {
-      "topic": "node-runtime",
-      "qs": [
-        "How can you use the `AsyncLocalStorage` API in Node.js 20+ to manage context propagation across asynchronous operations, and what are some practical scenarios where this improves observability or request tracing?"
-      ]
-    },
-    {
-      "topic": "express-nest",
-      "qs": [
-        "How do you configure and use the new Prisma 8 integration in a NestJS project, and what are the main improvements or changes compared to previous Prisma versions?"
+        "How would you use the `Error.cause` property in JavaScript to improve debugging and error tracing in asynchronous code involving promises?"
       ]
     },
     {
       "topic": "python-async",
       "qs": [
-        "What are best practices for managing shared in-memory caches in asyncio applications to prevent race conditions and ensure cache invalidation does not disrupt in-flight tasks?"
+        "In Python 3.12 and later, how can you use `asyncio.timeout()` to manage multiple nested timeouts, and what is a reliable way to determine which timeout context actually triggered a `TimeoutError`?"
       ]
     },
     {
       "topic": "python-packaging",
       "qs": [
-        "What steps would you take to ensure that a Python project using `pyproject.toml` and `uv` remains compatible with both legacy `setup.py`-based tooling and modern build backends?"
-      ]
-    },
-    {
-      "topic": "api-testing",
-      "qs": [
-        "How do you test REST APIs for rate limiting and throttling enforcement, and which tools or features help automate detection of inconsistent responses in modern API gateways?"
+        "What are the main differences in dependency resolution strategies between `uv` and `pip` as of their latest versions, and how might these impact reproducibility and speed in large projects?"
       ]
     },
     {
       "topic": "performance-testing",
       "qs": [
-        "How would you approach performance testing for a browser-based 3D modeling application, and which metrics would be most critical to monitor?"
-      ]
-    },
-    {
-      "topic": "threat-modeling",
-      "qs": [
-        "How would you update your threat modeling process to account for the increased use of AI-powered code generation tools, especially regarding data flow diagrams and STRIDE analysis?"
+        "How would you approach performance testing for a web application that leverages real-time voice input, such as a subvocal interface, and what unique metrics or bottlenecks would you monitor?"
       ]
     }
   ]
