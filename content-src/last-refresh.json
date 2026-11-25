@@ -1,126 +1,138 @@
 {
   "month": "2026-11",
-  "at": "2026-11-24T17:56:29.594Z",
-  "added": 20,
+  "at": "2026-11-25T17:23:51.952Z",
+  "added": 22,
   "report": [
-    {
-      "topic": "system-design",
-      "qs": [
-        "How would you design a system that allows users to interactively annotate architecture diagrams with comments and links, ensuring both real-time synchronization and auditability of changes?"
-      ]
-    },
     {
       "topic": "sql",
       "qs": [
-        "In recent versions of PostgreSQL, how do composite value comparisons differ from using arrays in WHERE clauses, and what impact does this have on query results and performance?"
+        "How can you use the `EXCEPT` and `INTERSECT` set operators in SQL to filter results across multiple tables, and what are some performance considerations when using them with large datasets?"
       ]
     },
     {
       "topic": "concurrency",
       "qs": [
-        "How would you minimize cache line contention when multiple threads update adjacent elements in a shared array, and what programming techniques or data structure modifications are effective for this?"
+        "How would you ensure thread safety when using Python's `multiprocessing.shared_memory` module to share large NumPy arrays between processes, especially considering recent changes in Python 3.13's memory management?"
+      ]
+    },
+    {
+      "topic": "sql-advanced",
+      "qs": [
+        "When working with composite types in PostgreSQL, how does inequality comparison between row value expressions like (a, b, c) differ from using ARRAY[a, b, c], and what are the implications for query logic and indexing?"
       ]
     },
     {
       "topic": "data-modeling",
       "qs": [
-        "What are the key considerations when modeling audit trails for data corrections in a dimensional warehouse, especially with recent support for ACID transactions in lakehouse platforms?"
+        "How would you model and enforce unique constraints on fields that are expected to be unique, but may occasionally require correction, in a modern OLTP or lakehouse environment?"
       ]
     },
     {
       "topic": "etl-elt",
       "qs": [
-        "How would you leverage dbt's `defer` functionality in a production ELT workflow to safely test changes without impacting live data transformations?"
+        "How can you use dbt's `retries` configuration in model execution to improve reliability in ELT pipelines, and what are important considerations when setting retry limits?"
       ]
     },
     {
-      "topic": "streaming",
+      "topic": "spark",
       "qs": [
-        "What steps would you take to troubleshoot a Kafka Streams application that fails to recover after an uncaught exception, and how does the `setUncaughtExceptionHandler` API influence this process?"
+        "How does enabling `spark.ssl.rpc.enabled` in Spark 4.x affect executor memory usage, especially with disk-cached blocks, and what configuration changes can help prevent out-of-memory errors?"
       ]
     },
     {
       "topic": "warehouses",
       "qs": [
-        "How would you implement and monitor object-level access policies in Databricks Unity Catalog to meet evolving compliance requirements, and what are common pitfalls to avoid?"
+        "How would you leverage Snowflake's Search Optimization Service to improve query performance on semi-structured data, and what cost considerations should you keep in mind when enabling this feature?"
+      ]
+    },
+    {
+      "topic": "react",
+      "qs": [
+        "How can you use React's new `useTransition` hook to improve perceived performance when updating large lists, and what are the limitations developers should be aware of?"
       ]
     },
     {
       "topic": "angular",
       "qs": [
-        "When using Angular signals within a component, what steps should you take to ensure that dynamically created child components receive and react to signal updates, especially when using the new `createComponent` API?"
+        "How do you ensure that a component using Angular signals remains type-safe and avoids runtime errors when accessing deeply nested properties, especially when the signal's initial value is undefined or fetched asynchronously?"
       ]
     },
     {
       "topic": "browser-performance",
       "qs": [
-        "What techniques can be used to minimize JavaScript main thread blocking and improve Interaction to Next Paint (INP) when integrating advanced client-side features like AI-powered video editing in the browser?"
-      ]
-    },
-    {
-      "topic": "state-management",
-      "qs": [
-        "How can you implement parameterized selectors in NgRx to efficiently derive data based on dynamic input, and what are the benefits of this approach?"
-      ]
-    },
-    {
-      "topic": "go-core",
-      "qs": [
-        "How would you ensure that a custom struct type used as a map key in Go remains valid and hashable, especially when using generics with type constraints?"
+        "What steps would you take to reduce the impact of large AI model weights on initial page load and Core Web Vitals when integrating in-browser LLM inference in a web app?"
       ]
     },
     {
       "topic": "go-concurrency",
       "qs": [
-        "How would you safely handle closing a channel shared among multiple goroutines to avoid panics and ensure all senders and receivers exit cleanly, especially in light of recent best practices for channel ownership?"
+        "How would you handle reference counting for file descriptors in concurrent Go network code to prevent resource leaks, especially when using `net.Conn` and ensuring `Close()` doesn't block indefinitely?"
       ]
     },
     {
       "topic": "network",
       "qs": [
-        "How would you design a scalable, low-latency UDP-based communication layer for a real-time multiplayer game, and what networking challenges would you need to address to ensure reliability and fairness among players?"
+        "What are some considerations and best practices when configuring firewall rules to support DNS-over-HTTPS (DoH) while maintaining network observability and security?"
       ]
     },
     {
-      "topic": "k8s",
+      "topic": "cloud",
       "qs": [
-        "How would you use the `PodDisruptionBudget` resource to ensure high availability during voluntary disruptions, and what recent changes should you consider when configuring it for large-scale deployments?"
+        "In Azure, how would you use Managed Identities with Azure Container Apps to securely access Key Vault secrets, and what configuration is required to avoid exposing credentials?"
       ]
     },
     {
-      "topic": "jvm",
+      "topic": "statistics",
       "qs": [
-        "How do JVM features for compressed object pointers (compressed oops) influence memory usage and performance in applications running with large heaps, and what configuration options should you consider when tuning for modern hardware?"
+        "How would you assess whether a distribution is multimodal, and what implications does this have for regression modeling?"
       ]
     },
     {
       "topic": "ml-ops",
       "qs": [
-        "How would you leverage the latest MLflow 3.x capabilities to automate lineage tracking for model training pipelines, ensuring traceability of both data and code changes?"
+        "How would you implement scalable, low-latency model serving for large language models (LLMs) using the latest features in model serving platforms like KServe or Seldon Core?"
       ]
     },
     {
       "topic": "js-core",
       "qs": [
-        "How would you use the `Error.cause` property in JavaScript to improve debugging and error tracing in asynchronous code involving promises?"
+        "How can you use the `Symbol.prototype.description` property to enhance debugging or logging of object prototypes in modern JavaScript?"
+      ]
+    },
+    {
+      "topic": "typescript",
+      "qs": [
+        "How can you use TypeScript's `satisfies` operator to enforce that an object matches a specific type while preserving its literal types, and what are the advantages over traditional type assertions?"
       ]
     },
     {
       "topic": "python-async",
       "qs": [
-        "In Python 3.12 and later, how can you use `asyncio.timeout()` to manage multiple nested timeouts, and what is a reliable way to determine which timeout context actually triggered a `TimeoutError`?"
+        "What approach would you take to safely remove idle or unused `asyncio.Lock` instances in a long-running application without risking race conditions or duplicate task execution?"
       ]
     },
     {
       "topic": "python-packaging",
       "qs": [
-        "What are the main differences in dependency resolution strategies between `uv` and `pip` as of their latest versions, and how might these impact reproducibility and speed in large projects?"
+        "How does the introduction of `pyproject.toml`-based editable installs (PEP 660) affect the workflow for local development with tools like `pip`, `poetry`, or `uv`?"
+      ]
+    },
+    {
+      "topic": "api-testing",
+      "qs": [
+        "How do you use AI-powered API testing tools to generate and maintain test cases for evolving REST APIs, and what are the main advantages and limitations of these tools in practice?"
       ]
     },
     {
       "topic": "performance-testing",
       "qs": [
-        "How would you approach performance testing for a web application that leverages real-time voice input, such as a subvocal interface, and what unique metrics or bottlenecks would you monitor?"
+        "What strategies would you use to ensure performance test coverage for applications that utilize flash memory-based AI inference accelerators, such as DeepSeek v4.1, and which metrics would you focus on?"
+      ]
+    },
+    {
+      "topic": "appsec",
+      "qs": [
+        "How would you determine if your application is impacted by a newly disclosed vulnerability such as CVE-2026-109618, and what steps would you take to mitigate it?"
       ]
     }
   ]
