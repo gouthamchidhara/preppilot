@@ -526,6 +526,22 @@ function planCompare() {
   </section>`;
 }
 
+// The app, shown the way it moves: short silent loops of real screens (recorded from the app itself).
+function movesHtml() {
+  const clip = (f, name, meta) => `<figure class="mv-item">
+    <div class="mv-frame"><video src="media/${f}.mp4" poster="media/${f}.jpg" muted loop playsinline autoplay preload="metadata" aria-label="${esc(name)}"></video></div>
+    <figcaption><b>${esc(name)}</b><span class="mv-meta">${esc(meta)}</span></figcaption></figure>`;
+  return `<section class="l-moves" aria-label="The app in motion">
+    <div class="mv-head"><h2 class="mv-title">See it move.</h2><span class="mv-meta">PrepPilot · iPhone and web</span></div>
+    <p class="mv-sub">Real screens from the app, not mock-ups.</p>
+    <div class="mv-row">
+      ${clip('swipe', 'Swipe cards', 'Flashcards · right if you know it')}
+      ${clip('role', 'Role Ready', 'Type a role · 25 cards · basics to scenarios')}
+      ${clip('learn', 'Why · Example · Trap', 'Every answer explained')}
+    </div>
+  </section>`;
+}
+
 function landingView() {
   const demo = S.demo;
   const q = demo?.q;
@@ -557,6 +573,7 @@ function landingView() {
       ${heroAnim()}
       <p class="l-giant" aria-hidden="true">recall<span class="l-giant-dot"></span></p>
     </section>
+    ${movesHtml()}
     ${LANDING_V2 ? featuresHtml() : ''}
     ${storyHtml()}
     ${storyCta()}

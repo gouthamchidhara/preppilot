@@ -1144,7 +1144,8 @@ h2, h3 { font-weight: 650; }
 
 /* Chat input dock: an opaque strip with a soft fade above, so messages scroll cleanly underneath */
 .ai-dock { position: sticky; bottom: calc(var(--tabs) + env(safe-area-inset-bottom)); z-index: 5; margin: 0 -20px; padding: 10px 20px 12px; background: var(--desk); }
-.ai-dock::before { content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: 28px; background: linear-gradient(to bottom, transparent, var(--desk)); pointer-events: none; }
+/* Soft blur where messages slide under the composer: a backdrop blur that fades in toward the bottom. */
+.ai-dock::before { content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: 44px; background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--desk) 70%, transparent)); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); -webkit-mask-image: linear-gradient(to bottom, transparent, #000 85%); mask-image: linear-gradient(to bottom, transparent, #000 85%); pointer-events: none; }
 .ai-dock .composer { position: static; margin: 0; }
 .ai-tab .msgs { padding-bottom: 8px; }
 .ai-dock .iconbtn.on { color: var(--accent); }
@@ -1391,3 +1392,19 @@ html { background: var(--desk); color-scheme: light dark; }
 .jf-mode { align-self: flex-start; }
 .jf-role-in { width: 100%; padding: 14px 16px; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--paper); color: var(--ink); font: 17px var(--sans); }
 .jf .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Landing: "See it move." Real screens as quiet loops; large title with a full stop, mono meta labels. */
+.l-moves { display: grid; gap: 14px; padding: 28px 0 8px; border-top: 1px solid var(--line); }
+.mv-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.mv-title { margin: 0; font: 700 clamp(40px, 11vw, 72px)/1 var(--sans); letter-spacing: -.035em; }
+.mv-sub { margin: 0; color: var(--muted); font-size: 17px; }
+.mv-meta { font: 500 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.mv-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(230px, 1fr); gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 6px -20px 0; padding: 4px 20px 12px; scrollbar-width: none; }
+.mv-row::-webkit-scrollbar { display: none; }
+.mv-item { margin: 0; display: grid; gap: 10px; scroll-snap-align: start; }
+.mv-frame { padding: 10px; border-radius: 26px; background: color-mix(in srgb, var(--line) 60%, var(--desk)); }
+.mv-frame video { display: block; width: 100%; aspect-ratio: 390 / 760; object-fit: cover; object-position: top; border-radius: 18px; background: var(--paper); }
+.mv-item figcaption { display: grid; gap: 3px; padding: 0 4px; }
+.mv-item figcaption b { font-size: 17px; }
+@media (min-width: 900px) { .mv-row { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); overflow: visible; margin: 6px 0 0; padding: 4px 0 12px; } }
+@media (prefers-reduced-motion: reduce) { .mv-frame video { animation: none; } }
