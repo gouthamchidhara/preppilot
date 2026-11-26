@@ -26,3 +26,13 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
         run: node scripts/asc-setup.mjs
+      - name: Listing text, screenshots, review screenshots and notes
+        if: env.APP_ID != ''
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          node scripts/asc-listing.mjs || true
+          node scripts/asc-screens.mjs || true
+          if [ -n "$SUB_ID" ] && [ -n "$IAP_ID" ]; then node scripts/asc-review.mjs || true; fi

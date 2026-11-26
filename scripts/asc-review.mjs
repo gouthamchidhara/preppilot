@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 
 const { ASC_KEY_ID: kid, ASC_ISSUER_ID: iss, ASC_KEY_P8: p8 } = process.env;
 if (!kid || !iss || !p8) { console.error('Missing ASC_KEY_ID, ASC_ISSUER_ID or ASC_KEY_P8 secret.'); process.exit(1); }
-const SUB = '6835597421', IAP = '6835659087';
+const SUB = process.env.SUB_ID || '6835597421', IAP = process.env.IAP_ID || '6835659087';
 const NOTES = {
   sub: 'PrepPilot Pro, $6.99/month with a 3-day free trial for new subscribers. Unlocks every topic and card, unlimited AI coach messages, and 30 Live AI minutes a month (a voice mock interview for practice; only connected time counts). To test: Profile or Pricing > Try Pro free for 3 days. Sign in with Apple works for review.',
   iap: 'Live AI, one 60-minute session ($15.99, consumable). A spoken mock interview with an AI interviewer for practice, for users who want a full hour before an interview. To test: Pricing > Buy one session, then AI > Live AI > Start. The microphone is used only during a session the user starts.',

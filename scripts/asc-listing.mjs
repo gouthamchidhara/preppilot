@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 
 const { ASC_KEY_ID: kid, ASC_ISSUER_ID: iss, ASC_KEY_P8: p8 } = process.env;
 if (!kid || !iss || !p8) { console.error('Missing ASC_KEY_ID, ASC_ISSUER_ID or ASC_KEY_P8 secret.'); process.exit(1); }
-const APP = '6835532732';
+const APP = process.env.APP_ID || '6835532732';
 const L = JSON.parse(readFileSync('store/listing.json', 'utf8'));
 const b64u = v => Buffer.from(JSON.stringify(v)).toString('base64url');
 const now = Math.floor(Date.now() / 1000);
