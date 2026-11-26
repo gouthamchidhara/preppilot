@@ -1,0 +1,28 @@
+name: App Store setup (new account)
+
+# Runs scripts/asc-setup.mjs with the App Store Connect key in this repository's secrets.
+# Starts when this file is pushed to the working branch, or by hand from the Actions tab.
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/eloquent-pasteur-wdc9yd]
+    paths: [.github/workflows/asc-setup.yml, scripts/asc-setup.mjs]
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Set up App Store Connect
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: node scripts/asc-setup.mjs
