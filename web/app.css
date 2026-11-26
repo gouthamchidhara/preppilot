@@ -1441,3 +1441,11 @@ html { background: var(--desk); color-scheme: light dark; }
 .lab-box.trap b { color: #b4572e; }
 .lab-next { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 16px; border: 1px dashed var(--line-strong); border-radius: 16px; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
 .lab-next b { flex: 1; }
+
+/* One tip at a time on Home */
+.tip { display: flex; gap: 12px; padding: 14px 16px; border: 1px solid var(--line-strong); border-radius: 16px; background: var(--paper); }
+.tip > div { flex: 1; display: grid; gap: 4px; }
+.tip b { font-size: 16px; }
+.tip .row { margin-top: 6px; gap: 8px; }
+.tip-ic { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: #fbefd9; color: #b7791f; }
+.tip-ic .ic { width: 18px; height: 18px; }

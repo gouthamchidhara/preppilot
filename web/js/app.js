@@ -876,6 +876,26 @@ function learnSearchHtml(p) {
   </section>`;
 }
 
+// Tips: one at a time on Home, each shown until "Got it". Only tips that fit this device.
+const TIPS = [
+  { id: 'float', when: () => pipSupport() && !native(), t: 'Cards float over your other apps', d: 'Your first click opens a small card window that stays on top of Outlook, Teams or your editor. It moves to the next card by itself.', act: 'popout', btn: 'Try it now' },
+  { id: 'swipe', when: () => true, t: 'Swipe right on what you know', d: 'In swipe mode, right means you know it, left brings it back sooner, up means you know it cold.', act: 'deck', btn: 'Open cards' },
+  { id: 'wet', when: () => true, t: 'Every answer has a Why', d: 'Flip a card and tap Why · Example · Trap to see how it works, a real example and the mistake interviewers listen for.' },
+  { id: 'role', when: () => true, t: 'Type any role to get its decks', d: 'Role Ready builds about 25 cards for a role, or decks from a pasted job post.', act: 'jobfocus', btn: 'Open Role Ready' },
+  { id: 'lab', when: () => true, t: 'Worked answers in Interview Lab', d: 'System design, coding, SQL and more: try it yourself first, get it checked, then see the strong answer.', act: 'lab', btn: 'Open Interview Lab' },
+  { id: 'live', when: () => true, t: 'Pause Live AI any time', d: 'Pause stops your minutes. Locking the phone pauses it for you, and Resume carries on the same conversation.' },
+  { id: 'drawer', when: () => window.innerWidth < 900, t: 'Swipe right for the menu', d: 'Swipe right anywhere to open the side panel with your chats and every section.' },
+  { id: 'keys', when: () => !native() && window.innerWidth >= 900, t: 'Keyboard shortcuts', d: 'On cards: Space flips, the arrow keys answer. In the floating window: P pauses.' },
+];
+function tipHtml() {
+  let seen; try { seen = JSON.parse(lsGet('pp.tipsSeen', '[]')); } catch { seen = []; }
+  const tip = TIPS.find(t => !seen.includes(t.id) && t.when());
+  if (!tip) return '';
+  return `<section class="tip"><span class="tip-ic">${ic('bulb')}</span><div><span class="mv-meta">Tip</span><b>${esc(tip.t)}</b><span class="muted small">${esc(tip.d)}</span>
+    <div class="row">${tip.act ? `<button class="btn small primary" data-act="tipgo" data-id="${tip.id}">${esc(tip.btn)}</button>` : ''}<button class="btn small quiet" data-act="tipok" data-id="${tip.id}">Got it</button></div></div></section>`;
+}
+function tipSeen(id) { let seen; try { seen = JSON.parse(lsGet('pp.tipsSeen', '[]')); } catch { seen = []; } lsSet('pp.tipsSeen', JSON.stringify([...new Set([...seen, id])])); }
+
 function newTopicsNote() {
   let n; try { n = JSON.parse(lsGet('pp.newTopics', 'null')); } catch { n = null; }
   if (!n?.ids?.length) return '';
@@ -924,6 +944,7 @@ function homeView() {
   return `<div class="stack loose">
     ${learnSearchHtml(p)}
     ${newTopicsNote()}
+    ${tipHtml()}
     <div class="curated-head"><h2>Curated for you</h2><span class="muted small">${esc(roleIds.map(label).join(' and '))}${p.level ? ` · ${esc(p.level)}` : ''}</span></div>
     ${nt ? `<section class="card stacked">
       <div class="card-head"><span>Up next</span>${hasPro() ? '' : `<span>${relevant.length - relevant.filter(t => isLocked(t.id)).length} of ${relevant.length} topics open</span>`}</div>
@@ -2115,7 +2136,7 @@ function prefsSection() {
   return `<section class="pf-prefs">
     <h2>Display</h2>
     <div class="pf-row"><div><b>Text size</b><span class="muted small">Lessons, cards and answers</span></div>${seg('textsize', ts, [['s', '<span class="ts-s">A</span>', 'Small'], ['m', '<span class="ts-m">A</span>', 'Medium'], ['l', '<span class="ts-l">A</span>', 'Large']])}</div>
-    ${pipSupport() && !native() ? `<div class="pf-row"><div><b>Float cards automatically</b><span class="muted small">Your first click on PrepPilot opens the floating cards, so they stay on top of your other apps</span></div>${seg('pipauto', lsGet('pp.pipAuto', 'off'), [['off', 'Off'], ['on', 'On']])}</div>` : ''}
+    ${pipSupport() && !native() ? `<div class="pf-row"><div><b>Float cards automatically</b><span class="muted small">Your first click on PrepPilot opens the floating cards, so they stay on top of your other apps</span></div>${seg('pipauto', lsGet('pp.pipAuto', 'on'), [['off', 'Off'], ['on', 'On']])}</div>` : ''}
     <div class="pf-row"><div><b>Cards open in</b><span class="muted small">Switch any time on the cards screen</span></div>${seg('prefmode', dm, [['steady', 'Steady'], ['swipe', 'Swipe']])}</div>
   </section>`;
 }
@@ -2536,7 +2557,7 @@ function mixTopics(cards) {
 // Floating cards window (desktop browsers): keeps cards on top while you work in other apps.
 // "Float cards automatically": browsers need a click to open it, so the first click of each visit does.
 document.addEventListener('pointerdown', () => {
-  if (S.pipAutoDone || lsGet('pp.pipAuto', 'off') !== 'on' || !signedIn() || !profile() || pipOpen() || !pipSupport() || native()) return;
+  if (S.pipAutoDone || lsGet('pp.pipAuto', 'on') !== 'on' || !signedIn() || !profile() || pipOpen() || !pipSupport() || native()) return;
   S.pipAutoDone = true;
   popOut();
 }, true);
@@ -2988,6 +3009,8 @@ document.addEventListener('click', async e => {
   else if (a === 'jfgo') jobFocusGo();
   else if (a === 'jfpick') { S.jf.sel = Number(b.dataset.i) || 0; render(); }
   else if (a === 'jfretry') jobFocusCards(Number(b.dataset.i) || 0);
+  else if (a === 'tipok') { tipSeen(b.dataset.id); render(); }
+  else if (a === 'tipgo') { const t = TIPS.find(x => x.id === b.dataset.id); tipSeen(t.id); if (t.act === 'popout') popOut(); else if (t.act === 'deck') startDeck(null); else if (t.act === 'jobfocus') { S.view = 'focus'; render(); } else { S.view = t.act; render(); } scrollToY(0); }
   else if (a === 'labfmt') { S.lab.fmt = b.dataset.id; S.lab.q = null; render(); scrollToY(0); }
   else if (a === 'labq') { S.lab.q = b.dataset.id; render(); scrollToY(0); }
   else if (a === 'labback') { S.lab.q = null; render(); scrollToY(0); }
