@@ -1,174 +1,96 @@
 {
   "month": "2026-11",
-  "at": "2026-11-21T14:47:54.446Z",
-  "added": 28,
+  "at": "2026-11-26T17:04:13.131Z",
+  "added": 15,
   "report": [
-    {
-      "topic": "system-design",
-      "qs": [
-        "How would you design a system that supports interactive architecture diagram editing, ensuring both real-time collaboration and conflict resolution among multiple users?"
-      ]
-    },
     {
       "topic": "sql",
       "qs": [
-        "How would you use the `AT TIME ZONE` clause in SQL to convert timestamps, and what should you watch out for when the input is an ambiguous or unknown string literal?"
-      ]
-    },
-    {
-      "topic": "concurrency",
-      "qs": [
-        "What are some common causes of false sharing in multi-threaded applications, and how can you mitigate its impact on performance when multiple threads write to adjacent elements in a data structure?"
-      ]
-    },
-    {
-      "topic": "sql-advanced",
-      "qs": [
-        "In modern PostgreSQL, how would you use row-level security (RLS) to ensure tenant isolation in a multi-tenant SaaS environment, and what pitfalls can arise when connection pooling is enabled?"
+        "How can you optimize a SQL query that uses `ORDER BY` on a timestamp column to avoid empty result sets, especially when filtering with recent data in time-series tables?"
       ]
     },
     {
       "topic": "data-modeling",
       "qs": [
-        "How would you model and enforce the association of a single 'primary image' per SKU in a dimensional data warehouse, ensuring efficient OLAP querying and data integrity?"
+        "How would you design a dimensional model in a lakehouse architecture to support real-time analytics while ensuring consistency with batch-loaded historical data?"
       ]
     },
     {
       "topic": "etl-elt",
       "qs": [
-        "How does dbt's built-in support for materialized views in recent versions impact the performance and maintenance of ELT pipelines?"
+        "How would you implement and monitor data freshness checks in a dbt pipeline to ensure timely batch loads, and what configuration options are available for alerting on stale data?"
       ]
     },
     {
       "topic": "spark",
       "qs": [
-        "How does Spark 4.x handle MERGE INTO operations with Delta Lake tables, and what are common causes for 'No plan for TableReference' errors?"
+        "What are the trade-offs when using the new `spark.sql.jsonSchemaInference.parallelism` setting in Spark 4.x to speed up schema inference for massive JSON columns, and how can it impact cluster resource usage?"
+      ]
+    },
+    {
+      "topic": "airflow",
+      "qs": [
+        "How can you use Airflow's updated DAG-level concurrency controls to prevent resource contention when running multiple high-frequency DAGs simultaneously?"
       ]
     },
     {
       "topic": "warehouses",
       "qs": [
-        "How do you leverage Snowflake's dynamic tables feature to automate data pipeline refreshes, and what are the implications for cost and performance?"
-      ]
-    },
-    {
-      "topic": "data-quality",
-      "qs": [
-        "How would you implement batch-level lineage tracking in a modern data pipeline to improve traceability and debugging?"
-      ]
-    },
-    {
-      "topic": "csharp-core",
-      "qs": [
-        "How can you use C# records with required properties to enforce initialization, and what are the limitations when integrating with legacy codebases?"
-      ]
-    },
-    {
-      "topic": "efcore",
-      "qs": [
-        "How can you configure EF Core to support concurrent read operations on the same DbContext instance, and what are the trade-offs involved?"
+        "How would you use Redshift's new auto-copy from Amazon S3 feature to streamline data ingestion, and what are the main configuration steps and security considerations?"
       ]
     },
     {
       "topic": "angular",
       "qs": [
-        "How do you handle state synchronization between Angular signals and RxJS observables when both are used in the same component?"
+        "In Angular 22+, how would you ensure that a component using signals for state management can handle asynchronous data fetching while avoiding undefined property errors in templates?"
       ]
     },
     {
       "topic": "go-concurrency",
       "qs": [
-        "How would you use the `context` package's new deadline propagation features in Go 1.22 to coordinate cancellation across multiple goroutines working on dependent tasks, and what are the practical benefits compared to manual deadline management?"
-      ]
-    },
-    {
-      "topic": "docker",
-      "qs": [
-        "How can you use Docker's BuildKit to optimize multi-stage builds for faster image creation, and what BuildKit-specific features would you enable in your Dockerfile?"
-      ]
-    },
-    {
-      "topic": "cloud",
-      "qs": [
-        "How would you implement governance controls to ensure only approved AWS CodeConnections are used in CodePipeline workflows, given recent changes in GitHub integration security?"
-      ]
-    },
-    {
-      "topic": "java-core",
-      "qs": [
-        "What considerations should you make when using `TreeMap` with custom comparators to avoid unintentional value overwrites, and how do you ensure key uniqueness?"
-      ]
-    },
-    {
-      "topic": "jvm",
-      "qs": [
-        "How does the JVM's automatic native memory management using arenas (e.g., with the Foreign Memory API) influence memory leak detection and profiling strategies in modern Java applications?"
+        "With recent improvements in Go's `context` package, how would you propagate cancellation signals across a group of goroutines working on interdependent tasks, ensuring that all goroutines terminate promptly if one fails?"
       ]
     },
     {
       "topic": "statistics",
       "qs": [
-        "How would you approach diagnosing and resolving convergence issues in a logistic regression model when the dataset contains many zero values or sparse features?"
-      ]
-    },
-    {
-      "topic": "python-data",
-      "qs": [
-        "How would you efficiently append a new column to multiple large pandas DataFrames, ensuring each column reflects its source file name, and what considerations are important for memory usage?"
+        "What are the advantages of using quantile regression over ordinary least squares regression when analyzing data with outliers or non-normal error distributions?"
       ]
     },
     {
       "topic": "ml-ops",
       "qs": [
-        "How would you implement automated retraining triggers in an MLOps pipeline using the latest workflow orchestration tools, ensuring models are updated only when significant drift is detected?"
+        "How would you configure a model monitoring pipeline to distinguish between natural data drift and shifts caused by increased AI-generated web content, using the latest open-source monitoring frameworks?"
       ]
     },
     {
-      "topic": "llm-apps",
+      "topic": "react-native",
       "qs": [
-        "What techniques can you use to ensure that LLM-powered agents interacting with production systems do not perform unintended or unsafe actions, especially when using autonomous multi-step planning?"
+        "How would you address the issue of large AAB files compared to APKs in a React Native project, and what tools or configuration options are available to optimize bundle size?"
       ]
     },
     {
-      "topic": "ios-swift",
+      "topic": "typescript",
       "qs": [
-        "How would you ensure that a SwiftUI view correctly updates its display when the underlying data changes, especially when using AppEntity with WidgetKit's AppIntentConfiguration?"
-      ]
-    },
-    {
-      "topic": "js-core",
-      "qs": [
-        "How can you use private class fields in JavaScript to encapsulate state, and what are the limitations when accessing these fields from outside the class?"
+        "How can you use TypeScript's `NonNullable<T>` utility type with generics to ensure that a type excludes `null` and `undefined`, and what are some pitfalls when the generic might resolve to `undefined`?"
       ]
     },
     {
       "topic": "node-runtime",
       "qs": [
-        "What strategies can you use in Node.js 22+ to optimize memory usage when processing large streams of binary data, and how do the latest `stream/promises` APIs help with this?"
+        "How can you use the `stream.pipeline()` method with async generators in recent Node.js versions to efficiently process and transform large data sets, and what are the main advantages of this approach?"
       ]
     },
     {
-      "topic": "python-async",
+      "topic": "python-packaging",
       "qs": [
-        "How would you diagnose and resolve issues where an object is unexpectedly garbage collected between `await` points in an asyncio coroutine?"
-      ]
-    },
-    {
-      "topic": "api-testing",
-      "qs": [
-        "How do you test REST APIs for proper handling of JWT revocation and expiration, especially when using short-lived tokens and refresh flows in modern authentication setups?"
+        "What is the significance of the `virtualenv` API's new support for cross-platform activation scripts, and how does it improve developer experience compared to previous versions?"
       ]
     },
     {
       "topic": "performance-testing",
       "qs": [
-        "When conducting performance testing on applications that leverage self-improving CI/CD pipelines, what unique performance metrics or bottlenecks should you monitor, and why?"
-      ]
-    },
-    {
-      "topic": "threat-modeling",
-      "qs": [
-        "How would you incorporate recent CVE advisories, such as those for PHP vulnerabilities, into your threat modeling process to ensure timely risk mitigation?"
+        "How would you design a performance test to evaluate the scalability of a system that dynamically integrates agent skills for code optimization, and what metrics would you track to ensure these skills do not introduce unpredictable latency spikes?"
       ]
     }
   ]
