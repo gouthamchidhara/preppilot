@@ -1449,3 +1449,5 @@ html { background: var(--desk); color-scheme: light dark; }
 .tip .row { margin-top: 6px; gap: 8px; }
 .tip-ic { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: #fbefd9; color: #b7791f; }
 .tip-ic .ic { width: 18px; height: 18px; }
+/* The side panel is the only navigation; the old bottom tabs never show (pricing screen included). */
+nav.tabs { display: none !important; }

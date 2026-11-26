@@ -1,6 +1,6 @@
 name: App Store screenshots upload
 
-# Replaces the iPhone screenshots of the version being prepared with store/screenshots/*.png,
+# Replaces the iPhone screenshots (and the App Review screenshots and notes for Pro and Live AI) of the version being prepared with store/screenshots/*.png,
 # using the App Store Connect key in GitHub secrets. Run by hand from the Actions tab.
 on:
   workflow_dispatch:
@@ -22,4 +22,4 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
-        run: node scripts/asc-screens.mjs
+        run: node scripts/asc-screens.mjs && node scripts/asc-review.mjs
