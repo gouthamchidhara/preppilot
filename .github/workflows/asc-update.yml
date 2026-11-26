@@ -1,4 +1,4 @@
-name: App Store pricing update (one-off)
+name: App Store check and fix (US only)
 
 # Sets Pro to $6.99 in the USA, updates its description and adds a 3-day free trial, using the
 # App Store Connect key already stored in GitHub secrets. Runs when this file is pushed to the
@@ -26,4 +26,5 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
-        run: node scripts/asc-update.mjs
+          FIX: '1'
+        run: node scripts/asc-audit.mjs
