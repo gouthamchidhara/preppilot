@@ -731,6 +731,7 @@ async function saveProfile() {
   p.strong = (p.strong || []).filter(id => roles.some(role => role.topics?.[id]));
   p.weak = (p.weak || []).filter(id => roles.some(role => role.topics?.[id]));
   store.setProfile(p);
+  S.flushUserData?.(); // a new or changed profile goes to the account right away
   S.draft = null;
   if (p.roleIds.includes('other') && p.otherRole !== prev?.otherRole) ai.reportRole(p.otherRole).catch(() => {});
   app.innerHTML = '<p class="muted">Building your plan…</p>';
@@ -3100,6 +3101,8 @@ document.addEventListener('click', async e => {
     return ai.post('/api/me/data/save', { profile: profile(), progress: store.progress() }).catch(() => {}); };
   store.onUserData = () => { if (!signedIn()) return; clearTimeout(syncTimer); syncTimer = setTimeout(pushUserData, 4000); };
   S.flushUserData = pushUserData;
+  // Save at once when the tab is hidden or closed (keepalive lets the request finish).
+  document.addEventListener('visibilitychange', () => { if (document.hidden && syncTimer) pushUserData(); });
   let restoredFor = '';
   const restoreUserData = async () => {
     const who = store.session(); if (!who || restoredFor === who) return; restoredFor = who;
