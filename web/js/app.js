@@ -50,6 +50,8 @@ function md(s) {
   return parts.map((p, i) => (i % 2 ? `<pre><code>${esc(p.replace(/\n$/, ''))}</code></pre>` : fmt(p).replace(/(^|<br>)[-*] /g, '$1• '))).join('');
 }
 const ICONS = {
+  code: '<path d="m8 8-5 4 5 4M16 8l5 4-5 4M14 5l-4 14"/>',
+  layers: '<path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="m3 13 9 5 9-5"/>',
   pause: '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>',
   pip: '<rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="12" width="7" height="5" rx="1"/>',
   bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
@@ -1036,6 +1038,97 @@ function jobFocusView() {
   </div>`;
 }
 
+/* ---------- Interview Lab: classic interview questions with worked answers, beyond flashcards ---------- */
+// Content: web/content/lab/<format>.json (written by scripts/build-lab.mjs, fact-checked once, same for everyone).
+const LAB_FREE = 3; // questions per format open on Free
+const LAB_ICONS = { 'system-design': 'layers', coding: 'code', sql: 'list', lld: 'cards', behavioral: 'mic' };
+function labTags(p = profile()) {
+  const map = id => id.startsWith('backend') ? ['backend'] : id.startsWith('frontend') ? ['frontend'] : id === 'fullstack-js' ? ['frontend', 'backend']
+    : id.startsWith('mobile') ? ['mobile'] : id.startsWith('data') ? ['data'] : id === 'ml-engineer' ? ['ml', 'data'] : id === 'qa-automation' ? ['backend']
+    : id === 'security-engineer' ? ['backend', 'cloud'] : id === 'support' ? ['infra'] : [id];
+  return new Set((p ? effectiveRoles(p) : []).flatMap(map));
+}
+async function labLoad(id) {
+  const L = S.lab;
+  if (id ? L.data[id] : L.index) return;
+  try {
+    const r = await fetch(`content/lab/${id || 'index'}.json`);
+    if (!r.ok) throw new Error();
+    if (id) L.data[id] = await r.json(); else L.index = await r.json();
+  } catch { L.err = 'Could not load the questions. Check your connection.'; }
+  if (S.lastView === 'lab') render();
+}
+function labView() {
+  const L = S.lab || (S.lab = { fmt: null, q: null, data: {}, index: null, open: {} });
+  if (!L.index) { labLoad(); return `<div class="stack lab"><h1>Interview Lab</h1><p class="muted">${esc(L.err || 'Loading…')}</p></div>`; }
+  const pro = hasPro();
+  // Question page
+  if (L.fmt && L.q) {
+    const f = L.data[L.fmt]; const q = f?.questions.find(x => x.id === L.q);
+    if (!q) { L.q = null; return labView(); }
+    const a = q.answer, st = L.open[q.id] || (L.open[q.id] = { show: false, mine: '', grade: '', busy: false });
+    return `<div class="stack lab lab-q">
+      <button class="back" data-act="labback">${ic('left')}${esc(f.name)}</button>
+      <div><span class="mv-meta">${esc(f.name)} · ${esc(q.level === 'all' ? 'every level' : q.level)}</span><h1 class="lab-title">${esc(q.title)}</h1></div>
+      ${st.show ? '' : `<section class="lab-try">
+        <b>Try it first</b><span class="muted small">Say it out loud or type your answer. Then compare it with the worked answer.</span>
+        <textarea id="labMine" rows="5" maxlength="4000" placeholder="Your answer, in a few lines…">${esc(st.mine)}</textarea>
+        ${st.grade ? `<div class="lab-grade">${mdChat(st.grade)}</div>` : ''}
+        <div class="row"><button class="btn" data-act="labgrade" ${st.busy ? 'disabled' : ''}>${st.busy ? 'Checking…' : 'Check my answer'}</button><button class="btn primary" data-act="labshow">Show the worked answer</button></div>
+      </section>`}
+      ${st.show ? `<section class="lab-ans">
+        <p class="lab-sum">${fmt(a.summary)}</p>
+        ${a.sections.map((s, i) => `<div class="lab-sec"><span class="lab-n">${i + 1}</span><div><h3>${esc(s.h)}</h3>${s.points.length ? `<ul>${s.points.map(p => `<li>${fmt(p)}</li>`).join('')}</ul>` : ''}${s.code ? `<pre><code>${esc(s.code)}</code></pre>` : ''}</div></div>`).join('')}
+        ${a.mistakes.length ? `<div class="lab-box trap"><b>Mistakes to avoid</b><ul>${a.mistakes.map(m => `<li>${fmt(m)}</li>`).join('')}</ul></div>` : ''}
+        ${a.followups.length ? `<div class="lab-box"><b>What they ask next</b><ul>${a.followups.map(m => `<li>${fmt(m)}</li>`).join('')}</ul></div>` : ''}
+      </section>` : ''}
+      <div class="row"><button class="btn ${st.show ? 'primary' : ''}" data-act="lablive">${ic('mic')}Practise it out loud with Live AI</button>${st.show ? `<button class="btn quiet" data-act="labhide">Hide the answer</button>` : ''}</div>
+      ${labNext(f, q)}
+    </div>`;
+  }
+  // Question list for one format
+  if (L.fmt) {
+    const f = L.data[L.fmt];
+    if (!f) { labLoad(L.fmt); return `<div class="stack lab"><button class="back" data-act="labhome">${ic('left')}Interview Lab</button><p class="muted">${esc(L.err || 'Loading…')}</p></div>`; }
+    const tags = labTags();
+    const fits = q => q.tags.includes('all') || q.tags.some(t => tags.has(t));
+    const list = [...f.questions.filter(fits), ...f.questions.filter(q => !fits(q))];
+    return `<div class="stack lab">
+      <button class="back" data-act="labhome">${ic('left')}Interview Lab</button>
+      <div><h1>${esc(f.name)}</h1><p class="muted">${esc(f.blurb)}</p></div>
+      <div class="lab-list">${list.map((q, i) => {
+        const locked = !pro && f.questions.indexOf(q) >= LAB_FREE;
+        return `<button class="lab-row ${locked ? 'is-locked' : ''}" data-act="${locked ? 'plans' : 'labq'}" data-id="${q.id}">
+          <span class="lab-i">${i + 1}</span><span class="lab-t">${esc(q.title)}<span class="mv-meta">${esc(q.level === 'all' ? 'every level' : q.level)}${fits(q) && !q.tags.includes('all') ? ' · fits your role' : ''}</span></span>${locked ? ic('lock') : ic('right')}</button>`;
+      }).join('')}</div>
+      ${pro ? '' : `<p class="muted small">Free: the first ${LAB_FREE} in each list. <button class="link" data-act="plans">Pro opens all of them</button></p>`}
+    </div>`;
+  }
+  // Home: the formats
+  return `<div class="stack lab">
+    <div><h1 class="lab-h">Interview Lab.</h1><p class="lede">The questions interviewers really ask, with the answer a strong candidate gives, laid out step by step. Try it yourself first, then compare.</p></div>
+    <div class="lab-formats">${L.index.formats.map(f => `<button class="lab-fmt" data-act="labfmt" data-id="${f.id}">
+      <span class="lab-fi">${ic(LAB_ICONS[f.id] || 'cards')}</span><b>${esc(f.name)}</b><span class="muted small">${esc(f.blurb)}</span><span class="mv-meta">${f.count} questions</span></button>`).join('')}</div>
+  </div>`;
+}
+function labNext(f, q) {
+  const i = f.questions.indexOf(q), n = f.questions[i + 1];
+  if (!n || (!hasPro() && i + 1 >= LAB_FREE)) return '';
+  return `<button class="lab-next" data-act="labq" data-id="${n.id}"><span class="mv-meta">Next question</span><b>${esc(n.title)}</b>${ic('right')}</button>`;
+}
+async function labGrade() {
+  const L = S.lab, f = L.data[L.fmt], q = f.questions.find(x => x.id === L.q), st = L.open[q.id];
+  st.mine = (document.getElementById('labMine')?.value || '').trim();
+  if (st.mine.length < 20) return toast('Write a few lines first, the way you would say it in the interview.');
+  st.busy = true; render();
+  const ref = `${q.answer.summary}\n${q.answer.sections.map(s => `${s.h}: ${s.points.join(' ')}`).join('\n')}`.slice(0, 2500);
+  try {
+    st.grade = await ai.chat([{ role: 'user', content: `Grade my interview answer. Question (${f.name}): ${q.title}\n\nMy answer:\n${st.mine}\n\nCompare it with the reference answer. Reply with: one line verdict (strong / ok / needs work), then "Covered:" with the key points I got, then "Missing:" with the 2-3 most important points I left out. Be brief.` }],
+      { profileSummary: summary(), context: `Reference answer for "${q.title}":\n${ref}` });
+  } catch (e) { aiFailed(e); }
+  st.busy = false; render();
+}
+
 /* Role brief: job post + résumé -> practice answers from the candidate's own work, then a mock interview. */
 function briefSectionHtml(r) {
   const b = r.brief;
@@ -1656,6 +1749,7 @@ function navDrawerHtml(key) {
       ${item('home', 'Home', 'home', key === 'home')}
       ${item('deck', 'Cards', 'cards', key === 'deck')}
       ${item('jobfocus', 'Role Ready', 'target', key === 'focus')}
+      ${item('lab', 'Interview Lab', 'book', key === 'lab')}
       ${item('trend', 'What’s new in tech', 'bolt', key === 'trend')}
       ${item('live', 'Live AI interview', 'mic', false)}
       ${item('custom', 'Custom subjects', 'plus', key === 'custom')}
@@ -2310,6 +2404,7 @@ function render() {
     : key === 'chat' ? chatView()
     : key === 'custom' ? customView()
     : key === 'focus' ? jobFocusView()
+    : key === 'lab' ? labView()
     : key === 'trend' ? trendView()
     : key === 'settings' ? settingsView()
     : homeView();
@@ -2892,6 +2987,13 @@ document.addEventListener('click', async e => {
   else if (a === 'jfgo') jobFocusGo();
   else if (a === 'jfpick') { S.jf.sel = Number(b.dataset.i) || 0; render(); }
   else if (a === 'jfretry') jobFocusCards(Number(b.dataset.i) || 0);
+  else if (a === 'labfmt') { S.lab.fmt = b.dataset.id; S.lab.q = null; render(); scrollToY(0); }
+  else if (a === 'labq') { S.lab.q = b.dataset.id; render(); scrollToY(0); }
+  else if (a === 'labback') { S.lab.q = null; render(); scrollToY(0); }
+  else if (a === 'labhome') { S.lab.fmt = null; S.lab.q = null; render(); scrollToY(0); }
+  else if (a === 'labshow' || a === 'labhide') { const st = S.lab.open[S.lab.q]; st.mine = document.getElementById('labMine')?.value ?? st.mine; st.show = a === 'labshow'; render(); }
+  else if (a === 'labgrade') labGrade();
+  else if (a === 'lablive') { const f = S.lab.data[S.lab.fmt], q = f.questions.find(x => x.id === S.lab.q); S.chatContext = `Interview question (${f.name}): ${q.title}\nAsk me this question as the interviewer, listen to my full answer, then probe with follow-ups like: ${q.answer.followups.join(' / ')}`; S.view = 'chat'; render(); liveSetupSheet(); }
   else if (a === 'jfmode') { S.jf.mode = b.dataset.v; render(); }
   else if (a === 'jfrolepick') { S.jf.mode = 'role'; S.jf.roleText = b.dataset.v; render(); jobFocusGo(); }
   else if (a === 'jfnew') { S.jf.result = null; S.jf.text = ''; S.jf.sel = 0; render(); }
