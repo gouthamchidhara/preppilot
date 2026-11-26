@@ -17,8 +17,8 @@
   {
    "id": "core-dev",
    "name": "Developer fundamentals",
-   "version": "6e18bcb594",
-   "bytes": 104868,
+   "version": "2cb06e04cb",
+   "bytes": 105523,
    "topics": [
     {
      "id": "dsa",
@@ -79,8 +79,8 @@
   {
    "id": "data",
    "name": "Data Engineering",
-   "version": "89f41a985b",
-   "bytes": 103582,
+   "version": "b8877cacc2",
+   "bytes": 107029,
    "topics": [
     {
      "id": "sql-advanced",
@@ -167,8 +167,8 @@
   {
    "id": "frontend",
    "name": "Frontend",
-   "version": "648f67fdd9",
-   "bytes": 71563,
+   "version": "212fcc5773",
+   "bytes": 72163,
    "topics": [
     {
      "id": "html-css",
@@ -211,8 +211,8 @@
   {
    "id": "go",
    "name": "Go",
-   "version": "9ceb4e4ae9",
-   "bytes": 26418,
+   "version": "b7d4a15ab6",
+   "bytes": 27081,
    "topics": [
     {
      "id": "go-core",
@@ -346,8 +346,8 @@
   {
    "id": "ml",
    "name": "Machine Learning & AI",
-   "version": "f28752fff9",
-   "bytes": 64135,
+   "version": "de2a862558",
+   "bytes": 65406,
    "topics": [
     {
      "id": "statistics",
@@ -384,8 +384,8 @@
   {
    "id": "mobile",
    "name": "Mobile",
-   "version": "77e3055759",
-   "bytes": 45761,
+   "version": "5889eb7745",
+   "bytes": 46382,
    "topics": [
     {
      "id": "ios-swift",
@@ -416,8 +416,8 @@
   {
    "id": "node",
    "name": "JavaScript & Node.js",
-   "version": "57bf110706",
-   "bytes": 51157,
+   "version": "2e06fac4e6",
+   "bytes": 52507,
    "topics": [
     {
      "id": "js-core",
@@ -448,8 +448,8 @@
   {
    "id": "python",
    "name": "Python",
-   "version": "d8df884823",
-   "bytes": 49225,
+   "version": "36872e2a19",
+   "bytes": 49771,
    "topics": [
     {
      "id": "python-core",
@@ -480,8 +480,8 @@
   {
    "id": "quality",
    "name": "Quality & Security",
-   "version": "229cea4d42",
-   "bytes": 74055,
+   "version": "ab9405f01c",
+   "bytes": 74702,
    "topics": [
     {
      "id": "test-strategy",

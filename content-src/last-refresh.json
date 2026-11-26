@@ -1,138 +1,96 @@
 {
   "month": "2026-11",
-  "at": "2026-11-25T17:23:51.952Z",
-  "added": 22,
+  "at": "2026-11-26T17:04:13.131Z",
+  "added": 15,
   "report": [
     {
       "topic": "sql",
       "qs": [
-        "How can you use the `EXCEPT` and `INTERSECT` set operators in SQL to filter results across multiple tables, and what are some performance considerations when using them with large datasets?"
-      ]
-    },
-    {
-      "topic": "concurrency",
-      "qs": [
-        "How would you ensure thread safety when using Python's `multiprocessing.shared_memory` module to share large NumPy arrays between processes, especially considering recent changes in Python 3.13's memory management?"
-      ]
-    },
-    {
-      "topic": "sql-advanced",
-      "qs": [
-        "When working with composite types in PostgreSQL, how does inequality comparison between row value expressions like (a, b, c) differ from using ARRAY[a, b, c], and what are the implications for query logic and indexing?"
+        "How can you optimize a SQL query that uses `ORDER BY` on a timestamp column to avoid empty result sets, especially when filtering with recent data in time-series tables?"
       ]
     },
     {
       "topic": "data-modeling",
       "qs": [
-        "How would you model and enforce unique constraints on fields that are expected to be unique, but may occasionally require correction, in a modern OLTP or lakehouse environment?"
+        "How would you design a dimensional model in a lakehouse architecture to support real-time analytics while ensuring consistency with batch-loaded historical data?"
       ]
     },
     {
       "topic": "etl-elt",
       "qs": [
-        "How can you use dbt's `retries` configuration in model execution to improve reliability in ELT pipelines, and what are important considerations when setting retry limits?"
+        "How would you implement and monitor data freshness checks in a dbt pipeline to ensure timely batch loads, and what configuration options are available for alerting on stale data?"
       ]
     },
     {
       "topic": "spark",
       "qs": [
-        "How does enabling `spark.ssl.rpc.enabled` in Spark 4.x affect executor memory usage, especially with disk-cached blocks, and what configuration changes can help prevent out-of-memory errors?"
+        "What are the trade-offs when using the new `spark.sql.jsonSchemaInference.parallelism` setting in Spark 4.x to speed up schema inference for massive JSON columns, and how can it impact cluster resource usage?"
+      ]
+    },
+    {
+      "topic": "airflow",
+      "qs": [
+        "How can you use Airflow's updated DAG-level concurrency controls to prevent resource contention when running multiple high-frequency DAGs simultaneously?"
       ]
     },
     {
       "topic": "warehouses",
       "qs": [
-        "How would you leverage Snowflake's Search Optimization Service to improve query performance on semi-structured data, and what cost considerations should you keep in mind when enabling this feature?"
-      ]
-    },
-    {
-      "topic": "react",
-      "qs": [
-        "How can you use React's new `useTransition` hook to improve perceived performance when updating large lists, and what are the limitations developers should be aware of?"
+        "How would you use Redshift's new auto-copy from Amazon S3 feature to streamline data ingestion, and what are the main configuration steps and security considerations?"
       ]
     },
     {
       "topic": "angular",
       "qs": [
-        "How do you ensure that a component using Angular signals remains type-safe and avoids runtime errors when accessing deeply nested properties, especially when the signal's initial value is undefined or fetched asynchronously?"
-      ]
-    },
-    {
-      "topic": "browser-performance",
-      "qs": [
-        "What steps would you take to reduce the impact of large AI model weights on initial page load and Core Web Vitals when integrating in-browser LLM inference in a web app?"
+        "In Angular 22+, how would you ensure that a component using signals for state management can handle asynchronous data fetching while avoiding undefined property errors in templates?"
       ]
     },
     {
       "topic": "go-concurrency",
       "qs": [
-        "How would you handle reference counting for file descriptors in concurrent Go network code to prevent resource leaks, especially when using `net.Conn` and ensuring `Close()` doesn't block indefinitely?"
-      ]
-    },
-    {
-      "topic": "network",
-      "qs": [
-        "What are some considerations and best practices when configuring firewall rules to support DNS-over-HTTPS (DoH) while maintaining network observability and security?"
-      ]
-    },
-    {
-      "topic": "cloud",
-      "qs": [
-        "In Azure, how would you use Managed Identities with Azure Container Apps to securely access Key Vault secrets, and what configuration is required to avoid exposing credentials?"
+        "With recent improvements in Go's `context` package, how would you propagate cancellation signals across a group of goroutines working on interdependent tasks, ensuring that all goroutines terminate promptly if one fails?"
       ]
     },
     {
       "topic": "statistics",
       "qs": [
-        "How would you assess whether a distribution is multimodal, and what implications does this have for regression modeling?"
+        "What are the advantages of using quantile regression over ordinary least squares regression when analyzing data with outliers or non-normal error distributions?"
       ]
     },
     {
       "topic": "ml-ops",
       "qs": [
-        "How would you implement scalable, low-latency model serving for large language models (LLMs) using the latest features in model serving platforms like KServe or Seldon Core?"
+        "How would you configure a model monitoring pipeline to distinguish between natural data drift and shifts caused by increased AI-generated web content, using the latest open-source monitoring frameworks?"
       ]
     },
     {
-      "topic": "js-core",
+      "topic": "react-native",
       "qs": [
-        "How can you use the `Symbol.prototype.description` property to enhance debugging or logging of object prototypes in modern JavaScript?"
+        "How would you address the issue of large AAB files compared to APKs in a React Native project, and what tools or configuration options are available to optimize bundle size?"
       ]
     },
     {
       "topic": "typescript",
       "qs": [
-        "How can you use TypeScript's `satisfies` operator to enforce that an object matches a specific type while preserving its literal types, and what are the advantages over traditional type assertions?"
+        "How can you use TypeScript's `NonNullable<T>` utility type with generics to ensure that a type excludes `null` and `undefined`, and what are some pitfalls when the generic might resolve to `undefined`?"
       ]
     },
     {
-      "topic": "python-async",
+      "topic": "node-runtime",
       "qs": [
-        "What approach would you take to safely remove idle or unused `asyncio.Lock` instances in a long-running application without risking race conditions or duplicate task execution?"
+        "How can you use the `stream.pipeline()` method with async generators in recent Node.js versions to efficiently process and transform large data sets, and what are the main advantages of this approach?"
       ]
     },
     {
       "topic": "python-packaging",
       "qs": [
-        "How does the introduction of `pyproject.toml`-based editable installs (PEP 660) affect the workflow for local development with tools like `pip`, `poetry`, or `uv`?"
-      ]
-    },
-    {
-      "topic": "api-testing",
-      "qs": [
-        "How do you use AI-powered API testing tools to generate and maintain test cases for evolving REST APIs, and what are the main advantages and limitations of these tools in practice?"
+        "What is the significance of the `virtualenv` API's new support for cross-platform activation scripts, and how does it improve developer experience compared to previous versions?"
       ]
     },
     {
       "topic": "performance-testing",
       "qs": [
-        "What strategies would you use to ensure performance test coverage for applications that utilize flash memory-based AI inference accelerators, such as DeepSeek v4.1, and which metrics would you focus on?"
-      ]
-    },
-    {
-      "topic": "appsec",
-      "qs": [
-        "How would you determine if your application is impacted by a newly disclosed vulnerability such as CVE-2026-109618, and what steps would you take to mitigate it?"
+        "How would you design a performance test to evaluate the scalability of a system that dynamically integrates agent skills for code optimization, and what metrics would you track to ensure these skills do not introduce unpredictable latency spikes?"
       ]
     }
   ]
