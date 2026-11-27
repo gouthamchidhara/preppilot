@@ -27,14 +27,14 @@ Checked with it on 18 November: subscription Enabled; Static Web App (Free) prod
 - [x] **RevenueCat: webhook** created by Claude 18 Nov via API v2 (all events, sandbox and production), URL carries `?auth=` because Azure replaces the Authorization header. Was: URL `https://preppilot.us/api/billing/revenuecat`, Authorization header equal to the Azure setting `REVENUECAT_WEBHOOK_AUTH`. Send RevenueCat's test event; the API should answer 200.
 - [ ] *(optional)* **Azure: `REVENUECAT_SECRET_KEY`** — purchases work without it through the webhook; it only speeds up the first unlock. set to the RevenueCat **v2** secret key (owner pastes it in the Azure Portal; `REVENUECAT_PROJECT_ID=projda036fd0` is already set). Currently empty. Used right after a purchase to unlock Pro or the session.
 - [x] **App Store Connect: `pro_monthly`** fixed by Claude 18 Nov: $10.99/month (was $4.99), shows as "PrepPilot Pro", new description, review screenshot; state Ready to Submit.
-- [x] **App Store Connect: `mock_session_60min`** fixed by Claude 18 Nov: $15.99 (was $10.99), shows as "Live AI, 60 minutes", sold in the USA, review screenshot; state Ready to Submit. Unused misspelled product `com.gchid.prepilot.subscribtion` deleted. Was: display name and description "Live AI, 60 minutes". Keep the product id.
+- [x] **App Store Connect: `mock_session_60min`** fixed by Claude 18 Nov on the previous Apple account: $15.99 (was $10.99), shows as "Live AI, 60 minutes", sold in the USA, review screenshot; state Ready to Submit. An unused misspelled product was deleted. Keep the product id.
 - [x] **App Store Connect: Paid Apps agreement** in place with bank account and W-9 (owner screenshot 18 Nov). Was: Active (Agreements, Tax and Banking).
-- [ ] **New iOS build** started 18 Nov 16:49 UTC: build 8 (version 1.0.0), auto-submitted to TestFlight; tester group "PrepPilot Team" (Goutham, Priyanka) gets every build. Expo build: https://expo.dev/accounts/gchid/projects/preppilot/builds/27624931-f1c1-4fd7-bdfc-9525c60c2285 . Tick when it shows in TestFlight. Was: to TestFlight (`docs/IOS-RELEASE-RUNBOOK.md`, workflow "iOS release"). The current build predates the purchase fixes, light/dark colours, badge and notifications.
+- [ ] **New iOS build:** create and submit a build for the new Apple team. The 18 November build was for the previous account; see `docs/IOS-RELEASE-RUNBOOK.md`.
 - [x] **App Store Connect: App Privacy answers** published 18 Nov (email, name, audio, other user content, user ID, purchase history, product interaction; all App Functionality, linked, no tracking). Was: match `web/privacy.html` (updated 17 November).
 - [ ] **TestFlight purchase test** with a sandbox account: buy Pro, buy a Live AI session, Restore purchases, and check the AI page shows "Unlimited" and "2 of 2" Live AI sessions.
 
 - [x] **App availability: United States only** (set by Claude 18 Nov; was every country including China mainland, which triggered China security/AIGC notices). Add countries later in Pricing and Availability.
-- [x] **App Store name set to "PrepPilot: Interview Prep"** by Claude 18 Nov. Was: the PrepPilot listing (app 6835532732, `com.gchid.preppilot`) is named "interview-preppilot". Choose a proper store name (for example "PrepPilot: Interview Prep") before review. ("Remivo" is a different app in the same account.)
+- [x] **Previous App Store listing** was named "PrepPilot: Interview Prep" on 18 Nov. Confirm the new app's name separately before review.
 
 ## 2. Email
 

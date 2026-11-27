@@ -59,7 +59,7 @@ param googleClientIds string = ''
 param googleWebClientId string = ''
 
 @description('Comma-separated Apple Sign In audiences (iOS bundle ID, web Services ID).')
-param appleAudiences string = 'com.gchid.preppilot'
+param appleAudiences string = 'us.preppilot.app'
 
 @secure()
 param revenueCatSecretKey string = ''

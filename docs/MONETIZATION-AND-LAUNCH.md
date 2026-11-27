@@ -38,7 +38,7 @@ At worst-case usage the margin is about $1.80 per user per month; typical users 
 - Google sign-in (web), plus Google and Apple sign-in inside the native app (Apple requires Sign in with Apple whenever Google login is offered).
 - Accounts, quotas, the free pool, admin access, voice reserve/refund/hangup, the sweeper, RevenueCat webhook and refresh.
 - In-app account deletion (App Review guideline 5.1.1(v)) and a privacy policy at `/privacy.html`.
-- Expo app `mobile/` (bundle `com.gchid.preppilot`, EAS project `@gchid/preppilot`, App Store app 6835532732):
+- Expo app `mobile/` (iOS bundle `us.preppilot.app`, EAS project `@ppaladugula/preppilot`):
   - WebView shell for the app, native sign-in, RevenueCat purchase and restore, microphone permission, export-compliance flag.
 
 ## What only you can do (about 1 to 2 hours), in order
@@ -48,8 +48,8 @@ At worst-case usage the margin is about $1.80 per user per month; typical users 
    support email, privacy policy `https://lively-pond-0ad55040f.8.azurestaticapps.net/privacy.html`, scopes `openid email profile`. Publish it.
 2. **Credentials → Create OAuth client ID → Web application**: Authorized JavaScript origins
    `https://lively-pond-0ad55040f.8.azurestaticapps.net` and `http://localhost:5173`.
-3. **Create OAuth client ID → iOS**: bundle ID `com.gchid.preppilot`.
-4. Android (later): an **Android** client with package `com.gchid.preppilot` and the SHA-1 from `eas credentials -p android`.
+3. **Create OAuth client ID → iOS**: bundle ID `us.preppilot.app`.
+4. Android (later): an **Android** client with package `com.ppaladugula.preppilot` and the SHA-1 from `eas credentials -p android`.
 5. Paste the IDs:
    - `deploy.settings.json`: `googleWebClientId` = the web client; `googleClientIds` = web,ios,android (comma-separated)
    - `mobile/app.settings.json`: `googleWebClientId`, `googleIosClientId`
@@ -58,14 +58,14 @@ At worst-case usage the margin is about $1.80 per user per month; typical users 
 ### 2. App Store Connect (20 min)
 1. **Agreements, Tax and Banking**: accept the Paid Apps agreement and add bank and tax details (purchases won't work without it).
 2. Enroll in the **App Store Small Business Program** (15% instead of 30%).
-3. App 6835532732 → **Monetization → Subscriptions**: create the group "PrepPilot Pro", then an auto-renewable subscription
+3. In the new app → **Monetization → Subscriptions**: create the group "PrepPilot Pro", then an auto-renewable subscription
    with product ID `pro_monthly`, duration 1 month, price $4.99, and a display name and description.
 4. **Users and Access → Integrations → In-App Purchase**: generate a key (for RevenueCat).
 5. **App Privacy**: declare Email and Name (account), User ID, Product Interaction (usage counts),
    and Audio Data (voice, sent to a processor, not stored). None of it is used for tracking.
 
 ### 3. RevenueCat (15 min): app.revenuecat.com
-1. Create the project PrepPilot and add an **App Store** app with bundle `com.gchid.preppilot` and the In-App Purchase key from step 2.4.
+1. Create the project PrepPilot and add an **App Store** app with bundle `us.preppilot.app` and the In-App Purchase key from step 2.4.
 2. Products: `pro_monthly`. **Entitlement** identifier: `pro`, with `pro_monthly` attached.
    **Offering** "default" with one package containing `pro_monthly`.
 3. **Integrations → Webhooks**: URL `https://lively-pond-0ad55040f.8.azurestaticapps.net/api/billing/revenuecat`.

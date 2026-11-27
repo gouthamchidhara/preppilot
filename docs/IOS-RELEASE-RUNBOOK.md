@@ -24,19 +24,23 @@ Replacing EAS is not configured in this repository yet. It requires an Azure Dev
 
 | Item | Value |
 |---|---|
-| GitHub repository | `gouthamchidhara/preppilot` |
-| Expo account / project | `gchid` / `preppilot` |
-| Bundle ID | `com.gchid.preppilot` |
-| App Store Connect app ID | `6835532732` |
-| Apple Team ID | `KSD8FCH7C9` |
+| GitHub repository | `ppaladugula1993/preppilot-interview` |
+| Expo account / project | `ppaladugula` / `preppilot` |
+| iOS bundle ID | `us.preppilot.app` |
+| App Store Connect app ID | `6839824503` (confirm it uses the iOS bundle ID) |
+| Apple Team ID | Select the new Apple team during credential setup |
 | Subscription product ID | `pro_monthly` |
 | RevenueCat entitlement | `pro` |
 | Workflow file | `.github/workflows/ios-release.yml` |
 
+The iOS bundle and Android package are configured separately. Verify the Google iOS OAuth client
+and RevenueCat app/key match the iOS bundle, and redeploy `APPLE_AUDIENCES` before testing sign-in
+or purchases. Confirm the App Store Connect app ID belongs to this bundle before submission.
+
 ## Step 0: check the starting point
 
-1. Open `https://github.com/gouthamchidhara/preppilot/blob/main/.github/workflows/ios-release.yml`.
-2. If it is a 404, the workflow is not on `main` yet. GitHub only shows a manually triggered workflow once it is on the default branch. **Stop and ask the human** to merge the branch `claude/eloquent-pasteur-wdc9yd` into `main`. Tell them that merging also deploys the redesigned web app to the live site, because every push to `main` deploys.
+1. Open `https://github.com/ppaladugula1993/preppilot-interview/blob/main/.github/workflows/ios-release.yml`.
+2. If it is a 404, the workflow may not be on the default branch yet. Stop and report it.
 
 **Done when:** the workflow file opens on `main`.
 
@@ -54,9 +58,9 @@ This lets EAS upload builds without anyone's Apple password.
 
 ## Step 2: give the key to Expo
 
-1. Go to `https://expo.dev/accounts/gchid/settings/credentials`. The human signs in to Expo.
+1. Go to `https://expo.dev/accounts/ppaladugula/settings/credentials`. The human signs in to Expo.
 2. Find the **App Store Connect API Keys** section and add a key: upload the `.p8` file, enter the Key ID and Issuer ID from step 1, and save.
-3. Go to `https://expo.dev/accounts/gchid/projects/preppilot/credentials`, open the iOS bundle `com.gchid.preppilot`, and in the **App Store Connect API Key** / "Submissions" area select the key you just added.
+3. Go to `https://expo.dev/accounts/ppaladugula/projects/preppilot/credentials`, open the iOS bundle `us.preppilot.app`, and in the **App Store Connect API Key** / "Submissions" area select the key you just added.
 4. On the same page, confirm a **Distribution Certificate** and a **Provisioning Profile** are present and not expired. Do not create new ones.
 
 If the dashboard has no way to upload the key, do not improvise. Report it, and ask the human to run this once in a terminal and choose "App Store Connect: Manage your API Key":
@@ -69,9 +73,9 @@ cd mobile && npx eas-cli credentials --platform ios
 
 ## Step 3: Expo access token into GitHub
 
-1. Go to `https://expo.dev/accounts/gchid/settings/access-tokens`.
+1. Go to `https://expo.dev/accounts/ppaladugula/settings/access-tokens`.
 2. Create a token named `github-actions-preppilot`. Copy the value to the clipboard. It is shown once.
-3. Go to `https://github.com/gouthamchidhara/preppilot/settings/secrets/actions`. The human signs in to GitHub.
+3. Go to `https://github.com/ppaladugula1993/preppilot-interview/settings/secrets/actions`. The human signs in to GitHub.
 4. **New repository secret.** Name: `EXPO_TOKEN`. Paste the value. Add secret.
 
 **Done when:** `EXPO_TOKEN` is listed under Repository secrets.
@@ -82,13 +86,13 @@ Without this the "Start Pro" button in the app fails, and App Review rejects the
 
 1. Go to `https://app.revenuecat.com`. The human signs in. Open the PrepPilot project.
 2. **Check the setup.** Report anything missing; do not create it yourself unless the human says so.
-   - An App Store app with bundle ID `com.gchid.preppilot`.
+   - An App Store app with bundle ID `us.preppilot.app`.
    - A product `pro_monthly`.
    - An entitlement `pro` with `pro_monthly` attached.
    - An offering marked **Current** that contains a package for `pro_monthly`, ideally the Monthly package type.
    - Under Integrations → Webhooks: a webhook pointing at `<live web app URL>/api/billing/revenuecat` with an Authorization header set.
 3. Open **API keys**. Copy the **public** iOS SDK key. It starts with `appl_`. Do not copy any key that starts with `sk_`.
-4. Put that public key into `mobile/app.settings.json` as the value of `revenueCatIosKey`, on `main`. It is a public identifier and is safe to commit. Easiest route: open `https://github.com/gouthamchidhara/preppilot/edit/main/mobile/app.settings.json`, change only that one value, and commit with the message `Set RevenueCat iOS public key`. Keep the rest of the file exactly as it is.
+4. Put the new app's public key into `mobile/app.settings.json` as `revenueCatIosKey`.
 
 **Done when:** `revenueCatIosKey` on `main` holds a value starting with `appl_`, and the checklist in item 2 is reported.
 
@@ -97,19 +101,19 @@ Without this the "Start Pro" button in the app fails, and App Review rejects the
 Check only. Report what is missing.
 
 1. `https://appstoreconnect.apple.com/agreements/`: the **Paid Apps** agreement is Active. If not, stop: only the human can sign it, and subscriptions cannot be sold without it.
-2. `https://appstoreconnect.apple.com/apps/6835532732/distribution/subscriptions`: `pro_monthly` exists at $10.99/month, and its status is "Ready to Submit" or better. "Missing Metadata" means the human still has to finish it.
+2. Open the new app in App Store Connect and check its subscriptions: `pro_monthly` exists at $10.99/month, and its status is "Ready to Submit" or better. "Missing Metadata" means the human still has to finish it.
 3. Report whether a product called `mock_session_60min` still exists. The app no longer uses it. Do not delete it; tell the human.
 
 **Done when:** all three are reported.
 
 ## Step 6: run the release
 
-1. Go to `https://github.com/gouthamchidhara/preppilot/actions/workflows/ios-release.yml`.
+1. Go to `https://github.com/ppaladugula1993/preppilot-interview/actions/workflows/ios-release.yml`.
 2. **Run workflow**, branch `main`, "Upload the finished build to TestFlight" ticked. Run.
 3. Open the run and wait for it to go green. It takes a few minutes: it only starts the build and does not wait for it.
-4. Go to `https://expo.dev/accounts/gchid/projects/preppilot/builds`. The newest iOS build should be in progress. A build takes 15 to 30 minutes. Reload every few minutes; do not start a second build.
-5. When the build is Finished, open `https://expo.dev/accounts/gchid/projects/preppilot/submissions` and confirm the submission succeeded.
-6. Go to `https://appstoreconnect.apple.com/apps/6835532732/testflight/ios`. The build appears after Apple finishes processing, usually 5 to 30 minutes.
+4. Go to `https://expo.dev/accounts/ppaladugula/projects/preppilot/builds`. The newest iOS build should be in progress. A build takes 15 to 30 minutes. Reload every few minutes; do not start a second build.
+5. When the build is Finished, open `https://expo.dev/accounts/ppaladugula/projects/preppilot/submissions` and confirm the submission succeeded.
+6. Open the new app's TestFlight page in App Store Connect. The build appears after Apple finishes processing, usually 5 to 30 minutes.
 
 If the workflow, the build or the submission fails: copy the error text into your report and stop. Do not retry more than once.
 

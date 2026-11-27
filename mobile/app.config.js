@@ -19,7 +19,7 @@ module.exports = {
     backgroundColor: '#eceeed',
     splash: { image: './assets/splash-icon.png', resizeMode: 'contain', backgroundColor: '#1c2426' },
     ios: {
-      bundleIdentifier: s.bundleId,
+      bundleIdentifier: s.iosBundleId,
       buildNumber: '1',
       supportsTablet: true,
       usesAppleSignIn: true,

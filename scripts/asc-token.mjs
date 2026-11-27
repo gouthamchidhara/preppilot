@@ -13,6 +13,6 @@ if (!file || !kid || !iss) {
 const b64u = v => Buffer.from(typeof v === 'string' ? v : JSON.stringify(v)).toString('base64url');
 const now = Math.floor(Date.now() / 1000);
 const head = b64u({ alg: 'ES256', kid, typ: 'JWT' });
-const body = b64u({ iss, iat: now, exp: now + 19 * 60, aud: 'appstoreconnect-v1' });
+const body = b64u({ iss, iat: now, exp: now + 30 * 60, aud: 'appstoreconnect-v1' });
 const sig = createSign('SHA256').update(`${head}.${body}`).sign({ key: readFileSync(file), dsaEncoding: 'ieee-p1363' }).toString('base64url');
-console.log(`\nApp Store Connect pass (valid 19 minutes):\n\n${head}.${body}.${sig}\n`);
+console.log(`\nApp Store Connect pass (valid 30 minutes):\n\n${head}.${body}.${sig}\n`);

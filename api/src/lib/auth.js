@@ -14,7 +14,7 @@ const PROVIDERS = {
   apple: {
     jwks: 'https://appleid.apple.com/auth/keys',
     issuers: ['https://appleid.apple.com'],
-    audiences: () => (process.env.APPLE_AUDIENCES || 'com.gchid.preppilot').split(',').map(s => s.trim()).filter(Boolean),
+    audiences: () => (process.env.APPLE_AUDIENCES || 'us.preppilot.app').split(',').map(s => s.trim()).filter(Boolean),
   },
 };
 

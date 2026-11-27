@@ -6,7 +6,7 @@ for (const k of ['AZURE_OPENAI_ENDPOINT', 'AZURE_OPENAI_API_KEY', 'AZURE_OPENAI_
 delete process.env.REVENUECAT_SECRET_KEY;
 Object.assign(process.env, {
   RATE_CHAT_PER_HOUR: '1000', RATE_GENERATE_PER_HOUR: '1000', RATE_VOICE_PER_HOUR: '1000',
-  GOOGLE_CLIENT_IDS: 'web-client.apps.googleusercontent.com', APPLE_AUDIENCES: 'com.gchid.preppilot',
+  GOOGLE_CLIENT_IDS: 'web-client.apps.googleusercontent.com', APPLE_AUDIENCES: 'us.preppilot.app',
   ADMIN_EMAILS: 'boss@gmail.com', SESSION_SECRET: 'x'.repeat(40), REVENUECAT_WEBHOOK_AUTH: 'Bearer hook-secret',
 });
 
@@ -88,6 +88,12 @@ test('Google sign-in rejects bad signatures, wrong audience, unverified email', 
   assert.equal((await call('POST auth/google', { idToken: idToken({ sub: '1', email: 'a@gmail.com', aud: 'someone-else' }) })).status, 401);
   assert.equal((await call('POST auth/google', { idToken: idToken({ sub: '1', email: 'a@gmail.com', email_verified: false }) })).status, 401);
   assert.equal((await call('POST auth/apple', { idToken: good })).status, 401); // Google token is not an Apple token
+});
+
+test('Apple sign-in accepts the configured app audience and rejects another app', async () => {
+  const claims = { iss: 'https://appleid.apple.com', sub: 'apple-user', email: 'a@example.com' };
+  assert.equal((await call('POST auth/apple', { idToken: idToken({ ...claims, aud: 'us.preppilot.app' }) })).status, 200);
+  assert.equal((await call('POST auth/apple', { idToken: idToken({ ...claims, aud: 'com.example.other' }) })).status, 401);
 });
 
 test('free users get a fixed message allowance, then a 402 upgrade prompt', async () => {

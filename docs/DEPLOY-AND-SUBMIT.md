@@ -11,17 +11,17 @@
 | Node.js ≥ 20 | `node --version` |
 | Git | `git --version` |
 | EAS CLI | `npx eas-cli --version` (or `eas --version` if globally installed) |
-| Expo account | `eas whoami` → should return `gchid` |
+| Expo account | `eas whoami` → should return `ppaladugula` |
 | Apple Developer account | Active Paid Apps Agreement in App Store Connect |
-| Repo | `gouthamchidhara/preppilot` on GitHub |
+| Repo | `ppaladugula1993/preppilot-interview` on GitHub |
 
 ---
 
 ## Phase 1: Clone & Verify
 
 ```bash
-git clone https://github.com/gouthamchidhara/preppilot.git
-cd preppilot
+git clone https://github.com/ppaladugula1993/preppilot-interview.git
+cd preppilot-interview
 npm install
 npm test
 ```
@@ -35,22 +35,28 @@ npm test
 ```bash
 # If not logged in:
 npx eas-cli login
-# Enter Expo credentials (account: gchid, email: gvgsgoutham@gmail.com)
+# Enter Expo credentials for account: ppaladugula
 # If you don't have the password, ask the user to run this step manually.
 
 # Verify:
 npx eas-cli whoami
-# Should output: gchid
+# Should output: ppaladugula
 ```
 
 **Important:** On Windows with corporate SSL, you may need:
 ```powershell
-$env:NODE_TLS_REJECT_UNAUTHORIZED = '0'
+$env:NODE_OPTIONS = '--use-system-ca'
 ```
 
 ---
 
 ## Phase 3: Verify iOS Credentials
+
+Use the registered iOS bundle `us.preppilot.app` and confirm the App Store Connect app matches it.
+Set its numeric Apple ID as `submit.production.ios.ascAppId` in `mobile/eas.json` before
+non-interactive submissions. Android retains its separate package `com.ppaladugula.preppilot`.
+Verify the Google iOS OAuth client and RevenueCat app/key match the iOS bundle, and redeploy
+the configured `APPLE_AUDIENCES`.
 
 ```bash
 cd mobile
@@ -63,11 +69,7 @@ npx eas-cli credentials --platform ios
 # You'll need to log in to your Apple account when prompted.
 ```
 
-**Expected output:**
-```
-Distribution Certificate  Serial Number: 49C0CD18...  Expiration: Jun 2027
-Provisioning Profile      Developer Portal ID: 9SXJZ99MUK  Status: active
-```
+Confirm the certificate and profile belong to the new Apple team and bundle ID.
 
 ---
 
@@ -76,9 +78,7 @@ Provisioning Profile      Developer Portal ID: 9SXJZ99MUK  Status: active
 ```bash
 cd mobile
 
-# Set environment for TLS issues (Windows):
-export NODE_TLS_REJECT_UNAUTHORIZED=0   # Linux/macOS
-# $env:NODE_TLS_REJECT_UNAUTHORIZED = '0'   # PowerShell
+# If Node needs the system trust store, use NODE_OPTIONS=--use-system-ca.
 
 # Skip fingerprint computation (can be slow):
 export EAS_SKIP_AUTO_FINGERPRINT=1
@@ -91,7 +91,7 @@ npx eas-cli build -p ios --profile production
 1. Compresses project files (~1 MB)
 2. Uploads to EAS Build
 3. Starts an iOS build on Apple's build servers
-4. Returns a build URL like: `https://expo.dev/accounts/gchid/projects/preppilot/builds/<id>`
+4. Returns a build URL like: `https://expo.dev/accounts/ppaladugula/projects/preppilot/builds/<id>`
 5. Build takes **15-30 minutes**
 
 **Monitor the build:**
@@ -125,7 +125,7 @@ npx eas-cli submit -p ios --id <build-id>
 4. Apple may run a brief automated review before TestFlight availability
 
 **Verify in App Store Connect:**
-- Go to: `https://appstoreconnect.apple.com/apps/6835532732/testflight`
+- Open the new app's TestFlight page in App Store Connect.
 - The build should appear under "Builds" with a version like `1.0 (7)`
 
 ---
@@ -215,11 +215,11 @@ native `webUrl` requires a separate app build; do not remove the old hostname.
 
 When ready to submit for App Review (not just TestFlight):
 
-1. **App Store Connect** → App 6835532732 → **1.0 Prepare for Submission**
+1. **App Store Connect** → the new app → **1.0 Prepare for Submission**
 2. Fill in:
    - App description, keywords, screenshots (6.7" and 5.5" iPhone)
    - Privacy policy URL: `https://lively-pond-0ad55040f.8.azurestaticapps.net/privacy.html`
-   - Support URL: `https://github.com/gouthamchidhara/preppilot/issues`
+   - Support URL: `https://github.com/ppaladugula1993/preppilot-interview/issues`
 3. **Attach IAP:** Add `mock_session_60min` and the `pro_monthly` subscription to the review
 4. **App Review notes:**
    > PrepPilot is a free interview-prep study app. AI coaching requires sign-in (Google or Apple) and includes a free trial. Pro ($10.99/month) is an auto-renewing subscription. Live AI ($15.99) is a consumable one-time purchase: a practice test, not help during a real interview. Voice mode uses the microphone. Account deletion: Profile → Delete account.
@@ -231,14 +231,14 @@ When ready to submit for App Review (not just TestFlight):
 
 | Item | Value |
 |---|---|
-| Bundle ID | `com.gchid.preppilot` |
-| App Store Connect App ID | `6835532732` |
+| iOS bundle ID | `us.preppilot.app` |
+| App Store Connect App ID | Set `submit.production.ios.ascAppId` in `mobile/eas.json` to the new app's numeric Apple ID |
 | EAS Project ID | `2d0fc27c-f525-4610-895b-72c66b08815b` |
-| EAS Project Slug | `@gchid/preppilot` |
-| Apple Team ID | `KSD8FCH7C9` |
+| EAS Project Slug | `@ppaladugula/preppilot` |
+| Apple Team ID | Select the new team during EAS credential setup |
 | Web App URL | `https://preppilot.us` |
 | Azure/native fallback URL | `https://lively-pond-0ad55040f.8.azurestaticapps.net` |
-| GitHub Repo | `gouthamchidhara/preppilot` |
+| GitHub Repo | `ppaladugula1993/preppilot-interview` |
 | Azure Resource Group | `rg-preppilot` |
 | Google OAuth Web Client | `372383686135-jj1mv49jbskilvqk6qfiqguh4uqjkdl5.apps.googleusercontent.com` |
 | Google OAuth iOS Client | `372383686135-dvfs7h64g3vlnhkclilepbjtrnah55rd.apps.googleusercontent.com` |
@@ -254,7 +254,7 @@ When ready to submit for App Review (not just TestFlight):
 
 | Problem | Fix |
 |---|---|
-| `unable to get local issuer certificate` | Set `NODE_TLS_REJECT_UNAUTHORIZED=0` |
+| `unable to get local issuer certificate` | Use the system trust store, e.g. `$env:NODE_OPTIONS = '--use-system-ca'` in PowerShell, and verify your certificate chain |
 | `Distribution Certificate is not validated` | Run `eas credentials --platform ios` interactively and select "Use existing" or "Generate new" |
 | Build fingerprint timeout | Set `EAS_SKIP_AUTO_FINGERPRINT=1` |
 | `--non-interactive` flag not recognized | Use `CI=1` env var instead |
